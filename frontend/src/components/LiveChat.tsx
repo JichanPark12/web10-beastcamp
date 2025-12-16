@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from "react";
+import { Send, MessageCircle } from "lucide-react";
 
 interface ChatMessage {
   id: number;
@@ -9,46 +9,64 @@ interface ChatMessage {
 }
 
 const initialMessages: ChatMessage[] = [
-  { id: 1, nickname: '티켓마스터', message: '첫 시도인데 긴장되네요!', timestamp: '12:34' },
-  { id: 2, nickname: '콘서트러버', message: '대기열 통과 꿀팁 있나요?', timestamp: '12:35' },
-  { id: 3, nickname: '예매왕', message: '보안문자 연습 많이 하세요~', timestamp: '12:36' },
+  {
+    id: 1,
+    nickname: "티켓마스터",
+    message: "첫 시도인데 긴장되네요!",
+    timestamp: "12:34",
+  },
+  {
+    id: 2,
+    nickname: "콘서트러버",
+    message: "대기열 통과 꿀팁 있나요?",
+    timestamp: "12:35",
+  },
+  {
+    id: 3,
+    nickname: "예매왕",
+    message: "보안문자 연습 많이 하세요~",
+    timestamp: "12:36",
+  },
 ];
 
 export function LiveChat() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
-  const [inputMessage, setInputMessage] = useState('');
-  const [nickname, setNickname] = useState('');
+  const [inputMessage, setInputMessage] = useState("");
+  const [nickname, setNickname] = useState("");
   const [isNicknameSet, setIsNicknameSet] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   // Simulate incoming messages
   useEffect(() => {
     const interval = setInterval(() => {
       const randomMessages = [
-        '성공했어요! 연습 덕분에 실전도 성공!',
-        '네트워크 상태 체크 진짜 중요하네요',
-        '이번 시뮬레이션 난이도 높았어요',
-        '좌석 선택이 제일 어려웠어요',
-        '실전처럼 긴장되네요 ㅋㅋ',
+        "성공했어요! 연습 덕분에 실전도 성공!",
+        "네트워크 상태 체크 진짜 중요하네요",
+        "이번 시뮬레이션 난이도 높았어요",
+        "좌석 선택이 제일 어려웠어요",
+        "실전처럼 긴장되네요 ㅋㅋ",
       ];
-      const randomNicknames = ['티켓헌터', '공연매니아', '연습생', '예매고수', '티켓왕'];
-      
+      const randomNicknames = [
+        "티켓헌터",
+        "공연매니아",
+        "연습생",
+        "예매고수",
+        "티켓왕",
+      ];
+
       const newMessage: ChatMessage = {
         id: Date.now(),
-        nickname: randomNicknames[Math.floor(Math.random() * randomNicknames.length)],
-        message: randomMessages[Math.floor(Math.random() * randomMessages.length)],
-        timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+        nickname:
+          randomNicknames[Math.floor(Math.random() * randomNicknames.length)],
+        message:
+          randomMessages[Math.floor(Math.random() * randomMessages.length)],
+        timestamp: new Date().toLocaleTimeString("ko-KR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
 
-      setMessages(prev => [...prev.slice(-20), newMessage]);
+      setMessages((prev) => [...prev.slice(-20), newMessage]);
     }, 8000);
 
     return () => clearInterval(interval);
@@ -68,10 +86,13 @@ export function LiveChat() {
         id: Date.now(),
         nickname: nickname,
         message: inputMessage,
-        timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString("ko-KR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
-      setMessages(prev => [...prev, newMessage]);
-      setInputMessage('');
+      setMessages((prev) => [...prev, newMessage]);
+      setInputMessage("");
     }
   };
 
