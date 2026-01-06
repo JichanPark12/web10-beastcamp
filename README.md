@@ -1,4 +1,7 @@
 # 팀 맹수
+
+## 팀원 소개
+
 <table>
   <!-- 사진 + 영어이름 -->
   <tr>
@@ -33,3 +36,124 @@
     <td align="center"><a href="https://github.com/shininghyunho">J277_최현호</a></td>
   </tr>
 </table>
+
+---
+
+## 프로젝트 구조
+
+본 프로젝트는 MSA 환경에서의 모노레포 아키텍처로 구성되어 있습니다.
+
+```
+ticketing-system/
+├── pnpm-workspace.yaml          # 모노레포 workspace 설정
+├── package.json                 # 루트 package.json (모노레포 스크립트)
+├── pnpm-lock.yaml              # 전역 lock file
+│
+├── frontend/                    # 프론트엔드 (Next.js)
+│   ├── src/
+│   └── package.json
+│
+├── backend/                     # 백엔드 서버들
+│   ├── api-server/             # 일반 API 서버
+│   │   ├── src/
+│   │   └── package.json
+│   │
+│   └── ticket-server/          # 티켓 예매 전용 서버
+│       ├── src/
+│       └── package.json
+│
+├── queue-backend/              # 대기열 큐 서버
+│   ├── src/
+│   └── package.json
+│
+└── packages/                   # 공유 패키지
+    └── shared-types/           # 공통 타입 정의
+        ├── src/
+        │   ├── booking.ts
+        │   ├── queue.ts
+        │   └── events.ts
+        └── package.json
+```
+
+---
+
+## 시작하기
+
+### 1. 패키지 설치
+
+프로젝트 루트에서 다음 명령어를 실행하여 모든 workspace의 의존성을 설치합니다.
+
+```bash
+pnpm install
+```
+
+모노레포 구조이므로 루트에서 한 번만 실행하면 모든 하위 프로젝트의 의존성이 자동으로 설치됩니다.
+
+### 2. 개발 서버 실행
+
+각 서버를 개별적으로 실행할 수 있습니다.
+
+```bash
+# API 서버 실행
+pnpm dev:api
+
+# 티켓 서버 실행
+pnpm dev:ticket
+
+# 대기열 큐 서버 실행
+pnpm dev:queue
+
+# 프론트엔드 실행
+pnpm dev:frontend
+```
+
+### 3. 빌드
+
+```bash
+# API 서버 빌드
+pnpm build:api
+
+# 티켓 서버 빌드
+pnpm build:ticket
+
+# 대기열 큐 서버 빌드
+pnpm build:queue
+
+# 프론트엔드 빌드
+pnpm build:frontend
+```
+
+### 4. 린트 실행
+
+```bash
+# API 서버 린트
+pnpm lint:api
+
+# 티켓 서버 린트
+pnpm lint:ticket
+
+# 대기열 큐 서버 린트
+pnpm lint:queue
+
+# 프론트엔드 린트
+pnpm lint:frontend
+```
+
+---
+
+## 공유 타입 패키지 사용하기
+
+각 서버에서 공통 타입을 사용하려면 다음과 같이 import합니다.
+
+```typescript
+import { BookingRequest, QueueToken } from '@beastcamp/shared-types';
+```
+
+---
+
+## 기술 스택
+
+- **Frontend**: Next.js
+- **Backend**: NestJS
+- **Package Manager**: pnpm (모노레포)
+- **Language**: TypeScript
