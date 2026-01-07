@@ -5,7 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Venue } from './venue.entity';
+import { Venue } from '../../venues/entities/venue.entity';
 
 @Entity('performances')
 export class Performance {

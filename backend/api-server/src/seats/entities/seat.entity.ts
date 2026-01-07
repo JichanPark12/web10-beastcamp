@@ -6,7 +6,7 @@ import {
   JoinColumn,
   Unique,
 } from 'typeorm';
-import { Venue } from './venue.entity';
+import { Venue } from '../../venues/entities/venue.entity';
 
 @Entity('seats')
 @Unique('uk_venue_seat_location', ['venueId', 'seatLocation'])
