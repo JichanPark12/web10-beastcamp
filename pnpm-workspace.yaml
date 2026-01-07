@@ -1,5 +1,9 @@
 packages:
-  - 'frontend'
-  - 'backend/*'
-  - 'queue-backend'
-  - 'packages/*'
+  - frontend
+  - backend/*
+  - queue-backend
+  - packages/*
+
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - sqlite3

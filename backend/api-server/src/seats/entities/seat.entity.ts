@@ -11,10 +11,10 @@ import { Venue } from '../../venues/entities/venue.entity';
 @Entity('seats')
 @Unique('uk_venue_seat_location', ['venueId', 'seatLocation'])
 export class Seat {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'bigint', name: 'venue_id' })
+  @Column({ name: 'venue_id' })
   venueId: number;
 
   @Column({

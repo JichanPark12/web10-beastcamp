@@ -9,10 +9,10 @@ import { Venue } from '../../venues/entities/venue.entity';
 
 @Entity('performances')
 export class Performance {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'bigint', name: 'venue_id' })
+  @Column({ name: 'venue_id' })
   venueId: number;
 
   @Column({
