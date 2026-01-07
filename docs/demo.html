@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>티켓팅 대기열 MSA 아키텍처 | Ticketing Architecture Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8fafc;
+        color: #334155;
+      }
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        height: 300px;
+        max-height: 400px;
+      }
+      .component-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      .component-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+      .active-component {
+        ring: 2px solid #3b82f6;
+        background-color: #eff6ff;
+      }
+      .queue-item {
+        transition: all 0.5s ease;
+      }
+      /* Custom scrollbar for queue simulation */
+      .queue-box::-webkit-scrollbar {
+        width: 6px;
+      }
+      .queue-box::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+      .queue-box::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+    </style>
+    <!-- Chosen Palette: Slate (Background), Blue (Primary Action), Indigo (Secondary), Emerald (Success/Active), Rose (Alert) -->
+    <!-- Application Structure Plan:
+         1. Hero/Overview: High-level goals (100k users) and principles.
+         2. Interactive Architecture Map: A clickable grid layout representing the MSA components. Clicking updates a detail pane.
+         3. Logic Simulation: A visualizer for the Dual Queue (Waiting -> Active) concept using simple DOM manipulation and a Chart.js graph to show traffic smoothing.
+         4. Decision Matrix: A Radar chart comparing MQ technologies and accordions for architectural decisions (Polling vs Socket).
+         5. Lifecycle Flow: A step-by-step vertical timeline explaining the user journey.
+    -->
+    <!-- Visualization & Content Choices:
+         - Arch Map: HTML Grid with styled divs. Goal: Spatial understanding of server separation.
+         - Queue Sim: DOM elements + Line Chart. Goal: Visualize "Protection" of WAS. Interaction: "Add Traffic" button.
+         - Tech Comparison: Radar Chart (Chart.js). Goal: Compare RabbitMQ, Kafka, Redis based on report data.
+         - Flow: Vertical Stepper. Goal: Linear process understanding.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+  </head>
+  <body class="bg-slate-50 text-slate-800">
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <span class="text-xl font-bold text-slate-800 tracking-tight"
+              >🎟️ Ticketing<span class="text-blue-600">Arch</span></span
+            >
+          </div>
+          <div class="hidden md:flex items-center space-x-8">
+            <button
+              onclick="scrollToSection('overview')"
+              class="text-sm font-medium text-slate-600 hover:text-blue-600"
+            >
+              개요
+            </button>
+            <button
+              onclick="scrollToSection('architecture')"
+              class="text-sm font-medium text-slate-600 hover:text-blue-600"
+            >
+              시스템 구조
+            </button>
+            <button
+              onclick="scrollToSection('simulation')"
+              class="text-sm font-medium text-slate-600 hover:text-blue-600"
+            >
+              대기열 시뮬레이션
+            </button>
+            <button
+              onclick="scrollToSection('decisions')"
+              class="text-sm font-medium text-slate-600 hover:text-blue-600"
+            >
+              기술 의사결정
+            </button>
+            <button
+              onclick="scrollToSection('flow')"
+              class="text-sm font-medium text-slate-600 hover:text-blue-600"
+            >
+              서비스 흐름
+            </button>
+          </div>
+          <!-- Mobile menu button omitted for brevity, layout responsive by default -->
+        </div>
+      </div>
+    </nav>
+
+    <!-- 1. Hero / Overview Section -->
+    <section id="overview" class="py-12 bg-white border-b border-slate-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-10">
+          <h1 class="text-4xl font-extrabold text-slate-900 sm:text-5xl mb-4">
+            대규모 트래픽 대응 <br class="hidden sm:block" />
+            <span class="text-blue-600">티켓 예매 대기열 시스템</span>
+          </h1>
+          <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+            수십만 명의 동시 접속 상황에서도 WAS를 보호하고 공정한 예매 경험을
+            제공하기 위한 MSA 아키텍처 청사진입니다.
+          </p>
+        </div>
+
+        <!-- Key Metrics/Goals -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div
+            class="bg-slate-50 p-6 rounded-xl border border-slate-200 text-center"
+          >
+            <div class="text-3xl mb-2">🛡️</div>
+            <h3 class="font-bold text-slate-800 text-lg">WAS 보호</h3>
+            <p class="text-sm text-slate-500 mt-2">
+              트래픽 피크 시에도 서버 다운 방지 및 유효 요청 보장
+            </p>
+          </div>
+          <div
+            class="bg-slate-50 p-6 rounded-xl border border-slate-200 text-center"
+          >
+            <div class="text-3xl mb-2">⚖️</div>
+            <h3 class="font-bold text-slate-800 text-lg">공정성 보장</h3>
+            <p class="text-sm text-slate-500 mt-2">
+              대기 순번 시각화 및 순차적 진입 로직 적용
+            </p>
+          </div>
+          <div
+            class="bg-slate-50 p-6 rounded-xl border border-slate-200 text-center"
+          >
+            <div class="text-3xl mb-2">🚧</div>
+            <h3 class="font-bold text-slate-800 text-lg">기능 분리</h3>
+            <p class="text-sm text-slate-500 mt-2">
+              예매와 일반 기능(조회/채팅)을 물리적으로 격리하여 장애 전파 차단
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Interactive Architecture Map -->
+    <section id="architecture" class="py-16 bg-slate-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold text-slate-900">
+            시스템 아키텍처 청사진
+          </h2>
+          <p class="mt-4 text-slate-600 max-w-3xl">
+            아래 구성도는 시스템의 핵심 컴포넌트를 나타냅니다.
+            <strong>각 요소를 클릭</strong>하여 상세 역할과 기술적 특징을
+            확인하세요. 트래픽이 몰리는 예매 로직과 일반 로직을 분리한 것이
+            핵심입니다.
+          </p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-8 h-full">
+          <!-- Interactive Map (Left) -->
+          <div
+            class="lg:w-2/3 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"
+          >
+            <div
+              class="absolute top-2 right-4 text-xs text-slate-400 font-mono"
+            >
+              Interactive Map
+            </div>
+
+            <!-- Diagram Container -->
+            <div
+              class="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-min text-center font-semibold text-sm"
+            >
+              <!-- Client Layer -->
+              <div class="md:col-span-3 mb-4">
+                <div
+                  onclick="showArchDetail('client')"
+                  class="component-card bg-indigo-50 border-2 border-indigo-100 p-4 rounded-lg text-indigo-700"
+                >
+                  💻 Client (Browser)
+                  <div class="text-xs font-normal mt-1 opacity-75">
+                    SPA + CSR (React)
+                  </div>
+                </div>
+                <div class="h-6 w-0.5 bg-slate-300 mx-auto my-1"></div>
+                <div class="text-slate-400 text-xs">HTTP Request</div>
+              </div>
+
+              <!-- Web Server Layer -->
+              <div class="md:col-span-3 mb-6">
+                <div
+                  onclick="showArchDetail('ws')"
+                  class="component-card bg-slate-100 border-2 border-slate-200 p-3 rounded-lg text-slate-700 w-1/2 mx-auto"
+                >
+                  🌐 Web Server
+                  <div class="text-xs font-normal mt-1 opacity-75">
+                    Static Resource Serving
+                  </div>
+                </div>
+                <div class="h-6 w-0.5 bg-slate-300 mx-auto my-1"></div>
+                <div class="text-slate-400 text-xs">↓</div>
+              </div>
+
+              <!-- Gate Layer -->
+              <div class="md:col-span-1">
+                <div
+                  onclick="showArchDetail('queue')"
+                  class="component-card bg-blue-50 border-2 border-blue-200 p-6 rounded-lg text-blue-800 shadow-sm h-full flex flex-col justify-center items-center"
+                >
+                  <div class="text-2xl mb-2">🚦</div>
+                  Queue Server
+                  <div
+                    class="text-xs font-normal mt-2 bg-blue-100 px-2 py-1 rounded"
+                  >
+                    Gate Keeper
+                  </div>
+                </div>
+              </div>
+
+              <div class="md:col-span-1 flex items-center justify-center">
+                <div class="text-xs text-slate-400 px-2 text-center">
+                  <span class="block mb-1">Polling Check</span>
+                  ← Token →
+                </div>
+              </div>
+
+              <!-- Backend Layer (Split) -->
+              <div class="md:col-span-1 space-y-4">
+                <div
+                  onclick="showArchDetail('general')"
+                  class="component-card bg-slate-50 border-2 border-dashed border-slate-300 p-4 rounded-lg text-slate-600 opacity-80 hover:opacity-100"
+                >
+                  General Backend
+                  <div class="text-xs font-normal mt-1">Chat, Info API</div>
+                </div>
+                <div
+                  onclick="showArchDetail('was')"
+                  class="component-card bg-rose-50 border-2 border-rose-200 p-4 rounded-lg text-rose-800 font-bold shadow-sm ring-offset-2 ring-rose-100"
+                >
+                  🎫 Ticket WAS
+                  <div
+                    class="text-xs font-normal mt-1 bg-rose-100 px-2 py-1 rounded inline-block"
+                  >
+                    Core Logic
+                  </div>
+                </div>
+              </div>
+
+              <!-- Data Layer -->
+              <div
+                class="md:col-span-3 mt-6 pt-6 border-t border-slate-100 relative"
+              >
+                <div
+                  class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-slate-400"
+                >
+                  Data & Events
+                </div>
+                <div
+                  onclick="showArchDetail('redis')"
+                  class="component-card bg-red-50 border-2 border-red-200 p-4 rounded-lg text-red-700 mx-auto w-2/3"
+                >
+                  🗄️ Redis (Shared)
+                  <div class="text-xs font-normal mt-1">
+                    SortedSet Queue & Pub/Sub
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detail Panel (Right) -->
+          <div
+            class="lg:w-1/3 bg-white p-6 rounded-2xl border border-slate-200 shadow-lg flex flex-col"
+          >
+            <h3 id="detail-title" class="text-xl font-bold text-slate-800 mb-2">
+              시스템 요소를 선택하세요
+            </h3>
+            <div
+              id="detail-content"
+              class="text-slate-600 text-sm leading-relaxed flex-grow"
+            >
+              좌측 아키텍처 다이어그램의 각 박스를 클릭하면 상세 역할과 설계
+              의도를 확인할 수 있습니다.
+            </div>
+            <div id="detail-tags" class="mt-4 flex flex-wrap gap-2">
+              <!-- Dynamic Tags -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Dual Queue Logic & Simulation -->
+    <section id="simulation" class="py-16 bg-white border-t border-slate-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-10">
+          <h2 class="text-3xl font-bold text-slate-900">
+            이중 대기열(Dual Queue) 메커니즘
+          </h2>
+          <p class="mt-4 text-slate-600 max-w-3xl">
+            순간적인 트래픽 폭주로부터 WAS를 보호하기 위해
+            <strong>Waiting Queue(대기)</strong>와
+            <strong>Active Queue(진입 가능)</strong> 두 단계를 둡니다. 아래
+            시뮬레이터를 통해 트래픽이 어떻게 제어되는지 직접 확인해보세요.
+          </p>
+          <div
+            class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800"
+          >
+            <strong>💡 핵심 로직:</strong> 사용자는 먼저 '대기 큐'에 쌓이고,
+            WAS가 처리 가능한 만큼만 '활성 큐'로 이동하여 토큰을 발급받습니다.
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Simulation Controls & Visuals -->
+          <div class="space-y-6">
+            <div class="flex gap-4 mb-4">
+              <button
+                id="add-traffic-btn"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow transition font-semibold"
+              >
+                👥 트래픽 유입 (+50명)
+              </button>
+              <button
+                id="reset-sim-btn"
+                class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-2 rounded-lg transition font-medium"
+              >
+                초기화
+              </button>
+            </div>
+
+            <!-- Visual Queue Representation -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div class="flex justify-between items-center mb-2">
+                <h4 class="font-bold text-slate-700">
+                  1. 대기 큐 (Waiting Queue)
+                </h4>
+                <span
+                  id="waiting-count"
+                  class="bg-slate-200 text-slate-700 text-xs px-2 py-1 rounded-full"
+                  >0명</span
+                >
+              </div>
+              <div
+                id="waiting-queue-viz"
+                class="queue-box h-24 bg-white border border-slate-300 rounded-lg p-2 overflow-x-auto whitespace-nowrap flex items-center gap-1"
+              >
+                <span
+                  class="text-slate-400 text-sm italic w-full text-center"
+                  id="waiting-empty-msg"
+                  >대기자 없음</span
+                >
+              </div>
+              <p class="text-xs text-slate-500 mt-1">
+                Redis SortedSet (Score=Timestamp)
+              </p>
+            </div>
+
+            <div class="flex justify-center -my-2 z-10 relative">
+              <div class="bg-slate-200 rounded-full p-1">
+                <span class="text-slate-500">⬇️ 스케줄러 이동</span>
+              </div>
+            </div>
+
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+              <div class="flex justify-between items-center mb-2">
+                <h4 class="font-bold text-blue-800">
+                  2. 활성 큐 (Active Queue)
+                </h4>
+                <span
+                  id="active-count"
+                  class="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full"
+                  >0명 (Max: 20)</span
+                >
+              </div>
+              <div
+                id="active-queue-viz"
+                class="queue-box h-24 bg-white border border-blue-200 rounded-lg p-2 overflow-x-auto whitespace-nowrap flex items-center gap-1"
+              >
+                <span
+                  class="text-blue-300 text-sm italic w-full text-center"
+                  id="active-empty-msg"
+                  >진입 대기 중...</span
+                >
+              </div>
+              <p class="text-xs text-blue-600 mt-1">
+                활성 토큰 보유자만 WAS 접근 가능
+              </p>
+            </div>
+          </div>
+
+          <!-- Real-time Chart -->
+          <div
+            class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col"
+          >
+            <h3 class="font-bold text-slate-800 mb-4">서버 부하 모니터링</h3>
+            <div class="chart-container flex-grow">
+              <canvas id="trafficChart"></canvas>
+            </div>
+            <div class="mt-4 text-sm text-slate-500 text-center">
+              <span
+                class="inline-block w-3 h-3 bg-red-400 rounded-full mr-1"
+              ></span>
+              유입 요청
+              <span
+                class="inline-block w-3 h-3 bg-blue-500 rounded-full ml-4 mr-1"
+              ></span>
+              WAS 처리량 (제한됨)
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Technology Decisions -->
+    <section id="decisions" class="py-16 bg-slate-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-slate-900 mb-8">
+          핵심 기술 의사결정 (Decision Log)
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <!-- MQ Comparison Radar -->
+          <div
+            class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"
+          >
+            <h3 class="text-lg font-bold text-slate-800 mb-2">
+              왜 Redis Pub/Sub인가?
+            </h3>
+            <p class="text-sm text-slate-500 mb-6">
+              메시지 큐 기술별 적합성 비교 분석
+            </p>
+            <div class="chart-container">
+              <canvas id="mqRadarChart"></canvas>
+            </div>
+            <div
+              class="mt-4 text-sm bg-slate-50 p-3 rounded border border-slate-100"
+            >
+              <strong>결론:</strong> 예매 완료 후 즉시 다음 사용자를 진입시키는
+              <strong>실시간성(Real-time Broadcast)</strong>이 가장 중요하므로
+              Redis Pub/Sub 선택. (데이터 신뢰성보다 속도 우선)
+            </div>
+          </div>
+
+          <!-- Other Decisions Accordion -->
+          <div class="space-y-4">
+            <!-- Item 1 -->
+            <div
+              class="bg-white border border-slate-200 rounded-xl overflow-hidden"
+            >
+              <button
+                onclick="toggleAccordion('acc1')"
+                class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-slate-50"
+              >
+                <span class="font-bold text-slate-800"
+                  >Q. 대기열 서버를 별도로 분리한 이유는?</span
+                >
+                <span
+                  id="icon-acc1"
+                  class="text-slate-400 transform transition-transform"
+                  >▼</span
+                >
+              </button>
+              <div
+                id="acc1"
+                class="hidden px-6 py-4 bg-slate-50 border-t border-slate-100 text-slate-600 text-sm"
+              >
+                <p>
+                  WAS 내부에 대기열 로직을 두면, 트래픽 폭주 시 대기열 로직
+                  처리만으로도 자원이 고갈되어 시스템 전체가 마비될 위험이
+                  있습니다. 대기열 서버를
+                  <strong>Gate 역할의 독립 서버</strong>로 분리하여 WAS를
+                  물리적으로 보호합니다.
+                </p>
+              </div>
+            </div>
+
+            <!-- Item 2 -->
+            <div
+              class="bg-white border border-slate-200 rounded-xl overflow-hidden"
+            >
+              <button
+                onclick="toggleAccordion('acc2')"
+                class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-slate-50"
+              >
+                <span class="font-bold text-slate-800"
+                  >Q. WebSocket 대신 Polling을 사용한 이유는?</span
+                >
+                <span
+                  id="icon-acc2"
+                  class="text-slate-400 transform transition-transform"
+                  >▼</span
+                >
+              </button>
+              <div
+                id="acc2"
+                class="hidden px-6 py-4 bg-slate-50 border-t border-slate-100 text-slate-600 text-sm"
+              >
+                <p>
+                  수십만 명의 WebSocket 연결(Stateful)을 유지하는 것은 서버
+                  메모리에 과도한 부하를 줍니다.
+                  <strong>Polling(Stateless)</strong> 방식은 서버 확장이
+                  용이하고 구현이 단순하여 대규모 대기열 처리에 더 적합합니다.
+                </p>
+              </div>
+            </div>
+
+            <!-- Item 3 -->
+            <div
+              class="bg-white border border-slate-200 rounded-xl overflow-hidden"
+            >
+              <button
+                onclick="toggleAccordion('acc3')"
+                class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-slate-50"
+              >
+                <span class="font-bold text-slate-800"
+                  >Q. 대기열 자료구조로 Redis SortedSet을 쓴 이유는?</span
+                >
+                <span
+                  id="icon-acc3"
+                  class="text-slate-400 transform transition-transform"
+                  >▼</span
+                >
+              </button>
+              <div
+                id="acc3"
+                class="hidden px-6 py-4 bg-slate-50 border-t border-slate-100 text-slate-600 text-sm"
+              >
+                <p>
+                  <code>Score</code>를 타임스탬프로 설정하면 입력 순서대로 자동
+                  정렬되며, 삽입/삭제가 <strong>O(log N)</strong>으로 매우
+                  빠릅니다. 또한 특정 범위(Rank) 조회가 쉬워 "내 앞에 몇 명이
+                  남았는지" 빠르게 계산할 수 있습니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Service Flow Step-by-Step -->
+    <section id="flow" class="py-16 bg-white border-t border-slate-200">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-slate-900 mb-10 text-center">
+          전체 서비스 흐름 (Lifecycle)
+        </h2>
+
+        <div class="relative border-l-4 border-slate-200 ml-6 space-y-12">
+          <!-- Step 1 -->
+          <div class="relative pl-8 group">
+            <div
+              class="absolute -left-3 top-0 bg-white border-2 border-slate-300 rounded-full w-6 h-6 flex items-center justify-center group-hover:border-blue-500 transition-colors"
+            >
+              <div
+                class="w-2.5 h-2.5 bg-slate-300 rounded-full group-hover:bg-blue-500 transition-colors"
+              ></div>
+            </div>
+            <div
+              class="bg-slate-50 p-5 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all"
+            >
+              <h4 class="font-bold text-slate-800 mb-1">
+                1. 사용자 진입 & 정적 리소스 수신
+              </h4>
+              <p class="text-sm text-slate-600">
+                사용자가 웹사이트에 접속하면 웹서버(WS)로부터 React 앱(JS/CSS)을
+                다운로드 받습니다. (CSR)
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="relative pl-8 group">
+            <div
+              class="absolute -left-3 top-0 bg-white border-2 border-slate-300 rounded-full w-6 h-6 flex items-center justify-center group-hover:border-blue-500 transition-colors"
+            >
+              <div
+                class="w-2.5 h-2.5 bg-slate-300 rounded-full group-hover:bg-blue-500 transition-colors"
+              ></div>
+            </div>
+            <div
+              class="bg-blue-50 p-5 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-all"
+            >
+              <h4 class="font-bold text-blue-800 mb-1">
+                2. 대기열 등록 (Waiting Queue)
+              </h4>
+              <p class="text-sm text-blue-700">
+                예매 버튼 클릭 시 Queue Server로 요청을 보냅니다. Redis
+                SortedSet에 타임스탬프와 함께 등록되고 대기 번호를 받습니다.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="relative pl-8 group">
+            <div
+              class="absolute -left-3 top-0 bg-white border-2 border-slate-300 rounded-full w-6 h-6 flex items-center justify-center group-hover:border-blue-500 transition-colors"
+            >
+              <div
+                class="w-2.5 h-2.5 bg-slate-300 rounded-full group-hover:bg-blue-500 transition-colors"
+              ></div>
+            </div>
+            <div
+              class="bg-slate-50 p-5 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all"
+            >
+              <h4 class="font-bold text-slate-800 mb-1">
+                3. 순번 조회 (Polling)
+              </h4>
+              <p class="text-sm text-slate-600">
+                클라이언트는 주기적으로 "내 순서가 되었나요?"라고 묻습니다. 아직
+                차례가 아니면 대기 인원을 갱신하여 보여줍니다.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="relative pl-8 group">
+            <div
+              class="absolute -left-3 top-0 bg-white border-2 border-slate-300 rounded-full w-6 h-6 flex items-center justify-center group-hover:border-blue-500 transition-colors"
+            >
+              <div
+                class="w-2.5 h-2.5 bg-slate-300 rounded-full group-hover:bg-blue-500 transition-colors"
+              ></div>
+            </div>
+            <div
+              class="bg-indigo-50 p-5 rounded-lg border border-indigo-200 shadow-sm hover:shadow-md transition-all"
+            >
+              <h4 class="font-bold text-indigo-800 mb-1">
+                4. 활성 토큰 발급 (Active Token)
+              </h4>
+              <p class="text-sm text-indigo-700">
+                순서가 되면 Queue Server가 '활성 토큰'을 발급합니다. 사용자는
+                이제 Active Queue 상태가 됩니다.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="relative pl-8 group">
+            <div
+              class="absolute -left-3 top-0 bg-white border-2 border-slate-300 rounded-full w-6 h-6 flex items-center justify-center group-hover:border-blue-500 transition-colors"
+            >
+              <div
+                class="w-2.5 h-2.5 bg-slate-300 rounded-full group-hover:bg-blue-500 transition-colors"
+              ></div>
+            </div>
+            <div
+              class="bg-rose-50 p-5 rounded-lg border border-rose-200 shadow-sm hover:shadow-md transition-all"
+            >
+              <h4 class="font-bold text-rose-800 mb-1">
+                5. 예매 진행 (Ticket WAS)
+              </h4>
+              <p class="text-sm text-rose-700">
+                활성 토큰을 헤더에 실어 Ticket WAS에 접근합니다. 좌석을 선택하고
+                결제를 진행합니다.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 6 -->
+          <div class="relative pl-8 group">
+            <div
+              class="absolute -left-3 top-0 bg-white border-2 border-slate-300 rounded-full w-6 h-6 flex items-center justify-center group-hover:border-blue-500 transition-colors"
+            >
+              <div
+                class="w-2.5 h-2.5 bg-slate-300 rounded-full group-hover:bg-blue-500 transition-colors"
+              ></div>
+            </div>
+            <div
+              class="bg-emerald-50 p-5 rounded-lg border border-emerald-200 shadow-sm hover:shadow-md transition-all"
+            >
+              <h4 class="font-bold text-emerald-800 mb-1">
+                6. 완료 및 이벤트 전파 (Pub/Sub)
+              </h4>
+              <p class="text-sm text-emerald-700">
+                예매가 완료되면 <code>BOOKING_DONE</code> 이벤트가 Redis
+                Pub/Sub을 통해 전파됩니다. Queue Server는 즉시 다음 대기자를
+                활성 상태로 변경합니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-8 mt-12">
+      <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+        <p>
+          © 2024 Ticketing MSA Architecture Interactive Report. Based on
+          provided system design.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // --- Navigation Logic ---
+      function scrollToSection(id) {
+        document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+      }
+
+      // --- Architecture Map Interaction ---
+      const archData = {
+        client: {
+          title: 'Client (Frontend)',
+          content:
+            '사용자의 브라우저 환경입니다. React 기반 SPA로 구현되며, 모든 화면 렌더링은 클라이언트 측에서 수행합니다(CSR).',
+          tags: ['React', 'SPA', 'CSR', 'User Interface'],
+        },
+        ws: {
+          title: 'Web Server (WS)',
+          content:
+            '정적 리소스(HTML, CSS, JS)만을 전담하여 서빙합니다. API 처리 부하를 분리하여 초기 진입 속도를 보장합니다.',
+          tags: ['Nginx/Apache', 'Static Serving', 'Load Balancing'],
+        },
+        queue: {
+          title: 'Queue Server',
+          content:
+            "WAS로 진입하는 문지기(Gate)입니다. 사용자에게 대기 번호를 발급하고, WAS의 상태에 따라 '활성 토큰'을 부여하여 진입을 제어합니다. 단일 서버로 구성하되 필요시 확장합니다.",
+          tags: [
+            'Node.js/Go',
+            'Token Issuance',
+            'Traffic Control',
+            'Gatekeeper',
+          ],
+        },
+        general: {
+          title: 'General Backend API',
+          content:
+            '예매와 무관한 기능(공연 목록 조회, 공지사항, 채팅 등)을 처리합니다. 예매 트래픽 폭주 시에도 일반 서비스가 마비되지 않도록 물리적으로 분리되었습니다.',
+          tags: ['Spring Boot/Node', 'Read Operations', 'Non-Critical'],
+        },
+        was: {
+          title: 'Ticket WAS (Core)',
+          content:
+            "실제 예매 트랜잭션을 처리하는 핵심 서버입니다. 대기열을 통과한 유효한 '활성 토큰'을 가진 요청만 수락합니다. 100~200명(1차), 수십만(2차) 트래픽을 감당하기 위해 보호받아야 합니다.",
+          tags: [
+            'Transactional',
+            'Booking Logic',
+            'Payment',
+            'High Consistency',
+          ],
+        },
+        redis: {
+          title: 'Redis Shared Storage',
+          content:
+            '대기열 상태 관리(SortedSet)와 서버 간 이벤트 전파(Pub/Sub)를 담당하는 인메모리 저장소입니다. 빠른 처리 속도가 핵심입니다.',
+          tags: ['SortedSet', 'Pub/Sub', 'In-Memory DB', 'High Performance'],
+        },
+      };
+
+      function showArchDetail(key) {
+        const data = archData[key];
+        document.getElementById('detail-title').innerText = data.title;
+        document.getElementById('detail-content').innerText = data.content;
+
+        const tagContainer = document.getElementById('detail-tags');
+        tagContainer.innerHTML = '';
+        data.tags.forEach((tag) => {
+          const span = document.createElement('span');
+          span.className =
+            'bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs border border-slate-200';
+          span.innerText = tag;
+          tagContainer.appendChild(span);
+        });
+
+        // Highlight Logic
+        document
+          .querySelectorAll('.component-card')
+          .forEach((card) => card.classList.remove('active-component'));
+        event.currentTarget.classList.add('active-component');
+      }
+
+      // --- Accordion Logic ---
+      function toggleAccordion(id) {
+        const content = document.getElementById(id);
+        const icon = document.getElementById(`icon-${id}`);
+        if (content.classList.contains('hidden')) {
+          content.classList.remove('hidden');
+          icon.style.transform = 'rotate(180deg)';
+        } else {
+          content.classList.add('hidden');
+          icon.style.transform = 'rotate(0deg)';
+        }
+      }
+
+      // --- Dual Queue Simulation Logic ---
+      const waitingQueueEl = document.getElementById('waiting-queue-viz');
+      const activeQueueEl = document.getElementById('active-queue-viz');
+      const waitingCountEl = document.getElementById('waiting-count');
+      const activeCountEl = document.getElementById('active-count');
+      const waitingEmptyMsg = document.getElementById('waiting-empty-msg');
+      const activeEmptyMsg = document.getElementById('active-empty-msg');
+
+      let waitingUsers = 0;
+      let activeUsers = 0;
+      const MAX_ACTIVE = 20;
+      let simulationInterval;
+      let chartInterval;
+
+      // Chart.js Setup for Traffic
+      const ctx = document.getElementById('trafficChart').getContext('2d');
+      const trafficChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array(20).fill(''),
+          datasets: [
+            {
+              label: '유입 요청 (Incoming)',
+              data: Array(20).fill(0),
+              borderColor: '#f87171', // Red
+              backgroundColor: 'rgba(248, 113, 113, 0.1)',
+              fill: true,
+              tension: 0.4,
+            },
+            {
+              label: 'WAS 처리량 (Protected)',
+              data: Array(20).fill(0),
+              borderColor: '#3b82f6', // Blue
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              fill: true,
+              tension: 0.4,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            y: { beginAtZero: true, max: 60 },
+          },
+          plugins: {
+            legend: { position: 'bottom' },
+          },
+        },
+      });
+
+      function updateSimUI() {
+        waitingCountEl.innerText = `${waitingUsers}명`;
+        activeCountEl.innerText = `${activeUsers}명 (Max: ${MAX_ACTIVE})`;
+
+        // Render Waiting
+        if (waitingUsers > 0) {
+          waitingEmptyMsg.style.display = 'none';
+          // Simple visual limiter
+          const dots = Math.min(waitingUsers, 20);
+          waitingQueueEl.innerHTML = '';
+          for (let i = 0; i < dots; i++) {
+            const d = document.createElement('div');
+            d.className =
+              'w-4 h-4 bg-red-400 rounded-full flex-shrink-0 animate-pulse';
+            waitingQueueEl.appendChild(d);
+          }
+          if (waitingUsers > 20) {
+            const more = document.createElement('span');
+            more.className = 'text-xs text-slate-500 ml-2';
+            more.innerText = `+${waitingUsers - 20}`;
+            waitingQueueEl.appendChild(more);
+          }
+        } else {
+          waitingQueueEl.innerHTML = '';
+          waitingQueueEl.appendChild(waitingEmptyMsg);
+          waitingEmptyMsg.style.display = 'block';
+        }
+
+        // Render Active
+        if (activeUsers > 0) {
+          activeEmptyMsg.style.display = 'none';
+          activeQueueEl.innerHTML = '';
+          for (let i = 0; i < activeUsers; i++) {
+            const d = document.createElement('div');
+            d.className =
+              'w-4 h-4 bg-blue-500 rounded-full flex-shrink-0 border-2 border-white shadow-sm';
+            activeQueueEl.appendChild(d);
+          }
+        } else {
+          activeQueueEl.innerHTML = '';
+          activeQueueEl.appendChild(activeEmptyMsg);
+          activeEmptyMsg.style.display = 'block';
+        }
+      }
+
+      function runSimulation() {
+        // Move Waiting -> Active
+        if (waitingUsers > 0 && activeUsers < MAX_ACTIVE) {
+          const moveCount = Math.min(waitingUsers, MAX_ACTIVE - activeUsers);
+          waitingUsers -= moveCount;
+          activeUsers += moveCount;
+        }
+
+        // Process Active (Booking Done)
+        if (activeUsers > 0) {
+          // Randomly process 1-3 users per tick
+          const processed = Math.min(
+            activeUsers,
+            Math.floor(Math.random() * 3) + 1
+          );
+          activeUsers -= processed;
+        }
+        updateSimUI();
+      }
+
+      document
+        .getElementById('add-traffic-btn')
+        .addEventListener('click', () => {
+          waitingUsers += 50;
+          updateSimUI();
+
+          // Spike the chart
+          const lastIdx = trafficChart.data.datasets[0].data.length - 1;
+          trafficChart.data.datasets[0].data[lastIdx] = 50 + Math.random() * 10;
+        });
+
+      document.getElementById('reset-sim-btn').addEventListener('click', () => {
+        waitingUsers = 0;
+        activeUsers = 0;
+        updateSimUI();
+        trafficChart.data.datasets[0].data = Array(20).fill(0);
+        trafficChart.data.datasets[1].data = Array(20).fill(0);
+        trafficChart.update();
+      });
+
+      // Loop for Sim Logic & Chart
+      setInterval(() => {
+        runSimulation();
+
+        // Update Chart Data
+        const incData = trafficChart.data.datasets[0].data;
+        const wasData = trafficChart.data.datasets[1].data;
+
+        // Shift data
+        incData.shift();
+        wasData.shift();
+
+        // New Data points
+        // Incoming decays naturally if not clicked
+        let newIncoming = incData[incData.length - 1] * 0.8;
+        if (newIncoming < 1) newIncoming = 0;
+        incData.push(newIncoming);
+
+        // WAS load is proportional to active users
+        wasData.push(activeUsers);
+
+        trafficChart.update();
+      }, 500); // 0.5s tick
+
+      // --- Tech Radar Chart ---
+      const ctxRadar = document.getElementById('mqRadarChart').getContext('2d');
+      new Chart(ctxRadar, {
+        type: 'radar',
+        data: {
+          labels: [
+            'Real-time (실시간성)',
+            'Reliability (신뢰성)',
+            'Ease of Ops (운영 편의)',
+            'Simplicity (단순성)',
+            'Throughput (처리량)',
+          ],
+          datasets: [
+            {
+              label: 'Redis Pub/Sub (Selected)',
+              data: [5, 2, 5, 5, 5],
+              fill: true,
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              borderColor: 'rgb(59, 130, 246)',
+              pointBackgroundColor: 'rgb(59, 130, 246)',
+            },
+            {
+              label: 'Kafka',
+              data: [4, 5, 1, 1, 5],
+              fill: true,
+              backgroundColor: 'rgba(148, 163, 184, 0.2)',
+              borderColor: 'rgb(148, 163, 184)',
+              pointBackgroundColor: 'rgb(148, 163, 184)',
+              borderDash: [5, 5],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              angleLines: { display: false },
+              suggestedMin: 0,
+              suggestedMax: 5,
+              grid: { color: '#e2e8f0' },
+            },
+          },
+          plugins: {
+            legend: { position: 'bottom' },
+          },
+        },
+      });
+
+      // Initialize first view
+      updateSimUI();
+    </script>
+  </body>
+</html>
