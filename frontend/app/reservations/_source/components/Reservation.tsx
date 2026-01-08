@@ -38,14 +38,13 @@ export default function Reservation() {
     <div className="h-screen flex flex-col overflow-hidden">
       <ReservationHeader selectedSeatsSize={selectedSeats.size} />
       <div className="flex-1 flex overflow-hidden min-h-0">
-        <Suspense>
-          <ReservationStage
-            selectedArea={selectedArea}
-            selectedSeats={selectedSeats}
-            handleChangeArea={handleChangeArea}
-            handleToggleSeat={handleToggleSeat}
-          />
-        </Suspense>
+        <ReservationStage
+          selectedArea={selectedArea}
+          selectedSeats={selectedSeats}
+          handleChangeArea={handleChangeArea}
+          handleToggleSeat={handleToggleSeat}
+        />
+
         <ReservationSidebar
           selectedSeats={selectedSeats}
           handleResetSeats={handleResetSeats}
