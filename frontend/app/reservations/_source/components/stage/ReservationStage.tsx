@@ -1,5 +1,5 @@
 import { Seat } from "../../types/reservationType";
-import { Suspense, useRef, useState } from "react";
+import { Suspense } from "react";
 import StageController from "./StageController";
 import { useZoomPan } from "../../hooks/useZoomPan";
 import { ErrorBoundary } from "react-error-boundary";
@@ -12,16 +12,12 @@ const StageMap = dynamic(() => import("./StageMap"), {
 });
 
 interface ReservationStageProps {
-  selectedArea: string | "main";
   selectedSeats: ReadonlyMap<string, Seat>;
   handleToggleSeat: (seatId: string, data: Seat) => void;
-  handleChangeArea: (area: string | "main") => void;
 }
 
 export default function ReservationStage({
   handleToggleSeat,
-  handleChangeArea,
-  selectedArea,
   selectedSeats,
 }: ReservationStageProps) {
   const {
@@ -31,6 +27,7 @@ export default function ReservationStage({
     zoomIn,
     zoomOut,
     reset,
+    moveTo,
     handleWheel,
     handleMouseDown,
     handleMouseMove,
@@ -54,6 +51,7 @@ export default function ReservationStage({
         >
           <Suspense fallback={<div>좌석 데이터를 불러오는 중입니다.</div>}>
             <StageMap
+              moveTo={moveTo}
               contentRef={contentRef}
               containerRef={containerRef}
               isMinScale={isMinScale}

@@ -6,13 +6,20 @@ import {
   useReservedSeatQuery,
   useSeatMetaQuery,
 } from "../../queries/seat";
-import { Seat } from "../../types/reservationType";
+import { BlockArea, Seat } from "../../types/reservationType";
 
 interface StageMapProps {
   contentRef: React.Ref<HTMLDivElement>;
   containerRef: React.Ref<HTMLDivElement>;
   isMinScale: boolean;
   selectedSeats: ReadonlyMap<string, Seat>;
+  moveTo: (
+    targetX: number,
+    targetY: number,
+    newScale: number,
+    w: number,
+    h: number
+  ) => void;
   handleToggleSeat: (seatId: string, data: Seat) => void;
   handleWheel: (e: React.WheelEvent, rect?: DOMRect) => void;
   handleMouseDown: (e: React.MouseEvent) => void;
@@ -25,6 +32,7 @@ export default function StageMap({
   containerRef,
   isMinScale,
   selectedSeats,
+  moveTo,
   handleToggleSeat,
   handleWheel,
   handleMouseDown,
@@ -45,6 +53,13 @@ export default function StageMap({
       .flat()
   );
 
+  const onSectionClick = (block: BlockArea) => {
+    const centerX = (block.absoluteLeft + block.absoluteRight) / 2;
+    const centerY = (block.absoluteTop + block.absoluteBottom) / 2;
+
+    moveTo(centerX, centerY, 6, 510, 435); // 나중에 svg 동적으로 변경 할 예정 아마도..;
+  };
+
   return (
     <div
       ref={containerRef}
@@ -53,32 +68,33 @@ export default function StageMap({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      className="relative  flex-1 bg-[#EDEFF3] rounded-lg overflow-hidden flex items-center justify-center"
+      className="relative h-full w-full bg-[#EDEFF3] rounded-lg overflow-hidden flex items-center justify-center"
     >
       <div
         ref={contentRef}
-        className="relative w-full h-full"
+        className="relative h-full w-full flex items-center justify-center"
         style={{
           transformOrigin: "0 0",
         }}
       >
-        <div className="flex justify-center items-center absolute w-full h-full p-16">
+        <div className="relative w-127.5 h-108.75">
           {isMinScale ? (
             <img
-              className="w-full h-full select-none pointer-events-none z-30"
+              className="absolute inset-0 w-full h-full select-none pointer-events-none z-30"
               src="494b5ac0ae674853956bb73037051895.svg"
               alt=""
             />
           ) : (
             <img
-              className="w-full h-full select-none pointer-events-none"
+              className="absolute inset-0 w-full h-full select-none pointer-events-none"
               src={"/7079e87b843d4852a5ee78d9fd346c19.svg"}
               alt="좌석배치도"
             />
           )}
+
           <svg
-            className={`absolute inset-0 w-full h-full p-16 ${
-              isMinScale ? " pointer-events-none" : " pointer-event-auto"
+            className={`absolute inset-0 w-full h-full ${
+              isMinScale ? "pointer-events-none" : "pointer-events-auto"
             }`}
             viewBox="0 0 510 435"
           >
@@ -123,6 +139,35 @@ export default function StageMap({
                 })}
               </g>
             ))}
+          </svg>
+
+          <svg
+            className={`absolute inset-0 w-full h-full ${
+              isMinScale ? "pointer-events-auto" : "pointer-events-none"
+            }`}
+            viewBox="0 0 510 435"
+          >
+            {isMinScale &&
+              blocks?.map((block) => {
+                const width = block.absoluteRight - block.absoluteLeft;
+                const height = block.absoluteBottom - block.absoluteTop;
+
+                return (
+                  <g
+                    key={block.blockKey}
+                    className="cursor-pointer group"
+                    onClick={() => onSectionClick(block)}
+                  >
+                    <rect
+                      x={block.absoluteLeft}
+                      y={block.absoluteTop}
+                      width={width}
+                      height={height}
+                      fill="rgba(255, 255, 255, 0.01)"
+                    />
+                  </g>
+                );
+              })}
           </svg>
         </div>
       </div>

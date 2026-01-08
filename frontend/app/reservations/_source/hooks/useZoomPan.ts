@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 interface UseZoomPanOptions {
   minScale?: number;
@@ -7,17 +7,16 @@ interface UseZoomPanOptions {
   initialOffset?: { x: number; y: number };
 }
 
-const ZOOM_STEPS = [1.0, 2.0, 4.0, 8.0];
-
 export const useZoomPan = (options: UseZoomPanOptions = {}) => {
   const [isMinScale, setIsMinScale] = useState(true);
 
   const {
     minScale = 0.3,
-    maxScale = 5,
+    maxScale = 7,
     initialScale = 1,
     initialOffset = { x: 0, y: 0 },
   } = options;
+
   const scaleRef = useRef(initialScale);
   const offsetRef = useRef(initialOffset);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -114,6 +113,32 @@ export const useZoomPan = (options: UseZoomPanOptions = {}) => {
       contentRef.current.style.transition = "transform 0.2s ease-out";
   };
 
+  const moveTo = (
+    targetX: number, // SVG 좌표
+    targetY: number, // SVG 좌표
+    newScale: number,
+    contentWidth: number, // SVG 너비..
+    contentHeight: number // SVG 높이..
+  ) => {
+    if (!containerRef.current || !contentRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+
+    const flexOffsetX = (rect.width - contentWidth) / 2;
+    const flexOffsetY = (rect.height - contentHeight) / 2;
+
+    const actualTargetX = flexOffsetX + targetX;
+    const actualTargetY = flexOffsetY + targetY;
+
+    const finalX = rect.width / 2 - actualTargetX * newScale;
+    const finalY = rect.height / 2 - actualTargetY * newScale;
+
+    offsetRef.current = { x: finalX, y: finalY };
+    scaleRef.current = newScale;
+
+    updateDOM(newScale, finalX, finalY);
+  };
+
   return {
     containerRef,
     contentRef,
@@ -121,6 +146,7 @@ export const useZoomPan = (options: UseZoomPanOptions = {}) => {
     reset,
     zoomIn: () => handleZoom(true),
     zoomOut: () => handleZoom(false),
+    moveTo,
     handleWheel,
     handleMouseDown,
     handleMouseMove,

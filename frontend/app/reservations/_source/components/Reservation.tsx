@@ -1,6 +1,5 @@
 "use client";
 
-import { Suspense, useState } from "react";
 import useSelection from "@/hooks/useSelector";
 import { useRouter } from "next/navigation";
 import { Seat } from "../types/reservationType";
@@ -16,13 +15,7 @@ export default function Reservation() {
     remove: handleRemoveSeat,
     reset: handleResetSeats,
   } = useSelection<string, Seat>(new Map(), { max: RESERVATION_LIMIT });
-  const [selectedArea, setSelectedArea] = useState<string | "main">("main");
-
   const router = useRouter();
-
-  const handleChangeArea = (area: string | "main") => {
-    setSelectedArea(area);
-  };
 
   const handleClickReserve = () => {
     try {
@@ -39,9 +32,7 @@ export default function Reservation() {
       <ReservationHeader selectedSeatsSize={selectedSeats.size} />
       <div className="flex-1 flex overflow-hidden min-h-0">
         <ReservationStage
-          selectedArea={selectedArea}
           selectedSeats={selectedSeats}
-          handleChangeArea={handleChangeArea}
           handleToggleSeat={handleToggleSeat}
         />
 
