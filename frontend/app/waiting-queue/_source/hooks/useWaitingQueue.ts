@@ -40,8 +40,11 @@ export function useWaitingQueue() {
     };
   }, []);
 
+  const isFinished = data !== undefined && data.order <= 0;
+
   return {
     data,
     isError,
+    isFinished,
   };
 }

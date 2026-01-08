@@ -1,10 +1,5 @@
-"use client";
-
-import { usePreventRefresh } from "@/hooks/usePreventRefresh";
-import WaitingQueue from "./_source/WaitingQueue";
+import WaitingQueue from "./_source/components/WaitingQueue";
 
 export default function WaitingQueuePage() {
-  usePreventRefresh();
-
   return <WaitingQueue />;
 }

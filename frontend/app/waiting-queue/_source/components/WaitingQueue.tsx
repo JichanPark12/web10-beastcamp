@@ -1,10 +1,24 @@
+"use client";
+
 import { usePreventRefresh } from "@/hooks/usePreventRefresh";
-import { useWaitingQueue } from "./hooks/useWaitingQueue";
-import ProgressBar from "./components/ProgressBar";
+import { useWaitingQueue } from "../hooks/useWaitingQueue";
+import ProgressBar from "./ProgressBar";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function WaitingQueue() {
-  const { data, isError } = useWaitingQueue();
+  const router = useRouter();
+  const { data, isError, isFinished } = useWaitingQueue();
+
   usePreventRefresh();
+
+  useEffect(() => {
+    if (isFinished) {
+      router.push("/reservations");
+    }
+  }, [isFinished, router]);
+
+  const statusText = isFinished ? "입장 중입니다" : `${data?.order ?? 0}번`;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 p-4">
@@ -12,7 +26,7 @@ export default function WaitingQueue() {
         <div className="text-center py-8">
           {/* Header */}
           <h3 className="text-2xl mb-2">대기열 진행 중</h3>
-          <p className="text-gray-500 mb-8 text-xl">{data?.order}번</p>
+          <p className="text-gray-500 mb-8 text-xl">{statusText}</p>
 
           <div className="max-w-md mx-auto">
             {/* Progress */}

@@ -9,13 +9,14 @@ let currentOrder = MAX_ORDER;
  */
 export function GET() {
   currentOrder -= DECREASE_GAP;
-  if (currentOrder <= 0) {
-    currentOrder = MAX_ORDER;
-  }
 
   const mockWaitingOrder = {
     order: currentOrder,
   };
+
+  if (currentOrder <= 0) {
+    currentOrder = MAX_ORDER;
+  }
 
   return NextResponse.json(mockWaitingOrder);
 }
