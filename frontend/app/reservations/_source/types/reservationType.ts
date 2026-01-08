@@ -1,24 +1,54 @@
-export type SeatGrade = "VIP" | "R" | "S" | "A" | "GENERAL";
-
+// 좌석 정보 타입
 export interface Seat {
-  id: string;
-  row: string;
-  number: number;
-  grade: SeatGrade;
-  price: number;
-  section: string;
+  seatInfoId: string;
+  seatGrade: Grade;
+  seatGradeName: string;
   floor: string;
-  isOccupied: boolean;
-  x: number;
-  y: number;
+  rowNo: string;
+  seatNo: string;
+  salesPrice: number;
+  posLeft: number;
+  posTop: number;
+  isExposable: boolean;
 }
 
-export interface SelectedSeat {
-  id: string;
-  row: string;
-  number: number;
-  grade: SeatGrade;
-  price: number;
-  section: string;
-  floor: string;
+export type Grade = "1" | "2" | "3" | "4" | "5";
+
+export interface SeatBlock {
+  blockKey: string;
+  seats: Seat[];
 }
+
+export interface SeatStatus {
+  seatInfoId: string;
+  statusInfo: "OCCUPIED" | "RELEASED";
+}
+
+export interface SeatReservation {
+  blockKey: string;
+  seats: SeatStatus[];
+}
+
+export interface BlockArea {
+  blockKey: string;
+  selfDefineBlock: string;
+  absoluteLeft: number;
+  absoluteTop: number;
+  absoluteRight: number;
+  absoluteBottom: number;
+}
+
+export interface CombinedSeat extends Seat {
+  statusInfo?: "OCCUPIED" | "AVAILABLE" | "SELECTED";
+}
+
+export interface CombinedSeatBlock {
+  blockKey: string;
+  blockArea?: BlockArea;
+  seats: CombinedSeat[];
+}
+
+export type SeatDataResponse = SeatBlock[];
+
+export type ReservationResponse = SeatReservation[];
+export type BlockDataResponse = BlockArea[];
