@@ -153,5 +153,5 @@ export const GET = async () => {
       absoluteBottom: 288.8537,
     },
   ];
-  return Response.json(JSON.stringify(blockData), { status: 200 });
+  return Response.json(blockData, { status: 200 });
 };
