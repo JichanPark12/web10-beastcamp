@@ -1,4 +1,6 @@
 mysql_data
-redis-data
+redis_data
 
 node_modules
+dist
+env*
