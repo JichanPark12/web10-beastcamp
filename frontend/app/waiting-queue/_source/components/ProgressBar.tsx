@@ -14,5 +14,10 @@ export default function ProgressBar({
 }: ProgressBarProps) {
   const progress = ((maxValue - value) / (maxValue - 1)) * 100;
 
-  return <Progress value={Math.round(progress)} className="h-3 rounded-full" />;
+  return (
+    <Progress
+      value={Math.round(progress)}
+      className="bg-gray-200 rounded-full h-4 mb-4 overflow-hidden"
+    />
+  );
 }
