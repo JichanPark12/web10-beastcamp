@@ -2,6 +2,11 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('venues')
 export class Venue {
+  constructor(venueName?: string, seatImgUrl?: string | null) {
+    if (venueName) this.venueName = venueName;
+    if (seatImgUrl) this.seatImgUrl = seatImgUrl;
+  }
+
   @PrimaryGeneratedColumn()
   id: number;
 

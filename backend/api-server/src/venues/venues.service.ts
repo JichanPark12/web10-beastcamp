@@ -12,12 +12,8 @@ export class VenuesService {
     private venuesRepository: Repository<Venue>,
   ) {}
 
-  async create(
-    createVenueRequestDto: CreateVenueRequestDto,
-  ): Promise<{ id: number }> {
-    const venue = this.venuesRepository.create({
-      venueName: createVenueRequestDto.venue_name,
-    });
+  async create(requestDto: CreateVenueRequestDto): Promise<{ id: number }> {
+    const venue = new Venue(requestDto.venue_name);
     const savedVenue = await this.venuesRepository.save(venue);
     return { id: savedVenue.id };
   }
