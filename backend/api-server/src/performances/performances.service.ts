@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Performance } from './entities/performance.entity';
 import { CreatePerformanceRequestDto } from './dto/create-performance-request.dto';
-import { Venue } from 'src/venues/entities/venue.entity';
+import { Venue } from '../venues/entities/venue.entity';
 
 @Injectable()
 export class PerformancesService {
