@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Docker를 이용한 배포
 
-## Getting Started
+### 프론트엔드 Docker 빌드 및 실행
 
-First, run the development server:
+프로젝트 루트에서 다음 명령어를 실행합니다.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Docker 이미지 빌드 (프로젝트 루트에서 실행)
+docker build -f frontend/Dockerfile -t beastcamp-frontend .
+
+# 2. 컨테이너 실행
+docker run -d -p 80:80 --name frontend beastcamp-frontend
+
+# 3. 브라우저에서 확인
+# http://localhost 접속
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Docker 관리 명령어
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# 컨테이너 상태 확인
+docker ps
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# 컨테이너 로그 확인
+docker logs frontend
 
-## Learn More
+# 컨테이너 중지
+docker stop frontend
 
-To learn more about Next.js, take a look at the following resources:
+# 컨테이너 재시작
+docker restart frontend
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# 컨테이너 삭제
+docker rm -f frontend
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# 이미지 삭제
+docker rmi beastcamp-frontend
+```
 
-## Deploy on Vercel
+### 프로덕션 배포 최적화
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Dockerfile은 3단계 멀티 스테이지 빌드로 구성되어 있습니다:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **deps**: pnpm을 사용하여 필요한 의존성만 설치
+2. **builder**: Vite로 프로덕션 빌드 수행
+3. **production**: Nginx로 정적 파일 서빙 (최종 이미지 크기 최소화)
