@@ -141,6 +141,68 @@ pnpm lint:frontend
 
 ---
 
+## 패키지 설치 방법
+
+### 특정 workspace에 패키지 설치
+
+`--filter` 옵션을 사용하여 특정 workspace에만 패키지를 설치할 수 있습니다.
+
+```bash
+# API 서버에 패키지 설치
+pnpm add express --filter @beastcamp/api-server
+
+# 티켓 서버에 dev dependency 설치
+pnpm add -D jest --filter @beastcamp/ticket-server
+
+# 프론트엔드에 설치
+pnpm add react-query --filter frontend
+
+# 대기열 큐 서버에 설치
+pnpm add bull --filter queue-backend
+
+# shared-types에 설치
+pnpm add -D @types/node --filter @beastcamp/shared-types
+```
+
+### 루트에 공통 dependency 설치
+
+모든 workspace에서 공통으로 사용하는 패키지는 루트에 설치합니다.
+
+```bash
+# -w 또는 --workspace-root 옵션 필요
+pnpm add -w typescript
+pnpm add -D -w prettier
+```
+
+### 여러 workspace에 동시 설치
+
+```bash
+# 패턴 매칭으로 backend 하위 모든 프로젝트에 설치
+pnpm add lodash --filter "./backend/*"
+```
+
+### 해당 디렉토리에서 직접 설치
+
+```bash
+# 디렉토리로 이동 후 설치
+cd backend/api-server
+pnpm add express
+```
+
+### 배포 시 특정 서비스만 설치
+
+프로덕션 배포 시 특정 workspace의 의존성만 설치할 수 있습니다.
+
+```bash
+# API 서버의 프로덕션 의존성만 설치
+pnpm install --filter @beastcamp/api-server --prod
+
+# 해당 패키지와 의존 관계에 있는 workspace도 함께 설치
+pnpm install --filter @beastcamp/api-server...
+```
+
+---
+
 ## 공유 타입 패키지 사용하기
 
 각 서버에서 공통 타입을 사용하려면 다음과 같이 import합니다.
@@ -151,9 +213,12 @@ import { BookingRequest, QueueToken } from '@beastcamp/shared-types';
 
 ---
 
+---
+
 ## 기술 스택
 
 - **Frontend**: Next.js
 - **Backend**: NestJS
 - **Package Manager**: pnpm (모노레포)
 - **Language**: TypeScript
+- **Container**: Docker + Nginx
