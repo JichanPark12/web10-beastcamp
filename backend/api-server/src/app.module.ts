@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { VenuesModule } from './venues/venues.module';
 import { PerformancesModule } from './performances/performances.module';
 
@@ -38,7 +36,7 @@ import { PerformancesModule } from './performances/performances.module';
     VenuesModule,
     PerformancesModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
