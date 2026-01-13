@@ -41,13 +41,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy node_modules with .pnpm store from root and frontend
-# The frontend node_modules has symlinks pointing to ../../node_modules/.pnpm/
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/frontend/node_modules ./frontend/node_modules
+# standalone은 필요한 모든 의존성을 이미 포함하고 있음
+# 전체 standalone 구조를 복사
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/standalone ./
 
-# Copy everything from standalone directory maintaining the structure
-COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/standalone ./frontend
+# static 파일들을 올바른 중첩 경로에 복사
 COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./frontend/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/frontend/public ./frontend/public
 
@@ -58,4 +56,6 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "frontend/server.js"]
+# frontend 디렉토리로 이동해서 server.js 실행
+WORKDIR /app/frontend
+CMD ["node", "server.js"]

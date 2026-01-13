@@ -9,7 +9,7 @@
 docker build -f frontend/Dockerfile -t beastcamp-frontend .
 
 # 2. 컨테이너 실행
-docker run -d -p 80:80 --name frontend beastcamp-frontend
+docker run -d -p 80:3000 --name frontend beastcamp-frontend
 
 # 3. 브라우저에서 확인
 # http://localhost 접속
