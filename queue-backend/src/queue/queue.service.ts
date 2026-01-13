@@ -30,4 +30,18 @@ export class QueueService {
       position: rank !== null ? rank + 1 : null,
     };
   }
+
+  async getQueuePosition(userId: string | undefined): Promise<number | null> {
+    if (!userId) {
+      return null;
+    }
+
+    const rank = await this.redis.zrank(REDIS_KEYS.WAITING_QUEUE, userId);
+
+    if (rank === null) {
+      return null;
+    }
+
+    return rank + 1;
+  }
 }
