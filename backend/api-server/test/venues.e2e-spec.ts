@@ -3,13 +3,9 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Block } from './../src/venues/entities/block.entity';
-import { Repository } from 'typeorm';
 
 describe('공연장 (Venues) API', () => {
   let app: INestApplication;
-  let blockRepository: Repository<Block>;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -18,10 +14,6 @@ describe('공연장 (Venues) API', () => {
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
-
-    blockRepository = moduleFixture.get<Repository<Block>>(
-      getRepositoryToken(Block),
-    );
 
     await app.init();
   });
@@ -91,7 +83,11 @@ describe('공연장 (Venues) API', () => {
 
       it('응답 본문에 공연장 목록이 포함되어야 한다', () => {
         const body = response.body as {
-          venues: { id: number; venue_name: string }[];
+          venues: {
+            id: number;
+            venue_name: string;
+            block_map_url: string | null;
+          }[];
         };
         expect(body.venues).toBeDefined();
         expect(Array.isArray(body.venues)).toBe(true);
@@ -109,6 +105,53 @@ describe('공연장 (Venues) API', () => {
     });
   });
 
+  describe('POST /api/venues/:id/blocks 요청 시', () => {
+    let venueId: number;
+
+    beforeAll(async () => {
+      const res = await request(app.getHttpServer() as App)
+        .post('/api/venues')
+        .send({ venue_name: '구역 생성 테스트용 공연장' });
+      venueId = (res.body as { id: number }).id;
+    });
+
+    describe('유효한 구역 목록이 주어지면', () => {
+      let response: request.Response;
+      const validBlocks = {
+        blocks: [
+          { blockDataName: 'A-1', rowSize: 10, colSize: 10 },
+          { blockDataName: 'B-1', rowSize: 20, colSize: 20 },
+        ],
+      };
+
+      beforeAll(async () => {
+        response = await request(app.getHttpServer() as App)
+          .post(`/api/venues/${venueId}/blocks`)
+          .send(validBlocks);
+      });
+
+      it('HTTP 상태 코드 201을 반환해야 한다', () => {
+        expect(response.status).toBe(201);
+      });
+    });
+
+    describe('존재하지 않는 공연장 ID가 주어지면', () => {
+      let response: request.Response;
+
+      beforeAll(async () => {
+        response = await request(app.getHttpServer() as App)
+          .post('/api/venues/9999/blocks')
+          .send({
+            blocks: [{ blockDataName: 'A-1', rowSize: 10, colSize: 10 }],
+          });
+      });
+
+      it('HTTP 상태 코드 400을 반환해야 한다', () => {
+        expect(response.status).toBe(400);
+      });
+    });
+  });
+
   describe('GET /api/venues/:id 요청 시', () => {
     let createdVenueId: number;
 
@@ -121,20 +164,22 @@ describe('공연장 (Venues) API', () => {
         });
       createdVenueId = (res.body as { id: number }).id;
 
-      await blockRepository.save([
-        {
-          venueId: createdVenueId,
-          blockDataName: 'A-1',
-          rowSize: 10,
-          colSize: 15,
-        },
-        {
-          venueId: createdVenueId,
-          blockDataName: 'B-1',
-          rowSize: 12,
-          colSize: 20,
-        },
-      ]);
+      await request(app.getHttpServer() as App)
+        .post(`/api/venues/${createdVenueId}/blocks`)
+        .send({
+          blocks: [
+            {
+              blockDataName: 'A-1',
+              rowSize: 10,
+              colSize: 15,
+            },
+            {
+              blockDataName: 'B-1',
+              rowSize: 12,
+              colSize: 20,
+            },
+          ],
+        });
     });
 
     describe('존재하는 공연장 ID가 주어지면', () => {
