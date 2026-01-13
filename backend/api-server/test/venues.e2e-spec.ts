@@ -142,6 +142,27 @@ describe('공연장 (Venues) API', () => {
       });
     });
 
+    describe('중복된 구역 이름이 포함되어 있으면', () => {
+      let response: request.Response;
+
+      beforeAll(async () => {
+        response = await request(app.getHttpServer() as App)
+          .post(`/api/venues/${venueId}/blocks`)
+          .send({
+            blocks: [{ blockDataName: 'A-1', rowSize: 10, colSize: 10 }],
+          });
+      });
+
+      it('HTTP 상태 코드 400을 반환해야 한다', () => {
+        expect(response.status).toBe(400);
+      });
+
+      it('에러 메시지에 중복된 이름이 포함되어야 한다', () => {
+        const body = response.body as { message: string };
+        expect(body.message).toContain('중복된 블록 이름이 존재합니다 : A-1');
+      });
+    });
+
     describe('존재하지 않는 공연장 ID가 주어지면', () => {
       let response: request.Response;
 

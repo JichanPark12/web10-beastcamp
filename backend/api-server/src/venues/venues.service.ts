@@ -7,14 +7,14 @@ import { CreateVenueRequestDto } from './dto/create-venue-request.dto';
 import { GetVenuesResponseDto } from './dto/get-venues-response.dto';
 import { GetVenueResponseDto } from './dto/get-venue-response.dto';
 import { CreateBlocksRequestDto } from './dto/create-blocks-request.dto';
+import { BlockRepository } from './block.repository';
 
 @Injectable()
 export class VenuesService {
   constructor(
     @InjectRepository(Venue)
     private venuesRepository: Repository<Venue>,
-    @InjectRepository(Block)
-    private blocksRepository: Repository<Block>,
+    private blocksRepository: BlockRepository,
   ) {}
 
   async create(requestDto: CreateVenueRequestDto): Promise<{ id: number }> {
@@ -51,6 +51,18 @@ export class VenuesService {
 
     if (!venue) {
       throw new BadRequestException('Invalid venue id');
+    }
+
+    const requestBlockNames = requestDto.blocks.map((b) => b.blockDataName);
+    const duplicateNames = await this.blocksRepository.findExistingBlockNames(
+      venueId,
+      requestBlockNames,
+    );
+
+    if (duplicateNames.length > 0) {
+      throw new BadRequestException(
+        `중복된 블록 이름이 존재합니다 : ${duplicateNames.join(', ')}`,
+      );
     }
 
     const blocks = requestDto.blocks.map((dto) => {
