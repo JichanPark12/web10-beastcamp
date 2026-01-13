@@ -59,7 +59,6 @@ const datas = [
 
 export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
-  console.log("요청은왔냐");
 
   const startAfter = searchParams.get("start_after");
   const limitParam = searchParams.get("limit");
