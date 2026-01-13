@@ -34,7 +34,7 @@ export class QueueController {
       type: 'object',
       properties: {
         userId: { type: 'string', example: 'uGxk5wTQ5VQw9Hqz' },
-        position: { oneOf: [{ type: 'number' }, { type: 'null' }], example: 1 },
+        position: { type: 'number', nullable: true, example: 1 },
       },
       required: ['userId', 'position'],
     },
