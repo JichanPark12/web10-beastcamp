@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  queue-backend:
+    build:
+      context: ..
+      dockerfile: queue-backend/Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - queue-network
+
+networks:
+  queue-network:
+    driver: bridge

@@ -1,7 +1,6 @@
 "use client";
 
-import { API_PREFIX } from "@/constants/api";
-import axios from "axios";
+import { get } from "@/lib/api";
 import { useEffect, useRef, useState } from "react";
 
 interface WaitingOrderResponse {
@@ -19,10 +18,8 @@ export function useWaitingQueue() {
   useEffect(() => {
     const poll = async () => {
       try {
-        const response = await axios.get<WaitingOrderResponse>(
-          `${API_PREFIX}/waiting`
-        );
-        setData(response.data);
+        const response = await get<WaitingOrderResponse>("/waiting");
+        setData(response);
       } catch (error) {
         setIsError(true);
         console.error(error);

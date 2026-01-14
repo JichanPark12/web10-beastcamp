@@ -1,3 +1,36 @@
+# Node modules
+**/node_modules
+**/dist
+**/build
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+
+# Environment
+.env.local
+.env.*.local
+
+# Test coverage
+**/coverage
+
+# IDE
+.vscode
+.idea
+
+# Keep only necessary files for frontend build
+# Exclude other services
+backend/api-server/node_modules
+backend/ticket-server/node_modules
+queue-backend/node_modules
 redis_data/
 
 node_modules/
