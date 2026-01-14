@@ -14,7 +14,7 @@ export default function WaitingProgress() {
 
   useEffect(() => {
     if (isFinished) {
-      router.push("/reservations");
+      router.replace("/reservations");
     }
   }, [isFinished, router]);
 
