@@ -233,4 +233,161 @@ describe('공연 (Performances) API', () => {
       });
     });
   });
+
+  describe('공연 등급 (Grades) API', () => {
+    let performanceId: number;
+
+    beforeAll(async () => {
+      const venueRes = await request(app.getHttpServer() as App)
+        .post('/api/venues')
+        .send({ venue_name: '등급 테스트 공연장' });
+      const venueId = (venueRes.body as { id: number }).id;
+
+      const perfRes = await request(app.getHttpServer() as App)
+        .post('/api/performances')
+        .send({
+          performance_name: '등급 테스트 공연',
+          ticketing_date: new Date().toISOString(),
+          venue_id: venueId,
+        });
+      performanceId = (perfRes.body as { id: number }).id;
+    });
+
+    describe('POST /api/performances/:id/grades 요청 시', () => {
+      let response: request.Response;
+
+      beforeAll(async () => {
+        response = await request(app.getHttpServer() as App)
+          .post(`/api/performances/${performanceId}/grades`)
+          .send([
+            { name: 'VIP', price: 150000 },
+            { name: 'R', price: 100000 },
+          ]);
+      });
+
+      it('HTTP 상태 코드 201을 반환해야 한다', () => {
+        expect(response.status).toBe(201);
+      });
+    });
+
+    describe('GET /api/performances/:id/grades 요청 시', () => {
+      let response: request.Response;
+
+      beforeAll(async () => {
+        response = await request(app.getHttpServer() as App).get(
+          `/api/performances/${performanceId}/grades`,
+        );
+      });
+
+      it('HTTP 상태 코드 200을 반환해야 한다', () => {
+        expect(response.status).toBe(200);
+      });
+
+      it('생성한 등급 목록이 포함되어야 한다', () => {
+        const body = response.body as { name: string }[];
+        const names = body.map((g) => g.name);
+        expect(names).toContain('VIP');
+        expect(names).toContain('R');
+      });
+    });
+  });
+
+  describe('구역-등급 매핑 (BlockGrades) API', () => {
+    let performanceId: number;
+    let venueId: number;
+    let gradeId: number;
+    let blockId1: number;
+
+    beforeAll(async () => {
+      const venueRes = await request(app.getHttpServer() as App)
+        .post('/api/venues')
+        .send({ venue_name: '구역 매핑 테스트 공연장' });
+      venueId = (venueRes.body as { id: number }).id;
+
+      // 구역 생성
+      await request(app.getHttpServer() as App)
+        .post(`/api/venues/${venueId}/blocks`)
+        .send({
+          blocks: [
+            { blockDataName: 'A-1', rowSize: 10, colSize: 10 },
+            { blockDataName: 'A-2', rowSize: 10, colSize: 10 },
+          ],
+        });
+
+      const venueInfo = await request(app.getHttpServer() as App).get(
+        `/api/venues/${venueId}`,
+      );
+      blockId1 = (venueInfo.body as { blocks: { id: number }[] }).blocks[0].id;
+
+      const perfRes = await request(app.getHttpServer() as App)
+        .post('/api/performances')
+        .send({
+          performance_name: '구역 매핑 테스트 공연',
+          ticketing_date: new Date().toISOString(),
+          venue_id: venueId,
+        });
+      performanceId = (perfRes.body as { id: number }).id;
+
+      // 등급 생성
+      await request(app.getHttpServer() as App)
+        .post(`/api/performances/${performanceId}/grades`)
+        .send([{ name: 'VIP', price: 150000 }]);
+
+      const gradeRes = await request(app.getHttpServer() as App).get(
+        `/api/performances/${performanceId}/grades`,
+      );
+      gradeId = (gradeRes.body as { id: number }[])[0].id;
+    });
+
+    describe('POST /api/performances/:id/block-grades 요청 시', () => {
+      describe('유효한 매핑 정보가 주어지면', () => {
+        let response: request.Response;
+
+        beforeAll(async () => {
+          response = await request(app.getHttpServer() as App)
+            .post(`/api/performances/${performanceId}/block-grades`)
+            .send([{ gradeId: gradeId, blockIds: [blockId1] }]);
+        });
+
+        it('HTTP 상태 코드 201을 반환해야 한다', () => {
+          expect(response.status).toBe(201);
+        });
+      });
+
+      describe('이미 할당된 구역을 다시 할당하려고 하면', () => {
+        let response: request.Response;
+
+        beforeAll(async () => {
+          response = await request(app.getHttpServer() as App)
+            .post(`/api/performances/${performanceId}/block-grades`)
+            .send([{ gradeId: gradeId, blockIds: [blockId1] }]);
+        });
+
+        it('HTTP 상태 코드 400을 반환해야 한다', () => {
+          expect(response.status).toBe(400);
+        });
+      });
+    });
+
+    describe('GET /api/performances/:id/block-grades 요청 시', () => {
+      let response: request.Response;
+
+      beforeAll(async () => {
+        response = await request(app.getHttpServer() as App).get(
+          `/api/performances/${performanceId}/block-grades`,
+        );
+      });
+
+      it('HTTP 상태 코드 200을 반환해야 한다', () => {
+        expect(response.status).toBe(200);
+      });
+
+      it('할당된 구역 매핑 정보가 포함되어야 한다', () => {
+        const body = response.body as { blockId: number; gradeId: number }[];
+        const mapping = body.find((m) => m.blockId === blockId1);
+        expect(mapping).toBeDefined();
+        expect(mapping?.gradeId).toBe(gradeId);
+      });
+    });
+  });
 });
