@@ -1,8 +1,31 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import cookieParser from 'cookie-parser';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
+  app.use(cookieParser());
+  app.setGlobalPrefix('api');
+
+  const config = new DocumentBuilder()
+    .setTitle('대기열 API 서버')
+    .setDescription('티켓팅 시스템을 위한 대기열 관리 API 문서입니다.')
+    .setVersion('1.0.0')
+    .addCookieAuth('waiting-token', {
+      type: 'apiKey',
+      in: 'cookie',
+      name: 'waiting-token',
+    })
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api-docs', app, document, {
+    swaggerOptions: {
+      withCredentials: true,
+    },
+  });
+
+  await app.listen(Number(process.env.PORT ?? 3000));
 }
-bootstrap();
+void bootstrap();
