@@ -19,7 +19,7 @@ export class PerformancesRepository extends Repository<Performance> {
 
     if (requestDto.ticketing_after) {
       query.where('performance.ticketingDate >= :ticketing_after', {
-        ticketing_after: requestDto.ticketing_after,
+        ticketing_after: new Date(requestDto.ticketing_after),
       });
     }
 
