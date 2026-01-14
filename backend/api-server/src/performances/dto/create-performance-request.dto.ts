@@ -15,14 +15,6 @@ export class CreatePerformanceRequestDto {
   @IsNotEmpty()
   ticketing_date: string;
 
-  @ApiProperty({
-    description: '공연 일시 (ISO 8601)',
-    example: '2026-01-05T19:00:00Z',
-  })
-  @IsISO8601()
-  @IsNotEmpty()
-  performance_date: string;
-
   @ApiProperty({ description: '공연장 ID', example: 1 })
   @IsNumber()
   @IsNotEmpty()

@@ -41,7 +41,6 @@ describe('공연 (Performances) API', () => {
         const validBody = {
           performance_name: '테스트 공연',
           ticketing_date: new Date().toISOString(),
-          performance_date: new Date().toISOString(),
           venue_id: venueId,
         };
 
@@ -109,7 +108,6 @@ describe('공연 (Performances) API', () => {
           .send({
             performance_name: name,
             ticketing_date: date.toISOString(),
-            performance_date: date.toISOString(), // 공연일도 동일하게 설정
             venue_id: venueId,
           });
         return (res.body as { id: number }).id;

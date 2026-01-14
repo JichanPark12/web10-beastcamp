@@ -30,7 +30,6 @@ export class PerformancesService {
     const performance = new Performance(
       requestDto.performance_name,
       new Date(requestDto.ticketing_date),
-      new Date(requestDto.performance_date),
       requestDto.venue_id,
     );
     const savedPerformance =

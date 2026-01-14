@@ -3,21 +3,21 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { Venue } from '../../venues/entities/venue.entity';
+import { Session } from './session.entity';
 
 @Entity('performances')
 export class Performance {
   constructor(
     performanceName?: string,
     ticketingDate?: Date,
-    performanceDate?: Date,
     venueId?: number,
   ) {
     if (performanceName) this.performanceName = performanceName;
     if (ticketingDate) this.ticketingDate = ticketingDate;
-    if (performanceDate) this.performanceDate = performanceDate;
     if (venueId) this.venueId = venueId;
   }
 
@@ -37,13 +37,6 @@ export class Performance {
 
   @Column({
     type: 'datetime',
-    name: 'performance_date',
-    comment: '공연 일시 (ISO 8601)',
-  })
-  performanceDate: Date;
-
-  @Column({
-    type: 'datetime',
     name: 'ticketing_date',
     comment: '티켓팅 일시 (ISO 8601)',
   })
@@ -52,4 +45,7 @@ export class Performance {
   @ManyToOne(() => Venue)
   @JoinColumn({ name: 'venue_id' })
   venue: Venue;
+
+  @OneToMany(() => Session, (session) => session.performance)
+  sessions: Session[];
 }
