@@ -28,7 +28,7 @@ describe('공연 (Performances) API', () => {
       beforeAll(async () => {
         const validBody = {
           performance_name: '테스트 공연',
-          ticketing_date: new Date().toISOString(),
+          ticketing_date: '2000-01-01T00:00:00Z',
         };
 
         response = await request(app.getHttpServer() as App)
@@ -52,6 +52,25 @@ describe('공연 (Performances) API', () => {
       beforeAll(async () => {
         const invalidBody = {
           ticketing_date: new Date().toISOString(),
+        };
+
+        response = await request(app.getHttpServer() as App)
+          .post('/api/performances')
+          .send(invalidBody);
+      });
+
+      it('HTTP 상태 코드 400을 반환해야 한다', () => {
+        expect(response.status).toBe(400);
+      });
+    });
+
+    describe('ticketing_date 형식이 UTC가 아니면 (Z 없음)', () => {
+      let response: request.Response;
+
+      beforeAll(async () => {
+        const invalidBody = {
+          performance_name: 'UTC 테스트 공연',
+          ticketing_date: '2026-01-01T13:00:00', // Z 없음
         };
 
         response = await request(app.getHttpServer() as App)
@@ -144,6 +163,20 @@ describe('공연 (Performances) API', () => {
           performances: { performance_id: number }[];
         };
         expect(body.performances[0].performance_id).toBe(futurePerformanceId);
+      });
+    });
+
+    describe('ticketing_after 형식이 UTC가 아니면 (Z 없음)', () => {
+      let response: request.Response;
+
+      beforeAll(async () => {
+        response = await request(app.getHttpServer() as App)
+          .get('/api/performances')
+          .query({ ticketing_after: '2026-01-01T00:00:00' }); // Z 없음
+      });
+
+      it('HTTP 상태 코드 400을 반환해야 한다', () => {
+        expect(response.status).toBe(400);
       });
     });
   });
