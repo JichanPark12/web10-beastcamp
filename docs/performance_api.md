@@ -44,7 +44,7 @@ GET /api/performances?ticketing_after=2026-01-04T00:00:00&limit=5
       "ticketing_date": "2026-01-01T13:00:00Z",
       "performance_date": "2026-01-05T19:00:00Z",
       "venue_id": 20,
-      "venue_name": "장충 체육관",
+      "venue_name": "인천 남동 체육관",
     },
     {
       "performance_id": 124,
@@ -80,7 +80,7 @@ POST /api/venues
 POST /api/venues
 
 {
-	"venue_name": "장충 체육관"
+	"venue_name": "인천 남동 체육관"
 }
 ```
 
@@ -134,7 +134,7 @@ GET /api/venues
   "venues": [
     {
       "id": 123,
-      "venue_name": "장충 체육관"
+      "venue_name": "인천 남동 체육관"
     },
     {
       "id": 124,
