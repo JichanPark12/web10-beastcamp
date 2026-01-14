@@ -81,8 +81,8 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@beastcamp/shared-constants$": "<rootDir>/../packages/shared-constants/src",
-      "^@beastcamp/backend-config$": "<rootDir>/../packages/backend-config/src"
+      "^@beastcamp/shared-constants$": "<rootDir>/../../packages/shared-constants/src",
+      "^@beastcamp/backend-config$": "<rootDir>/../../packages/backend-config/src"
     }
   }
 }
