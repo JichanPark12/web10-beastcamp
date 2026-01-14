@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
+  app.setGlobalPrefix('api');
 
   const config = new DocumentBuilder()
     .setTitle('대기열 API 서버')
@@ -19,7 +20,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document, {
+  SwaggerModule.setup('api-docs', app, document, {
     swaggerOptions: {
       withCredentials: true,
     },
