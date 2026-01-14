@@ -1,15 +1,23 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { VenuesModule } from './venues/venues.module';
+import { PerformancesModule } from './performances/performances.module';
 
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'public'),
+
+      serveRoot: '/',
+    }),
+
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
     TypeOrmModule.forRootAsync({
       useFactory: () => {
         if (process.env.NODE_ENV === 'test') {
@@ -35,8 +43,9 @@ import { VenuesModule } from './venues/venues.module';
       },
     }),
     VenuesModule,
+    PerformancesModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

@@ -7,13 +7,13 @@
 ## request
 
 ```bash
-GET /api/performances?start_after={string(ISO 8601)}&limit={number}
+GET /api/performances?ticketing_after={string(ISO 8601)}&limit={number}
 ```
 
 ### 예시.
 
 ```bash
-GET /api/performances?start_after=2026-01-04T00:00:00&limit=5
+GET /api/performances?ticketing_after=2026-01-04T00:00:00&limit=5
 ```
 
 ## response

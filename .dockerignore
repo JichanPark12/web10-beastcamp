@@ -31,3 +31,13 @@ pnpm-debug.log*
 backend/api-server/node_modules
 backend/ticket-server/node_modules
 queue-backend/node_modules
+redis_data/
+
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+.git/
+.env*
+pnpm-debug.log*
