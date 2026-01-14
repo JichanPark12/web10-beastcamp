@@ -9,6 +9,7 @@
 1. **서비스 단위 배포** - 레포지토리 전체가 아닌 개별 서비스 단위로 배포
 2. **변경된 서비스만 CI/CD 실행** - 불필요한 리소스 낭비 방지
 3. **공통 패키지 변경 시 의존 서비스 자동 재배포** - 의존성 그래프 기반 배포
+   B
 
 ## 프로젝트 구조
 
@@ -44,11 +45,13 @@ web10-beastcamp/
 **동작 과정:**
 
 1. **변경 감지**
+
    - `detect-changes.sh` 스크립트 실행
    - main 브랜치와 비교하여 변경된 파일 분석
    - 영향받는 서비스 목록 생성
 
 2. **병렬 CI 실행**
+
    - 변경된 서비스만 선택적으로 CI 작업 실행
    - 각 서비스별로 독립적인 Job 실행:
      - Lint 검사
@@ -66,9 +69,11 @@ web10-beastcamp/
 **동작 과정:**
 
 1. **변경 감지**
+
    - 이전 커밋과 비교하여 변경된 서비스 감지
 
 2. **배포 서버 접속 및 배포**
+
    - GitHub Actions Runner가 SSH로 배포 서버에 접속
    - 배포 서버에서 직접 `git pull`로 최신 코드 가져오기
    - 변경된 서비스만 `docker-compose build` 및 `docker-compose up -d` 실행
@@ -79,6 +84,7 @@ web10-beastcamp/
    - 실패 시 알림
 
 **장점:**
+
 - 이미지 레지스트리 불필요 (GHCR, ECR 등)
 - 설정이 간단하고 직관적
 - 배포 서버에서 직접 빌드하여 환경 일관성 보장
@@ -99,10 +105,12 @@ web10-beastcamp/
 공통 패키지 변경 시 의존하는 서비스를 자동으로 재배포합니다:
 
 - `packages/shared-types/**` 변경
+
   - → api-server 재배포
   - → ticket-server 재배포
 
 - `packages/backend-config/**` 변경
+
   - → queue-backend 재배포
 
 - `packages/shared-constants/**` 변경
@@ -125,10 +133,12 @@ pnpm --filter @beastcamp/api-server... build
 모든 서비스는 3단계 멀티 스테이지 빌드를 사용합니다:
 
 1. **deps stage**: 의존성 설치
+
    - pnpm workspace 구조 유지
    - frozen-lockfile로 정확한 의존성 관리
 
 2. **builder stage**: 애플리케이션 빌드
+
    - 소스 코드 복사 및 빌드
    - 공통 패키지 포함
 
@@ -166,6 +176,7 @@ pnpm --filter @beastcamp/api-server... build
 **각 서버**에서 다음 환경을 준비하세요:
 
 1. **Docker 및 Docker Compose 설치**
+
    ```bash
    # Docker 설치
    curl -fsSL https://get.docker.com -o get-docker.sh
@@ -176,6 +187,7 @@ pnpm --filter @beastcamp/api-server... build
    ```
 
 2. **Git Repository 클론**
+
    ```bash
    cd /app
    git clone https://github.com/your-org/web10-beastcamp.git
@@ -190,45 +202,51 @@ pnpm --filter @beastcamp/api-server... build
 
 ### 2. GitHub Secrets 설정
 
-GitHub Repository → Settings → Secrets and variables → Actions에서 **서버별로** 시크릿을 추가하세요:
+GitHub Repository → Settings → Secrets and variables → Actions에서 다음 시크릿을 추가하세요:
 
-#### 프론트엔드 서버
+#### 공통 SSH 키
 
-| Secret 이름 | 설명 | 예시 |
-|------------|------|-----|
-| `FRONTEND_SSH_KEY` | 프론트엔드 서버 SSH 개인키 | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
+| Secret 이름       | 설명                            | 예시                                     |
+| ----------------- | ------------------------------- | ---------------------------------------- |
+| `SSH_PRIVATE_KEY` | 모든 서버에서 사용하는 SSH 키 | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
+
+#### 서버별 호스트 및 사용자
+
+| Secret 이름            | 설명                   | 예시            |
+| ---------------------- | ---------------------- | --------------- |
 | `FRONTEND_SERVER_HOST` | 프론트엔드 서버 호스트 | `123.456.78.90` |
-| `FRONTEND_SERVER_USER` | 프론트엔드 서버 사용자 | `deploy` |
+| `FRONTEND_SERVER_USER` | 프론트엔드 서버 사용자 | `deploy`        |
+| `BACKEND_SERVER_HOST`  | 백엔드 서버 호스트     | `123.456.78.91` |
+| `BACKEND_SERVER_USER`  | 백엔드 서버 사용자     | `deploy`        |
+| `QUEUE_SERVER_HOST`    | 큐 서버 호스트         | `123.456.78.92` |
+| `QUEUE_SERVER_USER`    | 큐 서버 사용자         | `deploy`        |
 
-#### 백엔드 서버
-
-| Secret 이름 | 설명 | 예시 |
-|------------|------|-----|
-| `BACKEND_SSH_KEY` | 백엔드 서버 SSH 개인키 | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
-| `BACKEND_SERVER_HOST` | 백엔드 서버 호스트 | `123.456.78.91` |
-| `BACKEND_SERVER_USER` | 백엔드 서버 사용자 | `deploy` |
-
-#### 큐 서버
-
-| Secret 이름 | 설명 | 예시 |
-|------------|------|-----|
-| `QUEUE_SSH_KEY` | 큐 서버 SSH 개인키 | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
-| `QUEUE_SERVER_HOST` | 큐 서버 호스트 | `123.456.78.92` |
-| `QUEUE_SERVER_USER` | 큐 서버 사용자 | `deploy` |
+**총 7개의 Secrets 필요**
 
 #### SSH 키 생성 방법
 
-**각 배포 서버**에서 개별적으로 SSH 키를 생성하세요:
+**한 번만** SSH 키를 생성하고 모든 서버에 공개키를 등록하세요:
+
 ```bash
-# SSH 키 생성
+# 1. 로컬 또는 안전한 환경에서 SSH 키 생성
 ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_actions
 
-# 공개키를 authorized_keys에 추가
-cat ~/.ssh/github_actions.pub >> ~/.ssh/authorized_keys
-chmod 600 ~/.ssh/authorized_keys
+# 2. 각 배포 서버에 공개키 등록
+# 프론트엔드 서버
+ssh deploy@FRONTEND_SERVER_HOST 'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys' < ~/.ssh/github_actions.pub
 
-# 개인키 출력 (해당 서버의 GitHub Secret에 등록)
+# 백엔드 서버
+ssh deploy@BACKEND_SERVER_HOST 'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys' < ~/.ssh/github_actions.pub
+
+# 큐 서버
+ssh deploy@QUEUE_SERVER_HOST 'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys' < ~/.ssh/github_actions.pub
+
+# 3. 각 서버에서 권한 설정
+ssh deploy@서버주소 'chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys'
+
+# 4. 개인키를 GitHub Secret (SSH_PRIVATE_KEY)에 등록
 cat ~/.ssh/github_actions
+# 출력된 전체 내용을 복사하여 GitHub Secrets에 등록
 ```
 
 ### 3. Docker Compose 파일 확인
@@ -236,6 +254,7 @@ cat ~/.ssh/github_actions
 각 서비스 디렉토리에 docker-compose.yml 파일이 이미 생성되어 있습니다:
 
 #### 프론트엔드 ([frontend/docker-compose.yml](../frontend/docker-compose.yml))
+
 ```yaml
 version: '3.8'
 
@@ -245,13 +264,14 @@ services:
       context: ..
       dockerfile: frontend/Dockerfile
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - NODE_ENV=production
     restart: unless-stopped
 ```
 
 #### 백엔드 ([backend/docker-compose.yml](../backend/docker-compose.yml))
+
 ```yaml
 version: '3.8'
 
@@ -261,7 +281,7 @@ services:
       context: ..
       dockerfile: backend/api-server/Dockerfile
     ports:
-      - "3001:3001"
+      - '3001:3001'
     environment:
       - NODE_ENV=production
     restart: unless-stopped
@@ -271,13 +291,14 @@ services:
       context: ..
       dockerfile: backend/ticket-server/Dockerfile
     ports:
-      - "3002:3002"
+      - '3002:3002'
     environment:
       - NODE_ENV=production
     restart: unless-stopped
 ```
 
 #### 큐 서버 ([queue-backend/docker-compose.yml](../queue-backend/docker-compose.yml))
+
 ```yaml
 version: '3.8'
 
@@ -287,7 +308,7 @@ services:
       context: ..
       dockerfile: queue-backend/Dockerfile
     ports:
-      - "3003:3003"
+      - '3003:3003'
     environment:
       - NODE_ENV=production
     restart: unless-stopped
@@ -375,11 +396,12 @@ git push origin feature/auth
 **원인:** git history가 깊지 않거나 base branch 비교 오류
 
 **해결:**
+
 ```yaml
 # .github/workflows/ci.yml 또는 cd.yml에서
 - uses: actions/checkout@v4
   with:
-    fetch-depth: 0  # 전체 히스토리 가져오기
+    fetch-depth: 0 # 전체 히스토리 가져오기
 ```
 
 ### Docker 빌드 실패

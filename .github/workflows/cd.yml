@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Deploy to frontend server
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.FRONTEND_SSH_KEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SERVER_HOST: ${{ secrets.FRONTEND_SERVER_HOST }}
           SERVER_USER: ${{ secrets.FRONTEND_SERVER_USER }}
         run: |
@@ -76,7 +76,7 @@ jobs:
     steps:
       - name: Deploy to backend server
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.BACKEND_SSH_KEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SERVER_HOST: ${{ secrets.BACKEND_SERVER_HOST }}
           SERVER_USER: ${{ secrets.BACKEND_SERVER_USER }}
           API_SERVER_CHANGED: ${{ needs.detect-changes.outputs.api_server_changed }}
@@ -126,7 +126,7 @@ jobs:
     steps:
       - name: Deploy to queue server
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.QUEUE_SSH_KEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SERVER_HOST: ${{ secrets.QUEUE_SERVER_HOST }}
           SERVER_USER: ${{ secrets.QUEUE_SERVER_USER }}
         run: |
