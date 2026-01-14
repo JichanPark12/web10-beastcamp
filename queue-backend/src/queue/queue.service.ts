@@ -47,7 +47,7 @@ export class QueueService {
   }
 
   private async _addToWaitingQueue(userId: string) {
-    const score = Date.now();
+    const score = Date.now(); // 한국시간 기준
     await this.redis.zadd(REDIS_KEYS.WAITING_QUEUE, 'NX', score, userId);
   }
 }
