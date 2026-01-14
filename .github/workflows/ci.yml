@@ -4,7 +4,11 @@ on:
   pull_request:
     branches:
       - main
-      - develop
+      - dev
+  push:
+    branches:
+      - main
+      - dev
 
 jobs:
   detect-changes:
@@ -161,7 +165,14 @@ jobs:
   # CI Summary
   ci-summary:
     name: CI Summary
-    needs: [detect-changes, ci-frontend, ci-api-server, ci-ticket-server, ci-queue-backend]
+    needs:
+      [
+        detect-changes,
+        ci-frontend,
+        ci-api-server,
+        ci-ticket-server,
+        ci-queue-backend,
+      ]
     if: always()
     runs-on: ubuntu-latest
     steps:
