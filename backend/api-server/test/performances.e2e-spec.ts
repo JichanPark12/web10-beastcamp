@@ -22,17 +22,6 @@ describe('공연 (Performances) API', () => {
   });
 
   describe('POST /api/performances 요청 시', () => {
-    let venueId: number;
-
-    beforeAll(async () => {
-      const venueResponse = await request(app.getHttpServer() as App)
-        .post('/api/venues')
-        .send({ venue_name: '테스트 공연장' });
-
-      const body = venueResponse.body as { id: number };
-      venueId = body.id;
-    });
-
     describe('유효한 공연 정보가 주어지면', () => {
       let response: request.Response;
 
@@ -40,7 +29,6 @@ describe('공연 (Performances) API', () => {
         const validBody = {
           performance_name: '테스트 공연',
           ticketing_date: new Date().toISOString(),
-          venue_id: venueId,
         };
 
         response = await request(app.getHttpServer() as App)
@@ -64,7 +52,6 @@ describe('공연 (Performances) API', () => {
       beforeAll(async () => {
         const invalidBody = {
           ticketing_date: new Date().toISOString(),
-          venue_id: venueId,
         };
 
         response = await request(app.getHttpServer() as App)
@@ -79,7 +66,6 @@ describe('공연 (Performances) API', () => {
   });
 
   describe('GET /api/performances 요청 시', () => {
-    let venueId: number;
     let pastPerformanceId: number;
     let futurePerformanceId: number;
     let farFuturePerformanceId: number;
@@ -93,18 +79,12 @@ describe('공연 (Performances) API', () => {
     dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
 
     beforeAll(async () => {
-      const venueRes = await request(app.getHttpServer() as App)
-        .post('/api/venues')
-        .send({ venue_name: '검색 테스트용 공연장' });
-      venueId = (venueRes.body as { id: number }).id;
-
       const createPerformance = async (name: string, date: Date) => {
         const res = await request(app.getHttpServer() as App)
           .post('/api/performances')
           .send({
             performance_name: name,
             ticketing_date: date.toISOString(),
-            venue_id: venueId,
           });
         return (res.body as { id: number }).id;
       };
@@ -140,13 +120,6 @@ describe('공연 (Performances) API', () => {
         expect(ids).toContain(futurePerformanceId);
         expect(ids).toContain(farFuturePerformanceId);
       });
-
-      it('공연장 이름(venue_name)이 포함되어야 한다', () => {
-        const body = response.body as {
-          performances: { venue_name: string }[];
-        };
-        expect(body.performances[0].venue_name).toBe('검색 테스트용 공연장');
-      });
     });
 
     describe('limit 파라미터로 1을 전달하면', () => {
@@ -177,19 +150,19 @@ describe('공연 (Performances) API', () => {
 
   describe('공연 회차 (Sessions) API', () => {
     let performanceId: number;
+    let venueId: number;
 
     beforeAll(async () => {
       const venueRes = await request(app.getHttpServer() as App)
         .post('/api/venues')
         .send({ venue_name: '회차 테스트 공연장' });
-      const venueId = (venueRes.body as { id: number }).id;
+      venueId = (venueRes.body as { id: number }).id;
 
       const perfRes = await request(app.getHttpServer() as App)
         .post('/api/performances')
         .send({
           performance_name: '회차 테스트 공연',
           ticketing_date: new Date().toISOString(),
-          venue_id: venueId,
         });
       performanceId = (perfRes.body as { id: number }).id;
     });
@@ -201,7 +174,10 @@ describe('공연 (Performances) API', () => {
         beforeAll(async () => {
           response = await request(app.getHttpServer() as App)
             .post(`/api/performances/${performanceId}/sessions`)
-            .send({ sessionDate: new Date().toISOString() });
+            .send({
+              sessionDate: new Date().toISOString(),
+              venue_id: venueId,
+            });
         });
 
         it('HTTP 상태 코드 201을 반환해야 한다', () => {
@@ -231,11 +207,16 @@ describe('공연 (Performances) API', () => {
       it('회차 목록이 배열 형태로 반환되어야 한다', () => {
         expect(Array.isArray(response.body)).toBe(true);
       });
+
+      it('회차 정보에 venueId가 포함되어야 한다', () => {
+        const body = response.body as { venueId: number }[];
+        expect(body[0].venueId).toBe(venueId);
+      });
     });
   });
 
   describe('공연 등급 (Grades) API', () => {
-    let performanceId: number;
+    let sessionId: number;
 
     beforeAll(async () => {
       const venueRes = await request(app.getHttpServer() as App)
@@ -248,17 +229,24 @@ describe('공연 (Performances) API', () => {
         .send({
           performance_name: '등급 테스트 공연',
           ticketing_date: new Date().toISOString(),
+        });
+      const performanceId = (perfRes.body as { id: number }).id;
+
+      const sessionRes = await request(app.getHttpServer() as App)
+        .post(`/api/performances/${performanceId}/sessions`)
+        .send({
+          sessionDate: new Date().toISOString(),
           venue_id: venueId,
         });
-      performanceId = (perfRes.body as { id: number }).id;
+      sessionId = (sessionRes.body as { id: number }).id;
     });
 
-    describe('POST /api/performances/:id/grades 요청 시', () => {
+    describe('POST /api/sessions/:sessionId/grades 요청 시', () => {
       let response: request.Response;
 
       beforeAll(async () => {
         response = await request(app.getHttpServer() as App)
-          .post(`/api/performances/${performanceId}/grades`)
+          .post(`/api/sessions/${sessionId}/grades`)
           .send([
             { name: 'VIP', price: 150000 },
             { name: 'R', price: 100000 },
@@ -270,12 +258,12 @@ describe('공연 (Performances) API', () => {
       });
     });
 
-    describe('GET /api/performances/:id/grades 요청 시', () => {
+    describe('GET /api/sessions/:sessionId/grades 요청 시', () => {
       let response: request.Response;
 
       beforeAll(async () => {
         response = await request(app.getHttpServer() as App).get(
-          `/api/performances/${performanceId}/grades`,
+          `/api/sessions/${sessionId}/grades`,
         );
       });
 
@@ -293,8 +281,7 @@ describe('공연 (Performances) API', () => {
   });
 
   describe('구역-등급 매핑 (BlockGrades) API', () => {
-    let performanceId: number;
-    let venueId: number;
+    let sessionId: number;
     let gradeId: number;
     let blockId1: number;
 
@@ -302,7 +289,7 @@ describe('공연 (Performances) API', () => {
       const venueRes = await request(app.getHttpServer() as App)
         .post('/api/venues')
         .send({ venue_name: '구역 매핑 테스트 공연장' });
-      venueId = (venueRes.body as { id: number }).id;
+      const venueId = (venueRes.body as { id: number }).id;
 
       // 구역 생성
       await request(app.getHttpServer() as App)
@@ -324,28 +311,35 @@ describe('공연 (Performances) API', () => {
         .send({
           performance_name: '구역 매핑 테스트 공연',
           ticketing_date: new Date().toISOString(),
+        });
+      const performanceId = (perfRes.body as { id: number }).id;
+
+      const sessionRes = await request(app.getHttpServer() as App)
+        .post(`/api/performances/${performanceId}/sessions`)
+        .send({
+          sessionDate: new Date().toISOString(),
           venue_id: venueId,
         });
-      performanceId = (perfRes.body as { id: number }).id;
+      sessionId = (sessionRes.body as { id: number }).id;
 
       // 등급 생성
       await request(app.getHttpServer() as App)
-        .post(`/api/performances/${performanceId}/grades`)
+        .post(`/api/sessions/${sessionId}/grades`)
         .send([{ name: 'VIP', price: 150000 }]);
 
       const gradeRes = await request(app.getHttpServer() as App).get(
-        `/api/performances/${performanceId}/grades`,
+        `/api/sessions/${sessionId}/grades`,
       );
       gradeId = (gradeRes.body as { id: number }[])[0].id;
     });
 
-    describe('POST /api/performances/:id/block-grades 요청 시', () => {
+    describe('POST /api/sessions/:sessionId/block-grades 요청 시', () => {
       describe('유효한 매핑 정보가 주어지면', () => {
         let response: request.Response;
 
         beforeAll(async () => {
           response = await request(app.getHttpServer() as App)
-            .post(`/api/performances/${performanceId}/block-grades`)
+            .post(`/api/sessions/${sessionId}/block-grades`)
             .send([{ gradeId: gradeId, blockIds: [blockId1] }]);
         });
 
@@ -359,7 +353,7 @@ describe('공연 (Performances) API', () => {
 
         beforeAll(async () => {
           response = await request(app.getHttpServer() as App)
-            .post(`/api/performances/${performanceId}/block-grades`)
+            .post(`/api/sessions/${sessionId}/block-grades`)
             .send([{ gradeId: gradeId, blockIds: [blockId1] }]);
         });
 
@@ -369,12 +363,12 @@ describe('공연 (Performances) API', () => {
       });
     });
 
-    describe('GET /api/performances/:id/block-grades 요청 시', () => {
+    describe('GET /api/sessions/:sessionId/block-grades 요청 시', () => {
       let response: request.Response;
 
       beforeAll(async () => {
         response = await request(app.getHttpServer() as App).get(
-          `/api/performances/${performanceId}/block-grades`,
+          `/api/sessions/${sessionId}/block-grades`,
         );
       });
 
