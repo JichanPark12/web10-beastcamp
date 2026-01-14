@@ -23,7 +23,7 @@ export default function RoundSelector({
   return (
     <div className="mb-4 bg-white rounded-xl p-4 text-gray-900">
       <div
-        className="flex items-center justify-between mb-3 cursor-pointer"
+        className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
         <h3 className="text-base">회차</h3>
@@ -35,7 +35,7 @@ export default function RoundSelector({
       </div>
 
       {isOpen && (
-        <div className="space-y-2">
+        <div className="space-y-2 mt-3">
           {rounds.map((round) => (
             <button
               key={round.id}

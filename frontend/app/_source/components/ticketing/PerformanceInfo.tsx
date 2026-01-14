@@ -31,7 +31,7 @@ export default function PerformanceInfo({ performance }: PerformanceInfoProps) {
   });
 
   return (
-    <div>
+    <div className="h-full flex flex-col justify-center w-full">
       <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
         <span className="text-sm">다음 티켓팅</span>
       </div>

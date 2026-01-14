@@ -16,7 +16,7 @@ export default function TicketingControls({
 }: TicketingControlsProps) {
   const { timeLeft, isActive } = useCountdown(performance?.ticketing_date);
   const [showDateSelection, setShowDateSelection] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<number | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedRound, setSelectedRound] = useState<string | null>(null);
 
   const handleConfirm = () => {
@@ -28,12 +28,18 @@ export default function TicketingControls({
 
   const handleBackToCountdown = () => {
     setShowDateSelection(false);
-    setSelectedDate(null);
+    setSelectedDate(undefined);
     setSelectedRound(null);
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+    <div
+      className={`${
+        showDateSelection
+          ? "flex flex-col items-end"
+          : "bg-white/10 p-3 backdrop-blur-lg rounded-2xl border border-white/20"
+      }`}
+    >
       {!showDateSelection ? (
         <>
           <CountdownTimer timeLeft={timeLeft} />
@@ -64,7 +70,7 @@ export default function TicketingControls({
           </button>
         </>
       ) : (
-        <>
+        <div className=" w-fit">
           <DateSelector
             selectedDate={selectedDate}
             onDateSelect={setSelectedDate}
@@ -95,7 +101,7 @@ export default function TicketingControls({
               예매하기
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
