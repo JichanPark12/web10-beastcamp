@@ -9,6 +9,18 @@ import { Venue } from '../../venues/entities/venue.entity';
 
 @Entity('performances')
 export class Performance {
+  constructor(
+    performanceName?: string,
+    ticketingDate?: Date,
+    performanceDate?: Date,
+    venueId?: number,
+  ) {
+    if (performanceName) this.performanceName = performanceName;
+    if (ticketingDate) this.ticketingDate = ticketingDate;
+    if (performanceDate) this.performanceDate = performanceDate;
+    if (venueId) this.venueId = venueId;
+  }
+
   @PrimaryGeneratedColumn()
   id: number;
 

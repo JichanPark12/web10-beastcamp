@@ -1,7 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Block } from './block.entity';
 
 @Entity('venues')
 export class Venue {
+  constructor(venueName?: string, blockMapUrl?: string | null) {
+    if (venueName) this.venueName = venueName;
+    if (blockMapUrl) this.blockMapUrl = blockMapUrl;
+  }
+
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -17,8 +23,11 @@ export class Venue {
     type: 'varchar',
     length: 500,
     nullable: true,
-    name: 'seat_img_url',
+    name: 'block_map_url',
     comment: 'SVG 이미지 경로',
   })
-  seatImgUrl: string | null;
+  blockMapUrl: string | null;
+
+  @OneToMany(() => Block, (block) => block.venue)
+  blocks: Block[];
 }
