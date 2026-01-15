@@ -31,7 +31,10 @@ jobs:
         id: detect
         run: |
           chmod +x .github/scripts/detect-changes.sh
-          .github/scripts/detect-changes.sh origin/main
+          # PR의 base 브랜치와 비교 (feature->dev는 dev와, dev->main은 main과 비교)
+          BASE_BRANCH="origin/${{ github.base_ref }}"
+          echo "Comparing with base branch: $BASE_BRANCH"
+          .github/scripts/detect-changes.sh "$BASE_BRANCH"
 
   # Frontend CI
   ci-frontend:
@@ -66,13 +69,44 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      # dev -> main PR인 경우에만 NCP Registry에 로그인
+      - name: Login to NCP Container Registry
+        if: github.base_ref == 'main' && github.event_name == 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.NCP_REGISTRY_URL }}
+          username: ${{ secrets.NCP_REGISTRY_USERNAME }}
+          password: ${{ secrets.NCP_REGISTRY_PASSWORD }}
+
+      # dev -> main PR인 경우: 이미지 빌드 및 푸시
+      - name: Build and push Docker image (dev -> main)
+        if: github.base_ref == 'main' && github.event_name == 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.NCP_REGISTRY_URL }}/beastcamp-frontend:${{ github.sha }}
+            ${{ secrets.NCP_REGISTRY_URL }}/beastcamp-frontend:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://localhost/api
+            NEXT_PUBLIC_API_MODE=mock
+          cache-from: type=registry,ref=${{ secrets.NCP_REGISTRY_URL }}/beastcamp-frontend:buildcache
+          cache-to: type=registry,ref=${{ secrets.NCP_REGISTRY_URL }}/beastcamp-frontend:buildcache,mode=max
+
+      # feature -> dev PR인 경우: 이미지 빌드만 (푸시 안 함)
+      - name: Build Docker image (feature -> dev)
+        if: github.base_ref != 'main' || github.event_name != 'pull_request'
         uses: docker/build-push-action@v5
         with:
           context: .
           file: frontend/Dockerfile
           push: false
           tags: beastcamp-frontend:ci-${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://localhost/api
+            NEXT_PUBLIC_API_MODE=mock
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

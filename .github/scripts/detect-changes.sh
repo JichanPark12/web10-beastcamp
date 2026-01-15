@@ -44,10 +44,10 @@ check_package_dependencies() {
 }
 
 # 서비스별 변경 감지
-check_service_change "frontend" "frontend"
-check_service_change "api-server" "backend/api-server"
-check_service_change "ticket-server" "backend/ticket-server"
-check_service_change "queue-backend" "queue-backend"
+check_service_change "frontend" "frontend" || true
+check_service_change "api-server" "backend/api-server" || true
+check_service_change "ticket-server" "backend/ticket-server" || true
+check_service_change "queue-backend" "queue-backend" || true
 
 # 공통 패키지 변경 시 의존 서비스 추가
 check_package_dependencies "shared-types" "api-server" "ticket-server"
@@ -78,13 +78,13 @@ else
 
   echo "changed_services=$SERVICES_JSON" >> $GITHUB_OUTPUT
   echo "has_changes=true" >> $GITHUB_OUTPUT
-
-  # 개별 서비스 플래그 설정
-  for service in "frontend" "api-server" "ticket-server" "queue-backend"; do
-    if [[ " ${CHANGED_SERVICES[@]} " =~ " ${service} " ]]; then
-      echo "${service//-/_}_changed=true" >> $GITHUB_OUTPUT
-    else
-      echo "${service//-/_}_changed=false" >> $GITHUB_OUTPUT
-    fi
-  done
 fi
+
+# 개별 서비스 플래그 설정 (변경 여부와 관계없이 항상 설정)
+for service in "frontend" "api-server" "ticket-server" "queue-backend"; do
+  if [[ " ${CHANGED_SERVICES[@]} " =~ " ${service} " ]]; then
+    echo "${service//-/_}_changed=true" >> $GITHUB_OUTPUT
+  else
+    echo "${service//-/_}_changed=false" >> $GITHUB_OUTPUT
+  fi
+done

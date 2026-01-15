@@ -53,10 +53,10 @@ check_package_dependencies() {
 
 echo "=== 서비스별 변경 감지 ==="
 # 서비스별 변경 감지
-check_service_change "frontend" "frontend"
-check_service_change "api-server" "backend/api-server"
-check_service_change "ticket-server" "backend/ticket-server"
-check_service_change "queue-backend" "queue-backend"
+check_service_change "frontend" "frontend" || true
+check_service_change "api-server" "backend/api-server" || true
+check_service_change "ticket-server" "backend/ticket-server" || true
+check_service_change "queue-backend" "queue-backend" || true
 
 echo ""
 echo "=== 공통 패키지 의존성 체크 ==="
