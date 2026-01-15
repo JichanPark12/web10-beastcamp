@@ -9,7 +9,6 @@
 1. **서비스 단위 배포** - 레포지토리 전체가 아닌 개별 서비스 단위로 배포
 2. **변경된 서비스만 CI/CD 실행** - 불필요한 리소스 낭비 방지
 3. **공통 패키지 변경 시 의존 서비스 자동 재배포** - 의존성 그래프 기반 배포
-   B
 
 ## 프로젝트 구조
 
@@ -75,22 +74,27 @@ web10-beastcamp/
 
    - 이전 커밋과 비교하여 변경된 서비스 감지
 
-2. **배포 서버 접속 및 배포**
+2. **배포 전략 (서비스별 차이)**
+
+   **Frontend (NCP Container Registry 사용):**
+
+   - GitHub Actions Runner에서 Docker 이미지 빌드
+   - NCP Container Registry에 이미지 푸시 (태그: `latest`, `{commit-sha}`)
+   - SSH로 프론트엔드 서버에 접속
+   - 서버에서 Registry로부터 이미지 pull 및 실행
+   - **장점**: 빌드 시간 단축 (소형 서버 부담 감소), 빌드 캐싱 활용
+
+   **Backend Services (서버 빌드 방식):**
 
    - GitHub Actions Runner가 SSH로 배포 서버에 접속
    - 배포 서버에서 직접 `git pull`로 최신 코드 가져오기
    - 변경된 서비스만 `docker-compose build` 및 `docker-compose up -d` 실행
    - 이전 이미지 정리 (`docker image prune`)
+   - **장점**: 이미지 레지스트리 불필요, 설정이 간단
 
 3. **배포 결과 요약**
    - 모든 배포 작업 결과 취합
    - 실패 시 알림
-
-**장점:**
-
-- 이미지 레지스트리 불필요 (GHCR, ECR 등)
-- 설정이 간단하고 직관적
-- 배포 서버에서 직접 빌드하여 환경 일관성 보장
 
 ## 변경 감지 로직
 
@@ -149,14 +153,31 @@ pnpm --filter @beastcamp/api-server... build
    - 최소한의 런타임 파일만 포함
    - 비특권 사용자로 실행 (보안)
 
-### 배포 서버에서 직접 빌드
+### 하이브리드 배포 전략
 
-이 프로젝트는 **이미지 레지스트리 없이** 배포 서버에서 직접 Docker 이미지를 빌드합니다:
+이 프로젝트는 서비스 특성에 따라 두 가지 배포 방식을 혼용합니다:
 
-- GitHub Actions → SSH → 배포 서버
-- 배포 서버에서 `git pull` 후 `docker-compose build`
-- 별도의 이미지 레지스트리(GHCR, ECR, Docker Hub) 불필요
-- 설정이 간단하고 비용 절감
+#### Frontend: NCP Container Registry 사용
+
+- **이유**: 프론트엔드 서버 스펙이 작아 빌드 시간이 과도하게 소요 (1시간+)
+- **방식**:
+  - GitHub Actions Runner에서 이미지 빌드
+  - NCP Container Registry에 푸시
+  - 프론트엔드 서버는 이미지만 pull하여 실행
+- **장점**:
+  - 빌드 시간 대폭 단축 (GitHub Actions의 고성능 환경 활용)
+  - Registry의 빌드 캐시 활용 가능
+  - 서버 리소스 부담 최소화
+
+#### Backend Services: 서버 직접 빌드
+
+- **방식**:
+  - GitHub Actions → SSH → 배포 서버
+  - 배포 서버에서 `git pull` 후 `docker-compose build`
+- **장점**:
+  - 이미지 레지스트리 불필요 (비용 절감)
+  - 설정이 간단하고 직관적
+  - 환경 일관성 보장
 
 ## 설정 가이드
 
@@ -209,8 +230,8 @@ GitHub Repository → Settings → Secrets and variables → Actions에서 다�
 
 #### 공통 SSH 키
 
-| Secret 이름       | 설명                            | 예시                                     |
-| ----------------- | ------------------------------- | ---------------------------------------- |
+| Secret 이름       | 설명                          | 예시                                     |
+| ----------------- | ----------------------------- | ---------------------------------------- |
 | `SSH_PRIVATE_KEY` | 모든 서버에서 사용하는 SSH 키 | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
 
 #### 서버별 호스트 및 사용자
@@ -224,7 +245,15 @@ GitHub Repository → Settings → Secrets and variables → Actions에서 다�
 | `QUEUE_SERVER_HOST`    | 큐 서버 호스트         | `123.456.78.92` |
 | `QUEUE_SERVER_USER`    | 큐 서버 사용자         | `deploy`        |
 
-**총 7개의 Secrets 필요**
+#### NCP Container Registry (프론트엔드 배포용)
+
+| Secret 이름                 | 설명                         | 예시                                      |
+| --------------------------- | ---------------------------- | ----------------------------------------- |
+| `NCP_REGISTRY_URL`          | NCP Container Registry URL   | `your-registry.kr.ncr.ntruss.com`         |
+| `NCP_REGISTRY_USERNAME`     | NCP Container Registry 사용자 | `your-username`                           |
+| `NCP_REGISTRY_PASSWORD`     | NCP Container Registry 비밀번호 | `your-password` 또는 Access Token         |
+
+**총 10개의 Secrets 필요**
 
 #### SSH 키 생성 방법
 
@@ -250,6 +279,30 @@ ssh deploy@서버주소 'chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys'
 # 4. 개인키를 GitHub Secret (SSH_PRIVATE_KEY)에 등록
 cat ~/.ssh/github_actions
 # 출력된 전체 내용을 복사하여 GitHub Secrets에 등록
+```
+
+#### NCP Container Registry 설정 방법
+
+프론트엔드 배포를 위해 NCP Container Registry를 설정하세요:
+
+```bash
+# 1. NCP Console에서 Container Registry 생성
+# - Container Registry 메뉴 접속
+# - 레지스트리 생성 (예: beastcamp-registry)
+# - 생성 완료 후 Registry URL 확인 (예: beastcamp-registry.kr.ncr.ntruss.com)
+
+# 2. Access Token 생성 (또는 Sub Account 사용)
+# - Container Registry 상세 페이지에서 Access Token 생성
+# - Username과 Token 복사
+
+# 3. GitHub Secrets에 등록
+# NCP_REGISTRY_URL: beastcamp-registry.kr.ncr.ntruss.com
+# NCP_REGISTRY_USERNAME: your-username
+# NCP_REGISTRY_PASSWORD: your-token
+
+# 4. 프론트엔드 서버에서 Registry 로그인 테스트
+ssh deploy@FRONTEND_SERVER_HOST
+docker login beastcamp-registry.kr.ncr.ntruss.com -u your-username -p your-token
 ```
 
 ### 3. Docker Compose 파일 확인
@@ -468,8 +521,10 @@ git push origin feature/auth
 - **리소스 효율**: 불필요한 빌드/배포 방지
 - **명확한 영향 범위**: 어떤 서비스가 배포되는지 명확
 - **안전한 배포**: 의존성 변경 시 자동으로 연관 서비스 재배포
-- **간단한 설정**: 이미지 레지스트리 없이 SSH로 직접 배포
-- **비용 절감**: 외부 레지스트리 비용 불필요
+- **하이브리드 전략**: 서비스 특성에 맞는 최적의 배포 방식 선택
+  - Frontend: Registry로 빌드 시간 최소화
+  - Backend: 서버 직접 빌드로 간단한 설정
+- **빌드 캐싱**: Frontend는 Registry의 빌드 캐시 활용 가능
 
 ### 단점 / 고려사항 ⚠️
 
@@ -477,6 +532,7 @@ git push origin feature/auth
 - **변경 감지 로직 유지보수**: 서비스 추가/변경 시 스크립트 업데이트 필요
 - **팀 학습 곡선**: pnpm workspace와 모노레포 개념 이해 필요
 - **의존성 관리**: 공통 패키지의 breaking change 관리 중요
+- **Registry 비용**: Frontend 배포를 위한 NCP Container Registry 비용 발생 (트래픽/스토리지에 따라 변동)
 
 ## 참고 자료
 

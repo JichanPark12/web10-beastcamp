@@ -36,11 +36,43 @@ jobs:
     if: needs.detect-changes.outputs.frontend_changed == 'true'
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to NCP Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.NCP_REGISTRY_URL }}
+          username: ${{ secrets.NCP_REGISTRY_USERNAME }}
+          password: ${{ secrets.NCP_REGISTRY_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.NCP_REGISTRY_URL }}/beastcamp-frontend:${{ github.sha }}
+            ${{ secrets.NCP_REGISTRY_URL }}/beastcamp-frontend:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://localhost/api
+            NEXT_PUBLIC_API_MODE=mock
+          cache-from: type=registry,ref=${{ secrets.NCP_REGISTRY_URL }}/beastcamp-frontend:buildcache
+          cache-to: type=registry,ref=${{ secrets.NCP_REGISTRY_URL }}/beastcamp-frontend:buildcache,mode=max
+
       - name: Deploy to frontend server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SERVER_HOST: ${{ secrets.FRONTEND_SERVER_HOST }}
           SERVER_USER: ${{ secrets.FRONTEND_SERVER_USER }}
+          NCP_REGISTRY_URL: ${{ secrets.NCP_REGISTRY_URL }}
+          NCP_REGISTRY_USERNAME: ${{ secrets.NCP_REGISTRY_USERNAME }}
+          NCP_REGISTRY_PASSWORD: ${{ secrets.NCP_REGISTRY_PASSWORD }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           # SSH 키 설정
           mkdir -p ~/.ssh
@@ -48,23 +80,32 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H $SERVER_HOST >> ~/.ssh/known_hosts
 
-          # 프론트엔드 서버에서 빌드 및 배포
-          ssh -i ~/.ssh/deploy_key $SERVER_USER@$SERVER_HOST << 'EOF'
-            cd /app/web10-beastcamp
+          # 프론트엔드 서버에 이미지 pull 및 배포
+          ssh -i ~/.ssh/deploy_key $SERVER_USER@$SERVER_HOST << EOF
+            # NCP Container Registry 로그인
+            echo "$NCP_REGISTRY_PASSWORD" | docker login $NCP_REGISTRY_URL -u $NCP_REGISTRY_USERNAME --password-stdin
 
-            # 최신 코드 가져오기
-            git fetch origin main
-            git reset --hard origin/main
+            # 최신 이미지 pull
+            docker pull $NCP_REGISTRY_URL/beastcamp-frontend:$IMAGE_TAG
 
-            # frontend 서비스 재배포
-            cd frontend
-            docker-compose build
-            docker-compose up -d
+            # 기존 컨테이너 중지 및 삭제
+            docker stop frontend 2>/dev/null || true
+            docker rm frontend 2>/dev/null || true
 
-            # 이전 이미지 정리
+            # 새 컨테이너 실행
+            docker run -d \
+              --name frontend \
+              -p 80:3000 \
+              --restart unless-stopped \
+              -e NODE_ENV=production \
+              -e NEXT_PUBLIC_API_URL=http://localhost/api \
+              -e NEXT_PUBLIC_API_MODE=mock \
+              $NCP_REGISTRY_URL/beastcamp-frontend:$IMAGE_TAG
+
+            # 이전 이미지 정리 (현재 사용 중인 이미지 제외)
             docker image prune -f
 
-            echo "✅ Frontend deployed successfully"
+            echo "✅ Frontend deployed successfully from registry"
           EOF
 
   # Backend Servers Deploy (api-server + ticket-server)
