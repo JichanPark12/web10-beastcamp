@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  api-server:
+    build:
+      context: ..
+      dockerfile: backend/api-server/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - backend-network
+
+  ticket-server:
+    build:
+      context: ..
+      dockerfile: backend/ticket-server/Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - backend-network
+
+networks:
+  backend-network:
+    driver: bridge
