@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   frontend:
@@ -6,9 +6,10 @@ services:
       context: ..
       dockerfile: frontend/Dockerfile
     ports:
-      - '80:3000'
+      - "80:3000"
     environment:
       - NODE_ENV=production
+      - INTERNAL_API_URL=http://localhost:3000/api
     restart: unless-stopped
     networks:
       - app-network
