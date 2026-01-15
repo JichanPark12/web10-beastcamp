@@ -7,6 +7,8 @@
 import Header from "./_source/components/Header";
 import Ticketing from "./_source/components/ticketing/Ticketing";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
