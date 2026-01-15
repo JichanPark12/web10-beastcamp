@@ -4,7 +4,8 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SearchPerformancesRequestDto {
   @ApiPropertyOptional({
-    description: '검색 기준 시간 (ISO 8601, UTC)',
+    description:
+      '검색 기준 시간 (ISO 8601, UTC). 입력하지 않으면 현재 시간이 기본값으로 사용됩니다.',
     example: '2026-01-01T00:00:00Z',
     pattern: '^.*Z$',
   })
@@ -14,7 +15,7 @@ export class SearchPerformancesRequestDto {
   ticketing_after?: string;
 
   @ApiPropertyOptional({
-    description: '조회할 공연 개수',
+    description: '조회할 공연 개수. 입력하지 않으면 기본값 10이 사용됩니다.',
     example: 10,
   })
   @IsNumber()

@@ -44,6 +44,10 @@ export class PerformancesService {
   async search(
     requestDto: SearchPerformancesRequestDto,
   ): Promise<SearchPerformancesResponseDto> {
+    if (!requestDto.ticketing_after) {
+      requestDto.ticketing_after = new Date().toISOString();
+    }
+    requestDto.limit = requestDto.limit ?? 10;
     const performances = await this.performancesRepository.search(requestDto);
 
     return SearchPerformancesResponseDto.fromEntities(performances);

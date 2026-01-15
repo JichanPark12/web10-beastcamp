@@ -116,6 +116,31 @@ describe('공연 (Performances) API', () => {
       );
     });
 
+    describe('ticketing_after 파라미터를 생략하면 (기본값 테스트)', () => {
+      let response: request.Response;
+
+      beforeAll(async () => {
+        response = await request(app.getHttpServer() as App).get(
+          '/api/performances',
+        );
+      });
+
+      it('HTTP 상태 코드 200을 반환해야 한다', () => {
+        expect(response.status).toBe(200);
+      });
+
+      it('과거 공연은 제외되고 미래 공연만 조회되어야 한다', () => {
+        const body = response.body as {
+          performances: { performance_id: number }[];
+        };
+        const ids = body.performances.map((p) => p.performance_id);
+
+        expect(ids).not.toContain(pastPerformanceId);
+        expect(ids).toContain(futurePerformanceId);
+        expect(ids).toContain(farFuturePerformanceId);
+      });
+    });
+
     describe('ticketing_after 파라미터로 오늘 날짜를 전달하면', () => {
       let response: request.Response;
 
@@ -163,6 +188,52 @@ describe('공연 (Performances) API', () => {
           performances: { performance_id: number }[];
         };
         expect(body.performances[0].performance_id).toBe(futurePerformanceId);
+      });
+    });
+
+    describe('limit 기본값 검증을 위해 미래 공연을 15개 추가하면', () => {
+      beforeAll(async () => {
+        for (let i = 0; i < 15; i++) {
+          await request(app.getHttpServer() as App)
+            .post('/api/performances')
+            .send({
+              performance_name: `Limit Test Performance ${i}`,
+              ticketing_date: tomorrow.toISOString(),
+            });
+        }
+      });
+
+      describe('limit 파라미터를 생략했을 때', () => {
+        let response: request.Response;
+
+        beforeAll(async () => {
+          response = await request(app.getHttpServer() as App)
+            .get('/api/performances')
+            .query({ ticketing_after: now.toISOString() });
+        });
+
+        it('기본값인 10개의 공연이 반환되어야 한다', () => {
+          const body = response.body as { performances: any[] };
+          expect(body.performances).toHaveLength(10);
+        });
+      });
+
+      describe('limit 파라미터로 15를 전달하면', () => {
+        let response: request.Response;
+
+        beforeAll(async () => {
+          response = await request(app.getHttpServer() as App)
+            .get('/api/performances')
+            .query({
+              ticketing_after: now.toISOString(),
+              limit: 15,
+            });
+        });
+
+        it('15개의 공연이 반환되어야 한다', () => {
+          const body = response.body as { performances: any[] };
+          expect(body.performances).toHaveLength(15);
+        });
       });
     });
 
