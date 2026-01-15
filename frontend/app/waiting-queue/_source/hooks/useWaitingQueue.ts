@@ -17,13 +17,20 @@ export function useWaitingQueue() {
 
   useEffect(() => {
     const poll = async () => {
+      let shouldPollAgain = true;
       try {
-        const response = await get<WaitingOrderResponse>("/waiting");
+        const response = await get<WaitingOrderResponse>(`/waiting`);
         setData(response);
+
+        if (response.order <= 0) {
+          shouldPollAgain = false;
+        }
       } catch (error) {
         setIsError(true);
         console.error(error);
-      } finally {
+      }
+
+      if (shouldPollAgain) {
         timeoutIdRef.current = setTimeout(poll, 2000);
       }
     };

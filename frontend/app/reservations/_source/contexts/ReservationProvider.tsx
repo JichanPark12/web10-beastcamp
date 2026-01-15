@@ -27,12 +27,12 @@ export function ReservationProvider({ children }: ReservationProviderProps) {
     remove: handleRemoveSeat,
     reset: handleResetSeats,
   } = useSelection<string, Seat>(new Map(), { max: RESERVATION_LIMIT });
-  
+
   const router = useRouter();
 
   const handleClickReserve = () => {
     try {
-      throw new Error("예매 실패");
+      // throw new Error("예매 실패");
       router.push("/result");
     } catch (e) {
       console.error(e);

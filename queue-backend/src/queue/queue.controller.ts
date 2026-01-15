@@ -5,11 +5,13 @@ import {
   Req,
   Res,
   Post,
+  Get,
 } from '@nestjs/common';
 import {
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiOperation,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { QueueService } from './queue.service';
@@ -55,6 +57,32 @@ export class QueueController {
     return {
       userId: result.userId,
       position: result.position,
+    };
+  }
+
+  @Get('entries/me')
+  @ApiOperation({
+    summary: '내 대기 순번 확인',
+    description:
+      '쿠키의 토큰을 읽고 현재 대기열에서의 실시간 순번을 반환합니다. 토큰이 없으면 null을 반환합니다.',
+  })
+  @ApiCookieAuth('waiting-token')
+  @ApiResponse({
+    status: 200,
+    description: '순번 조회 성공',
+    schema: {
+      type: 'object',
+      properties: {
+        position: { type: 'number', nullable: true, example: 5 },
+      },
+    },
+  })
+  async getMyPosition(@Req() req: Request) {
+    const userId = req.cookies?.['waiting-token'] as string;
+    const position = await this.queueService.getQueuePosition(userId);
+
+    return {
+      position,
     };
   }
 }
