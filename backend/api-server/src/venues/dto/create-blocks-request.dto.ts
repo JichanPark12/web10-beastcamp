@@ -26,7 +26,16 @@ export class CreateBlockDto {
 }
 
 export class CreateBlocksRequestDto {
-  @ApiProperty({ type: [CreateBlockDto], description: '구역 생성 목록' })
+  @ApiProperty({
+    type: [CreateBlockDto],
+    description: '구역 생성 목록',
+    example: [
+      { blockDataName: 'A-1', rowSize: 10, colSize: 15 },
+      { blockDataName: 'B-1', rowSize: 10, colSize: 15 },
+      { blockDataName: 'C-1', rowSize: 10, colSize: 15 },
+      { blockDataName: 'D-1', rowSize: 10, colSize: 15 },
+    ],
+  })
   @ValidateNested({ each: true })
   @Type(() => CreateBlockDto)
   blocks: CreateBlockDto[];

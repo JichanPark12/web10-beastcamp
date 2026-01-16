@@ -14,26 +14,11 @@ export class PerformanceDto {
   })
   ticketing_date: string;
 
-  @ApiProperty({
-    description: '공연 일시 (ISO 8601)',
-    example: '2026-02-01T19:00:00Z',
-  })
-  performance_date: string;
-
-  @ApiProperty({ description: '공연장 ID', example: 1 })
-  venue_id: number;
-
-  @ApiProperty({ description: '공연장 이름', example: '잠실 주경기장' })
-  venue_name: string;
-
   static fromEntity(performance: Performance): PerformanceDto {
     const dto = new PerformanceDto();
     dto.performance_id = performance.id;
     dto.performance_name = performance.performanceName;
     dto.ticketing_date = performance.ticketingDate.toISOString();
-    dto.performance_date = performance.performanceDate.toISOString();
-    dto.venue_id = performance.venueId;
-    dto.venue_name = performance.venue.venueName;
     return dto;
   }
 }

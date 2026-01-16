@@ -39,6 +39,7 @@ import { PerformancesModule } from './performances/performances.module';
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: true,
           logging: true,
+          timezone: 'Z',
         };
       },
     }),
