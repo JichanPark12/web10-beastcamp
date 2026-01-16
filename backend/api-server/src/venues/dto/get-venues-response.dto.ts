@@ -5,12 +5,12 @@ export class VenueDto {
   @ApiProperty({ description: '공연장 ID', example: 1 })
   id: number;
 
-  @ApiProperty({ description: '공연장 이름', example: '장충 체육관' })
+  @ApiProperty({ description: '공연장 이름', example: '인천 남동 체육관' })
   venue_name: string;
 
   @ApiProperty({
     description: '좌석 배치도 URL',
-    example: '/static/svg/jangchung.svg',
+    example: '/static/svg/incheon_namdong_gymnasium.svg',
     nullable: true,
   })
   block_map_url: string | null;

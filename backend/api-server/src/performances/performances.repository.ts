@@ -12,13 +12,14 @@ export class PerformancesRepository extends Repository<Performance> {
   async search(
     requestDto: SearchPerformancesRequestDto,
   ): Promise<Performance[]> {
-    const query = this.createQueryBuilder('performance')
-      .leftJoinAndSelect('performance.venue', 'venue')
-      .orderBy('performance.ticketingDate', 'ASC');
+    const query = this.createQueryBuilder('performance').orderBy(
+      'performance.ticketingDate',
+      'ASC',
+    );
 
     if (requestDto.ticketing_after) {
       query.where('performance.ticketingDate >= :ticketing_after', {
-        ticketing_after: requestDto.ticketing_after,
+        ticketing_after: new Date(requestDto.ticketing_after),
       });
     }
 
