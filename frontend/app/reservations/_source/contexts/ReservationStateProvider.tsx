@@ -9,7 +9,6 @@ import { Seat } from "../types/reservationType";
 interface ReservationStateContextValue {
   selectedSeats: ReadonlyMap<string, Seat>;
   area: string | null;
-  isShowArea: boolean;
 }
 
 interface ReservationDispatchContextValue {
@@ -41,7 +40,6 @@ export function ReservationStateProvider({
   } = useSelection<string, Seat>(new Map(), { max: RESERVATION_LIMIT });
 
   const [area, setArea] = useState<string | null>(null);
-  const isShowArea = !!area;
 
   const handleSelectArea = (areaId: string) => {
     setArea(areaId);
@@ -66,7 +64,6 @@ export function ReservationStateProvider({
   const stateValue: ReservationStateContextValue = {
     selectedSeats,
     area,
-    isShowArea,
   };
 
   const dispatchValue: ReservationDispatchContextValue = {
@@ -92,7 +89,10 @@ export function useReservationState() {
   if (!context) {
     throw new Error("ReservationStateProvider가 필요합니다.");
   }
-  return context;
+  return {
+    ...context,
+    isShowArea: !!context.area,
+  };
 }
 
 export function useReservationDispatch() {
