@@ -30,6 +30,19 @@ export default function StageMap() {
     fetchSvg();
   }, [blockMapUrl]);
 
+  const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const blockElement = target.closest("[data-block-name]");
+    const blockName = blockElement?.getAttribute("data-block-name");
+
+    if (blockName) {
+      const block = venue?.blocks.find((b) => b.blockDataName === blockName);
+      if (block) {
+        handleSelectArea(String(block.id));
+      }
+    }
+  };
+
   const blockColorMap = (() => {
     if (!venue?.blocks || !blockGrades) return {};
 
@@ -72,21 +85,7 @@ export default function StageMap() {
                 dangerouslySetInnerHTML={{
                   __html: svgContent ? svgContent : "",
                 }}
-                onClick={(e) => {
-                  const target = e.target as HTMLElement;
-                  const blockElement = target.closest("[data-block-name]");
-                  const blockName =
-                    blockElement?.getAttribute("data-block-name");
-
-                  if (blockName) {
-                    const block = venue?.blocks.find(
-                      (b) => b.blockDataName === blockName,
-                    );
-                    if (block) {
-                      handleSelectArea(String(block.id));
-                    }
-                  }
-                }}
+                onClick={handleStageClick}
               />
             </>
           </div>
