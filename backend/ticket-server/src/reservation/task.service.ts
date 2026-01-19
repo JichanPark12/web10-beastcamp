@@ -9,6 +9,7 @@ import { RedisService } from './../redis/redis.service';
 export class TaskService implements OnModuleInit {
   private readonly logger = new Logger(TaskService.name);
   private readonly ticketingDuration: number;
+  private readonly ticketingOpenDelay: number;
   private readonly setupInterval: string;
 
   constructor(
@@ -21,9 +22,13 @@ export class TaskService implements OnModuleInit {
       this.configService.get('TICKETING_DURATION', '180000'),
       10,
     );
+    this.ticketingOpenDelay = parseInt(
+      this.configService.get('TICKETING_OPEN_DELAY', '60000'),
+      10,
+    );
     this.setupInterval = this.configService.get(
       'SETUP_INTERVAL',
-      '0 */5 * * * *',
+      '0 4/5 * * * *',
     );
   }
 
@@ -40,19 +45,28 @@ export class TaskService implements OnModuleInit {
 
   async handleSetup() {
     try {
-      // set-up 과정.
       await this.reservationService.setup();
 
-      // 티켓팅 open.
+      setTimeout(() => {
+        void this.openTicketing();
+      }, this.ticketingOpenDelay);
+    } catch (error) {
+      const err = error as Error;
+      this.logger.error(`Setup failed: ${err.message}`, err.stack);
+      await this.redisService.set('is_ticketing_open', 'false');
+    }
+  }
+
+  async openTicketing() {
+    try {
       await this.redisService.set('is_ticketing_open', 'true');
 
-      // tear-down 예약.
       setTimeout(() => {
         void this.tearDown();
       }, this.ticketingDuration);
     } catch (error) {
       const err = error as Error;
-      this.logger.error(`Setup failed: ${err.message}`, err.stack);
+      this.logger.error(`Failed to open ticketing: ${err.message}`, err.stack);
       await this.redisService.set('is_ticketing_open', 'false');
     }
   }
