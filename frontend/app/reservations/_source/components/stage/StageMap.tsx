@@ -9,10 +9,9 @@ import { gradeInfoColor } from "../../data/seat";
 
 export default function StageMap() {
   const { venue, blockGrades } = useReservationData();
-  const { isShowArea, selectedSeats } = useReservationState();
+  const { isShowArea } = useReservationState();
   const { handleSelectArea } = useReservationDispatch();
 
-  console.log(selectedSeats);
   const blockMapUrl = venue?.blockMapUrl;
 
   const [svgContent, setSvgContent] = useState<string | null>(null);
