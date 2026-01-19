@@ -44,9 +44,3 @@ export function ReservationProvider({
     </ReservationDataProvider>
   );
 }
-
-export function useReservationAction() {
-  const state = useReservationState();
-  const dispatch = useReservationDispatch();
-  return { ...state, ...dispatch };
-}
