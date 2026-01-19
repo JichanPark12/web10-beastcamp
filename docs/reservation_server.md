@@ -7,7 +7,7 @@
 - 티켓팅 시뮬레이션 서버이므로 예약 정보는 N 분동안만 저장된다.
 
 # 1. set up.
-> 티켓팅 시작 1분에 처리.
+> 티켓팅 시작 1분에 처리. `TEST` 환경에서는 실제 API 대신 Mocking하여 사용.
 
 1. 최신 공연 목록 조회.
     - `GET /api/performances?limit=1` => performance_id
