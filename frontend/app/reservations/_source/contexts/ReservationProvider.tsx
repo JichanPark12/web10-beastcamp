@@ -8,11 +8,12 @@ import {
   useReservationData,
 } from "./ReservationDataProvider";
 import {
-  ReservationActionProvider,
-  useReservationAction,
-} from "./ReservationActionProvider";
+  ReservationStateProvider,
+  useReservationState,
+  useReservationDispatch,
+} from "./ReservationStateProvider";
 
-export { useReservationData, useReservationAction };
+export { useReservationData, useReservationState, useReservationDispatch };
 
 interface ReservationProviderProps {
   children: ReactNode;
@@ -39,13 +40,13 @@ export function ReservationProvider({
       blockGrades={blockGrades}
       grades={grades}
     >
-      <ReservationActionProvider>{children}</ReservationActionProvider>
+      <ReservationStateProvider>{children}</ReservationStateProvider>
     </ReservationDataProvider>
   );
 }
 
-export function useReservation() {
-  const data = useReservationData();
-  const action = useReservationAction();
-  return { ...data, ...action };
+export function useReservationAction() {
+  const state = useReservationState();
+  const dispatch = useReservationDispatch();
+  return { ...state, ...dispatch };
 }

@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import {
   useReservationData,
-  useReservationAction,
+  useReservationState,
+  useReservationDispatch,
 } from "../../contexts/ReservationProvider";
 import AreaSeats from "./AreaSeats";
 import { gradeInfoColor } from "../../data/seat";
 
 export default function StageMap() {
   const { venue, blockGrades } = useReservationData();
-  const { handleSelectArea, isShowArea, selectedSeats } =
-    useReservationAction();
+  const { isShowArea, selectedSeats } = useReservationState();
+  const { handleSelectArea } = useReservationDispatch();
 
   console.log(selectedSeats);
   const blockMapUrl = venue?.blockMapUrl;

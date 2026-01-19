@@ -2,15 +2,16 @@
 
 import {
   useReservationData,
-  useReservationAction,
+  useReservationState,
+  useReservationDispatch,
 } from "../../contexts/ReservationProvider";
 import { gradeInfoColor } from "../../data/seat";
 import { Seat } from "../../types/reservationType";
 
 export default function AreaSeats() {
   const { venue, blockGrades, grades } = useReservationData();
-  const { area, handleDeselectArea, selectedSeats, handleToggleSeat } =
-    useReservationAction();
+  const { area, selectedSeats } = useReservationState();
+  const { handleDeselectArea, handleToggleSeat } = useReservationDispatch();
 
   const targetBlock = venue?.blocks.find((b) => String(b.id) === area);
   const blockGrade = blockGrades?.find((bg) => bg.blockId === targetBlock?.id);

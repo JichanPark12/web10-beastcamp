@@ -6,28 +6,33 @@ import useSelection from "@/hooks/useSelector";
 import { RESERVATION_LIMIT } from "../constants/reservationConstants";
 import { Seat } from "../types/reservationType";
 
-interface ReservationActionContextValue {
+interface ReservationStateContextValue {
   selectedSeats: ReadonlyMap<string, Seat>;
+  area: string | null;
+  isShowArea: boolean;
+}
+
+interface ReservationDispatchContextValue {
   handleToggleSeat: (seatId: string, seat: Seat) => void;
   handleRemoveSeat: (seatId: string) => void;
   handleResetSeats: () => void;
   handleClickReserve: () => void;
-  area: string | null;
-  isShowArea: boolean;
   handleSelectArea: (areaId: string) => void;
   handleDeselectArea: () => void;
 }
 
-export const ReservationActionContext =
-  createContext<ReservationActionContextValue | null>(null);
+export const ReservationStateContext =
+  createContext<ReservationStateContextValue | null>(null);
+export const ReservationDispatchContext =
+  createContext<ReservationDispatchContextValue | null>(null);
 
-interface ReservationActionProviderProps {
+interface ReservationStateProviderProps {
   children: ReactNode;
 }
 
-export function ReservationActionProvider({
+export function ReservationStateProvider({
   children,
-}: ReservationActionProviderProps) {
+}: ReservationStateProviderProps) {
   const {
     selected: selectedSeats,
     toggle: handleToggleSeat,
@@ -58,29 +63,42 @@ export function ReservationActionProvider({
     }
   };
 
-  const actionValue: ReservationActionContextValue = {
+  const stateValue: ReservationStateContextValue = {
     selectedSeats,
+    area,
+    isShowArea,
+  };
+
+  const dispatchValue: ReservationDispatchContextValue = {
     handleToggleSeat,
     handleRemoveSeat,
     handleResetSeats,
     handleClickReserve,
-    area,
-    isShowArea,
     handleSelectArea,
     handleDeselectArea,
   };
 
   return (
-    <ReservationActionContext.Provider value={actionValue}>
-      {children}
-    </ReservationActionContext.Provider>
+    <ReservationStateContext.Provider value={stateValue}>
+      <ReservationDispatchContext.Provider value={dispatchValue}>
+        {children}
+      </ReservationDispatchContext.Provider>
+    </ReservationStateContext.Provider>
   );
 }
 
-export function useReservationAction() {
-  const context = use(ReservationActionContext);
+export function useReservationState() {
+  const context = use(ReservationStateContext);
   if (!context) {
-    throw new Error("ReservationActionProvider가 필요합니다.");
+    throw new Error("ReservationStateProvider가 필요합니다.");
+  }
+  return context;
+}
+
+export function useReservationDispatch() {
+  const context = use(ReservationDispatchContext);
+  if (!context) {
+    throw new Error("ReservationDispatchProvider가 필요합니다.");
   }
   return context;
 }
