@@ -62,6 +62,39 @@ export class VenuesController {
     description:
       '성공적으로 공연장 정보를 조회함 (존재하지 않으면 빈 객체 반환)',
     type: GetVenueResponseDto,
+    schema: {
+      example: {
+        id: 1,
+        venueName: '인천 남동 체육관',
+        blockMapUrl: '/static/svg/incheon_namdong_gymnasium.svg',
+        blocks: [
+          {
+            id: 1,
+            blockDataName: 'A-1',
+            rowSize: 10,
+            colSize: 15,
+          },
+          {
+            id: 2,
+            blockDataName: 'B-1',
+            rowSize: 10,
+            colSize: 15,
+          },
+          {
+            id: 3,
+            blockDataName: 'C-1',
+            rowSize: 10,
+            colSize: 15,
+          },
+          {
+            id: 4,
+            blockDataName: 'D-1',
+            rowSize: 10,
+            colSize: 15,
+          },
+        ],
+      },
+    },
   })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const venue = await this.venuesService.findOneWithBlocks(id);

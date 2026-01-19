@@ -1,31 +1,15 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
-import { Venue } from '../../venues/entities/venue.entity';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Session } from './session.entity';
 
 @Entity('performances')
 export class Performance {
-  constructor(
-    performanceName?: string,
-    ticketingDate?: Date,
-    performanceDate?: Date,
-    venueId?: number,
-  ) {
+  constructor(performanceName?: string, ticketingDate?: Date) {
     if (performanceName) this.performanceName = performanceName;
     if (ticketingDate) this.ticketingDate = ticketingDate;
-    if (performanceDate) this.performanceDate = performanceDate;
-    if (venueId) this.venueId = venueId;
   }
 
   @PrimaryGeneratedColumn()
   id: number;
-
-  @Column({ name: 'venue_id' })
-  venueId: number;
 
   @Column({
     type: 'varchar',
@@ -37,19 +21,11 @@ export class Performance {
 
   @Column({
     type: 'datetime',
-    name: 'performance_date',
-    comment: '공연 일시 (ISO 8601)',
-  })
-  performanceDate: Date;
-
-  @Column({
-    type: 'datetime',
     name: 'ticketing_date',
     comment: '티켓팅 일시 (ISO 8601)',
   })
   ticketingDate: Date;
 
-  @ManyToOne(() => Venue)
-  @JoinColumn({ name: 'venue_id' })
-  venue: Venue;
+  @OneToMany(() => Session, (session) => session.performance)
+  sessions: Session[];
 }

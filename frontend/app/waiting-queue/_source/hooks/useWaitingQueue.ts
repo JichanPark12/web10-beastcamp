@@ -1,7 +1,6 @@
 "use client";
 
-import { API_PREFIX } from "@/constants/api";
-import axios from "axios";
+import { get } from "@/lib/api";
 import { useEffect, useRef, useState } from "react";
 
 interface WaitingOrderResponse {
@@ -18,15 +17,20 @@ export function useWaitingQueue() {
 
   useEffect(() => {
     const poll = async () => {
+      let shouldPollAgain = true;
       try {
-        const response = await axios.get<WaitingOrderResponse>(
-          `${API_PREFIX}/waiting`
-        );
-        setData(response.data);
+        const response = await get<WaitingOrderResponse>(`/waiting`);
+        setData(response);
+
+        if (response.order <= 0) {
+          shouldPollAgain = false;
+        }
       } catch (error) {
         setIsError(true);
         console.error(error);
-      } finally {
+      }
+
+      if (shouldPollAgain) {
         timeoutIdRef.current = setTimeout(poll, 2000);
       }
     };
