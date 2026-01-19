@@ -1,10 +1,11 @@
-import { API_PREFIX } from "@/constants/api";
+import { getServerUrl, type ServerType } from "@/constants/api";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
 interface ApiRequestOptions extends Omit<RequestInit, "method" | "body"> {
   params?: Record<string, string | number | boolean>;
   requireAuth?: boolean;
+  serverType?: ServerType; // 요청을 보낼 서버 타입
 }
 
 export class ApiError extends Error {
@@ -18,8 +19,6 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 }
-
-const BASE_URL = API_PREFIX || "";
 
 // 인증 절차가 어찌될진 아직 잘 모르지만 일단 localStorage와 sessionStorage를 사용한다 가정하고 진행
 // 추후 next auth사용해서 구현할 수도 있음 next auth 사용 시 코드 변경 필요
@@ -54,9 +53,10 @@ async function request<T = unknown>(
   data?: unknown,
   options: ApiRequestOptions = {}
 ): Promise<T> {
-  const { params, headers = {}, requireAuth = false, ...restOptions } = options;
+  const { params, headers = {}, requireAuth = false, serverType = "api", ...restOptions } = options;
 
-  const url = buildUrl(`${BASE_URL}${endpoint}`, params);
+  const baseUrl = getServerUrl(serverType);
+  const url = buildUrl(`${baseUrl}${endpoint}`, params);
 
   // 인증이 필요한 경우 토큰 확인 및 추가
   const authHeaders: Record<string, string> = {};
