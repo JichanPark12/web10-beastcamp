@@ -1,9 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-
-export interface ActiveUser {
-  userId: string;
-  type: string;
-}
+import { ActiveUser } from '@beastcamp/shared-types';
 
 /**
  * JWT Guard를 통과한 후 request.user에서 사용자 정보를 추출하는 데코레이터
