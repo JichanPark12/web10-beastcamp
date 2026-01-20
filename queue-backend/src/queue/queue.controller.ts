@@ -14,7 +14,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { QueueService } from './queue.service';
+import { QueueService, type QueueStatus } from './queue.service';
 import type { Request, Response } from 'express';
 
 @ApiTags('queue')
@@ -77,12 +77,9 @@ export class QueueController {
       },
     },
   })
-  async getMyPosition(@Req() req: Request) {
+  async getMyPosition(@Req() req: Request): Promise<QueueStatus> {
     const userId = req.cookies?.['waiting-token'] as string;
-    const position = await this.queueService.getQueuePosition(userId);
-
-    return {
-      position,
-    };
+    const queueStatus = await this.queueService.getQueuePosition(userId);
+    return queueStatus;
   }
 }
