@@ -5,7 +5,13 @@ import { api } from "@/lib/api";
 export const useEnterQueue = () => {
   return useMutation({
     mutationFn: async () => {
-      const response = await api.post<EntryResponse>(`/queue/entries`);
+      const response = await api.post<EntryResponse>(
+        `/queue/entries`,
+        {},
+        {
+          serverType: "queue",
+        },
+      );
       return response;
     },
   });
@@ -15,7 +21,10 @@ export const useCurrentQueue = (hasToken: boolean = false) => {
   return useQuery({
     queryKey: ["currentQueue"],
     queryFn: async () => {
-      const response = await api.get<CurrentQueueResponse>(`/queue/entries/me`);
+      const response = await api.get<CurrentQueueResponse>(
+        `/queue/entries/me`,
+        { serverType: "queue" },
+      );
       return response;
     },
     enabled: hasToken,

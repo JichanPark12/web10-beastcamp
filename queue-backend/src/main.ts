@@ -8,6 +8,11 @@ async function bootstrap() {
   app.use(cookieParser());
   app.setGlobalPrefix('api');
 
+  app.enableCors({
+    origin: ['http://localhost:3000', 'http://localhost:5173'],
+    credentials: true,
+  });
+
   const config = new DocumentBuilder()
     .setTitle('대기열 API 서버')
     .setDescription('티켓팅 시스템을 위한 대기열 관리 API 문서입니다.')
