@@ -3,27 +3,30 @@ import ReservationHeader from "./ReservationHeader";
 import ReservationTimeTracker from "./ReservationTimeTracker";
 import ReservationStage from "./stage/ReservationStage";
 import ReservationSidebar from "./sidebar/ReservationSidebar";
-import { getLatestPerformance, getSessions } from "@/services/performance";
-import { getBlockGrades, getGradeInfo, getVenue } from "@/services/venue";
+import { getBlockGrades, getGradeInfo } from "@/services/venue";
+import AlertAndRedirect from "./AlertAndRedirect";
 
-export default async function Reservation() {
-  const performance = await getLatestPerformance();
-  const sessions = await getSessions(performance.performance_id);
-  const venue = await getVenue(sessions[0].venueId);
+interface ReservationProps {
+  searchParams: Promise<{ sId?: string }>;
+}
+
+export default async function Reservation({ searchParams }: ReservationProps) {
+  const { sId } = await searchParams;
+
+  // sessionId가 없으면 정상적이지 않은 접근이므로 메인으로 리다이렉트 시킵니다.
+  if (!sId) {
+    return <AlertAndRedirect message="정상적이지 않은 접근입니다." to="/" />;
+  }
+
+  const sessionId = parseInt(sId, 10);
 
   const [blockGrades, grades] = await Promise.all([
-    getBlockGrades(sessions[0].id),
-    getGradeInfo(sessions[0].id),
+    getBlockGrades(sessionId),
+    getGradeInfo(sessionId),
   ]);
 
   return (
-    <ReservationProvider
-      venue={venue}
-      performance={performance}
-      sessions={sessions}
-      blockGrades={blockGrades}
-      grades={grades}
-    >
+    <ReservationProvider blockGrades={blockGrades} grades={grades}>
       <ReservationTimeTracker />
       <div className="h-screen flex flex-col overflow-hidden">
         <ReservationHeader />
