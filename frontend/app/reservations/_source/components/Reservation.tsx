@@ -1,10 +1,10 @@
 import { ReservationProvider } from "../contexts/ReservationProvider";
-import ReservationHeader from "./ReservationHeader";
 import ReservationTimeTracker from "./ReservationTimeTracker";
 import ReservationStage from "./stage/ReservationStage";
 import ReservationSidebar from "./sidebar/ReservationSidebar";
 import { getBlockGrades, getGradeInfo } from "@/services/venue";
 import AlertAndRedirect from "./AlertAndRedirect";
+import ReservationHeader from "./header/ReservationHeader";
 
 interface ReservationProps {
   searchParams: Promise<{ sId?: string }>;
