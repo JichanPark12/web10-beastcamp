@@ -11,7 +11,17 @@ export interface VerifyCaptchaResponse {
   message: string;
 }
 
-// 보안 문자 이미지 요청
+/**
+ * 보안 문자 이미지 요청
+ *
+ * Note: 이 함수는 api.ts의 유틸 함수를 사용하지 않습니다.
+ * 이유:
+ * 1. Response 객체에서 커스텀 헤더(X-Captcha-Id)를 추출해야 함
+ * 2. 응답을 Blob으로 처리하여 이미지 URL을 생성해야 함
+ * 3. api.ts는 JSON 응답 위주로 설계되어 이러한 특수 케이스에 적합하지 않음
+ *
+ * 대신 getServerUrl을 활용하여 서버 URL을 가져옵니다.
+ */
 export async function fetchCaptcha(): Promise<CaptchaResponse> {
   const ticketServerUrl = getServerUrl('ticket');
   const response = await fetch(`${ticketServerUrl}/captcha`, {
@@ -39,7 +49,10 @@ export async function fetchCaptcha(): Promise<CaptchaResponse> {
   };
 }
 
-// 보안 문자 검증
+/**
+ * 보안 문자 검증
+ * api.post 유틸 함수를 사용하여 티켓 서버에 검증 요청
+ */
 export async function verifyCaptcha(
   captchaId: string,
   userInput: string
