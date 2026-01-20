@@ -18,6 +18,7 @@ interface ReservationDispatchContextValue {
   handleClickReserve: () => void;
   handleSelectArea: (areaId: string) => void;
   handleDeselectArea: () => void;
+  completeCaptcha: () => void;
 }
 
 export const ReservationStateContext =
@@ -40,6 +41,11 @@ export function ReservationStateProvider({
   } = useSelection<string, Seat>(new Map(), { max: RESERVATION_LIMIT });
 
   const [area, setArea] = useState<string | null>(null);
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+
+  const completeCaptcha = () => {
+    setIsCaptchaVerified(true);
+  };
 
   const handleSelectArea = (areaId: string) => {
     setArea(areaId);
@@ -54,6 +60,9 @@ export function ReservationStateProvider({
   const handleClickReserve = () => {
     try {
       // throw new Error("예매 실패");
+      if (!isCaptchaVerified) {
+        alert("보안문자가 입력되지 않았습니다.");
+      }
       router.push("/result");
     } catch (e) {
       console.error(e);
@@ -73,6 +82,7 @@ export function ReservationStateProvider({
     handleClickReserve,
     handleSelectArea,
     handleDeselectArea,
+    completeCaptcha,
   };
 
   return (

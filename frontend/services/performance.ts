@@ -12,6 +12,10 @@ export async function getLatestPerformance() {
     }
   );
 
+  if (!response.performances || response.performances.length === 0) {
+    throw new Error('공연 정보를 찾을 수 없습니다.');
+  }
+
   return response.performances[0];
 }
 
