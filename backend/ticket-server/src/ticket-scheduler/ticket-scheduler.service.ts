@@ -1,15 +1,21 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { CronJob } from 'cron';
 import { TicketSetupService } from '../ticket-setup/ticket-setup.service';
 
 @Injectable()
-export class TicketSchedulerService implements OnModuleInit {
+export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TicketSchedulerService.name);
   private readonly duration: number;
   private readonly openDelay: number;
   private readonly interval: string;
+  private job: CronJob | null = null;
 
   constructor(
     private readonly setupService: TicketSetupService,
@@ -28,45 +34,45 @@ export class TicketSchedulerService implements OnModuleInit {
   }
 
   onModuleInit() {
-    const job = new CronJob(this.interval, () => {
-      void this.handleSetup();
+    this.job = new CronJob(this.interval, () => {
+      void this.handleCycle();
     });
 
     // cron 패키지 버전 불일치로 인한 타입 오류를 방지하기 위해 any 캐스팅 사용
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    this.schedulerRegistry.addCronJob('setupJob', job as any);
-    job.start();
+    this.schedulerRegistry.addCronJob('setupJob', this.job as any);
+    this.job.start();
     this.logger.log(`Scheduled setup job: ${this.interval}`);
   }
 
-  async handleSetup() {
+  onModuleDestroy() {
+    if (this.job) {
+      this.job.stop();
+      this.logger.log('Stopped setup job');
+    }
+  }
+
+  async handleCycle() {
     try {
+      this.logger.log('Starting ticketing cycle...');
+
       await this.setupService.setup();
-      setTimeout(() => void this.open(), this.openDelay);
-    } catch (e) {
-      const err = e as Error;
-      this.logger.error(`Setup failed: ${err.message}`);
-      await this.setupService.tearDown();
-    }
-  }
 
-  async open() {
-    try {
+      await this.delay(this.openDelay);
       await this.setupService.openTicketing();
-      setTimeout(() => void this.close(), this.duration);
+
+      await this.delay(this.duration);
+      await this.setupService.tearDown();
+
+      this.logger.log('Ticketing cycle completed successfully.');
     } catch (e) {
       const err = e as Error;
-      this.logger.error(`Open failed: ${err.message}`);
+      this.logger.error(`Ticketing cycle failed: ${err.message}`, err.stack);
       await this.setupService.tearDown();
     }
   }
 
-  async close() {
-    try {
-      await this.setupService.tearDown();
-    } catch (e) {
-      const err = e as Error;
-      this.logger.error(`Close failed: ${err.message}`);
-    }
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

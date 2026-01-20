@@ -9,9 +9,10 @@ describe('TicketSchedulerService', () => {
   let service: TicketSchedulerService;
   let setupService: jest.Mocked<TicketSetupService>;
   let schedulerRegistry: jest.Mocked<SchedulerRegistry>;
+  let module: TestingModule;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       providers: [
         TicketSchedulerService,
         {
@@ -46,6 +47,10 @@ describe('TicketSchedulerService', () => {
     schedulerRegistry = module.get(SchedulerRegistry);
   });
 
+  afterEach(async () => {
+    await module.close();
+  });
+
   describe('onModuleInit', () => {
     it('CronJob을 레지스트리에 등록해야 한다', () => {
       service.onModuleInit();
@@ -56,53 +61,45 @@ describe('TicketSchedulerService', () => {
     });
   });
 
-  describe('handleSetup', () => {
-    it('성공 시 setup 호출 후 openTicketing을 예약해야 한다', async () => {
+  describe('handleCycle', () => {
+    it('전체 사이클(setup -> open -> close)이 순차적으로 실행되어야 한다', async () => {
       jest.useFakeTimers();
-      const openSpy = jest.spyOn(service, 'open').mockImplementation();
 
-      await service.handleSetup();
+      const cyclePromise = service.handleCycle();
 
       expect(jest.mocked(setupService.setup)).toHaveBeenCalled();
 
-      // Fast-forward time
-      jest.runAllTimers();
-      expect(openSpy).toHaveBeenCalled();
+      await Promise.resolve();
+
+      await jest.advanceTimersByTimeAsync(60000);
+      expect(jest.mocked(setupService.openTicketing)).toHaveBeenCalled();
+
+      await jest.advanceTimersByTimeAsync(180000);
+      expect(jest.mocked(setupService.tearDown)).toHaveBeenCalled();
+
+      await cyclePromise;
 
       jest.useRealTimers();
     });
 
-    it('실패 시 tearDown을 호출해야 한다', async () => {
+    it('중간에 에러 발생 시 tearDown을 호출해야 한다', async () => {
+      jest.useFakeTimers();
+
       jest
         .mocked(setupService.setup)
         .mockRejectedValue(new Error('Setup Error'));
 
-      await service.handleSetup();
+      const cyclePromise = service.handleCycle();
+
+      await Promise.resolve();
+      await Promise.resolve();
 
       expect(jest.mocked(setupService.tearDown)).toHaveBeenCalled();
-    });
-  });
+      expect(jest.mocked(setupService.openTicketing)).not.toHaveBeenCalled();
 
-  describe('open', () => {
-    it('성공 시 openTicketing 호출 후 close를 예약해야 한다', async () => {
-      jest.useFakeTimers();
-      const closeSpy = jest.spyOn(service, 'close').mockImplementation();
-
-      await service.open();
-
-      expect(jest.mocked(setupService.openTicketing)).toHaveBeenCalled();
-
-      jest.runAllTimers();
-      expect(closeSpy).toHaveBeenCalled();
+      await cyclePromise;
 
       jest.useRealTimers();
-    });
-  });
-
-  describe('close', () => {
-    it('tearDown을 호출해야 한다', async () => {
-      await service.close();
-      expect(jest.mocked(setupService.tearDown)).toHaveBeenCalled();
     });
   });
 });
