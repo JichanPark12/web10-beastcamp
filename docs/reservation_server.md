@@ -30,10 +30,16 @@
 # 2. Reservation
 > 매 N 개의 티켓팅 API 요청마다 반복하는 작업.
 
+## 좌석 조회 API.
+- `GET /api/reservations?session_id={session_id}&block_id={block_id}`
+    - block 별 좌석 현황 조회.
+    - Redis에서 해당 블록의 모든 좌석 정보를 가져옴.
+## 좌석 예매 API.
 - `POST /api/reservations`
     - header : active_token
     - body : session_id, block_id, row, col
 - validate active token.
+    - **`AuthGuard`에서 처리.**
     - JWT verify.
     - Redis Check. (해당 token이 정말 active queue에 있는지.)
     - (이 작업은 Jerry 에게 설명을 들어야함.)
