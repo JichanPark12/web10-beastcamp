@@ -25,6 +25,23 @@ export default function TicketingControls({
     router.push("/nol-ticket");
   };
 
+  const handleDemoStart = () => {
+    if (!performance?.platform) {
+      router.push("/nol-ticket");
+      return;
+    }
+
+    const platformRoutes = {
+      interpark: "/interpark",
+      yes24: "/yes24",
+      "melon-ticket": "/melon-ticket",
+    };
+
+    const route =
+      platformRoutes[performance.platform as keyof typeof platformRoutes];
+    router.push(route || "/nol-ticket");
+  };
+
   return (
     <div className="bg-white/10 p-3 backdrop-blur-lg rounded-2xl border border-white/20">
       <CountdownTimer timeLeft={timeLeft} />
@@ -48,7 +65,7 @@ export default function TicketingControls({
       )}
 
       <button
-        onClick={handleBooking}
+        onClick={handleDemoStart}
         className="w-full mt-3 py-3 rounded-xl bg-white/20 hover:bg-white/30 transition-all text-sm border border-white/30"
       >
         데모 시작하기

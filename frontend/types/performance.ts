@@ -1,7 +1,10 @@
+export type TicketPlatform = 'interpark' | 'yes24' | 'melon-ticket';
+
 export interface Performance {
   performance_id: number;
   performance_name: string;
   ticketing_date: string;
+  platform: TicketPlatform;
 }
 
 export interface Session {

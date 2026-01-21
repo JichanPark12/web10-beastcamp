@@ -17,11 +17,19 @@ export class PerformanceDto {
   })
   ticketing_date: string;
 
+  @ApiProperty({
+    description: '티켓팅 플랫폼',
+    example: 'interpark',
+    enum: ['interpark', 'yes24', 'melon-ticket'],
+  })
+  platform: 'interpark' | 'yes24' | 'melon-ticket';
+
   static fromEntity(performance: Performance): PerformanceDto {
     const dto = new PerformanceDto();
     dto.performance_id = performance.id;
     dto.performance_name = performance.performanceName;
     dto.ticketing_date = performance.ticketingDate.toISOString();
+    dto.platform = performance.platform;
     return dto;
   }
 }
