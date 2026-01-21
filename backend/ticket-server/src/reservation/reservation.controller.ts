@@ -17,7 +17,7 @@ export class ReservationController {
   @ApiOperation({
     summary: '좌석 현황 조회',
     description:
-      '특정 회차와 구역의 예약된 좌석 목록을 조회합니다. 대기열 토큰이 필요합니다.',
+      '특정 회차와 구역의 예약된 좌석 목록을 조회합니다. Active Token이 필요합니다.',
   })
   @ApiResponse({
     status: 200,
@@ -33,7 +33,8 @@ export class ReservationController {
   @Post()
   @ApiOperation({
     summary: '공연 예약',
-    description: '좌석을 선택하여 예약을 시도합니다. 대기열 토큰이 필요합니다.',
+    description:
+      '좌석을 선택하여 예약을 시도합니다. Active Token이 필요합니다.',
   })
   @ApiResponse({
     status: 201,
