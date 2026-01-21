@@ -104,18 +104,18 @@ export default function Yes24Calendar({
   };
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4">
+    <div>
       {/* 월 네비게이션 */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-center gap-8 mb-5">
         <button
           onClick={goToPreviousMonth}
           className="p-1 hover:bg-gray-100 rounded transition-colors"
           aria-label="이전 달"
         >
-          <ChevronLeft className="w-5 h-5 text-gray-600" />
+          <ChevronLeft className="w-6 h-6 text-gray-400" />
         </button>
 
-        <div className="text-lg font-bold text-gray-900">
+        <div className="text-3xl font-normal text-gray-900">
           {currentMonth.getFullYear()}. {String(currentMonth.getMonth() + 1).padStart(2, '0')}
         </div>
 
@@ -124,28 +124,21 @@ export default function Yes24Calendar({
           className="p-1 hover:bg-gray-100 rounded transition-colors"
           aria-label="다음 달"
         >
-          <ChevronRight className="w-5 h-5 text-gray-600" />
+          <ChevronRight className="w-6 h-6 text-gray-400" />
         </button>
       </div>
 
-      {/* 회차 정보 */}
-      <div className="text-center mb-3">
-        <span className="inline-block px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded">
-          1회 오후 6시 00분
-        </span>
-      </div>
-
       {/* 요일 헤더 */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-1.5 mb-3 border-b pb-3">
         {weekDays.map((day, index) => (
           <div
             key={day}
-            className={`text-center text-xs font-medium py-2 ${
+            className={`text-center text-sm font-medium ${
               index === 0
-                ? 'text-red-600'
+                ? 'text-red-500'
                 : index === 6
-                  ? 'text-blue-600'
-                  : 'text-gray-600'
+                  ? 'text-blue-500'
+                  : 'text-gray-700'
             }`}
           >
             {day}
@@ -154,7 +147,7 @@ export default function Yes24Calendar({
       </div>
 
       {/* 날짜 그리드 */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1.5">
         {calendar.map((date, index) => {
           const dayOfWeek = index % 7;
           const hasSession = date !== null && sessionDates.has(date);
@@ -171,7 +164,7 @@ export default function Yes24Calendar({
               onClick={() => handleDateClick(date)}
               disabled={!hasSession}
               className={`
-                aspect-square flex items-center justify-center text-sm rounded transition-colors
+                aspect-square flex items-center justify-center text-base font-normal rounded-full transition-colors
                 ${date === null ? 'invisible' : ''}
                 ${
                   hasSession
@@ -179,10 +172,10 @@ export default function Yes24Calendar({
                     : 'cursor-not-allowed text-gray-300'
                 }
                 ${isSelected ? 'bg-orange-500 text-white font-bold hover:bg-orange-600' : ''}
-                ${!isSelected && hasSession && dayOfWeek === 0 ? 'text-red-600' : ''}
-                ${!isSelected && hasSession && dayOfWeek === 6 ? 'text-blue-600' : ''}
+                ${!isSelected && hasSession && dayOfWeek === 0 ? 'text-red-500 font-medium' : ''}
+                ${!isSelected && hasSession && dayOfWeek === 6 ? 'text-blue-500' : ''}
                 ${!isSelected && hasSession && dayOfWeek !== 0 && dayOfWeek !== 6 ? 'text-gray-900' : ''}
-                ${isToday && !isSelected ? 'border-2 border-orange-500' : ''}
+                ${isToday && !isSelected ? 'ring-2 ring-orange-500' : ''}
               `}
             >
               {date}

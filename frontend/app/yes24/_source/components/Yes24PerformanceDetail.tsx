@@ -259,16 +259,25 @@ export default function Yes24PerformanceDetail({
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 좌측: 날짜/시간 선택 */}
           <div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4 border-b pb-3">
+            <div className="bg-white rounded-lg shadow-sm p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-900">
                 날짜/시간 선택
               </h2>
 
-              <Yes24Calendar
-                selectedDate={selectedDate}
-                onDateSelect={setSelectedDate}
-                sessions={sessions}
-              />
+              <div className="flex gap-8">
+                <div className="flex-1">
+                  <Yes24Calendar
+                    selectedDate={selectedDate}
+                    onDateSelect={setSelectedDate}
+                    sessions={sessions}
+                  />
+                </div>
+                <div className="w-48 flex items-start justify-center pt-16">
+                  <span className="inline-block px-6 py-3 bg-orange-500 text-white text-sm font-bold rounded whitespace-nowrap">
+                    1회 오후 6시 00분
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
