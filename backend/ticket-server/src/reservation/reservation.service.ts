@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import { REDIS_CHANNELS } from '@beastcamp/shared-constants';
 import { RedisService } from '../redis/redis.service';
 import { CreateReservationRequestDto } from './dto/create-reservation-request.dto';
 import { GetReservationsResponseDto } from './dto/get-reservations-response.dto';
@@ -30,9 +31,9 @@ export class ReservationService {
 
   async reserve(
     dto: CreateReservationRequestDto,
+    userId: string,
   ): Promise<CreateReservationResponseDto> {
     const { session_id: sessionId, block_id: blockId, row, col } = dto;
-    const userId = 'temp-user-id';
 
     await this.validateTicketingOpen();
     await this.validateSessionBlock(sessionId, blockId);
@@ -45,6 +46,16 @@ export class ReservationService {
 
     const rank = await this.redisService.incr(`rank:session:${sessionId}`);
     this.logger.log(`Reserved: ${userId} -> ${key} (Rank: ${rank})`);
+
+    try {
+      await this.redisService.publishToQueue(
+        REDIS_CHANNELS.QUEUE_EVENT_DONE,
+        userId,
+      );
+      this.logger.log(`이벤트 발행 성공: ${userId}님이 티켓팅을 완료했습니다.`);
+    } catch (error) {
+      this.logger.error('이벤트 발행 중 오류 발생:', error as Error);
+    }
 
     return { rank };
   }

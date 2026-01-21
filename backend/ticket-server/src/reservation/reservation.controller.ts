@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from '../auth/auth.guard';
+import { GetUser, JwtAuthGuard } from '../auth';
+import type { ActiveUser } from '@beastcamp/shared-types';
 import { ReservationService } from './reservation.service';
 import { CreateReservationRequestDto } from './dto/create-reservation-request.dto';
 import { GetReservationsRequestDto } from './dto/get-reservations-request.dto';
@@ -9,7 +10,7 @@ import { CreateReservationResponseDto } from './dto/create-reservation-response.
 
 @ApiTags('예약 API')
 @Controller('reservations')
-@UseGuards(AuthGuard)
+@UseGuards(JwtAuthGuard)
 export class ReservationController {
   constructor(private readonly reservationService: ReservationService) {}
 
@@ -48,7 +49,8 @@ export class ReservationController {
   @ApiResponse({ status: 403, description: '권한 없음 (대기열 미통과)' })
   async createReservation(
     @Body() dto: CreateReservationRequestDto,
+    @GetUser() user: ActiveUser,
   ): Promise<CreateReservationResponseDto> {
-    return this.reservationService.reserve(dto);
+    return this.reservationService.reserve(dto, user.userId);
   }
 }
