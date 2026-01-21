@@ -25,8 +25,26 @@ import { RedisService } from './redis.service';
       },
       inject: [ConfigService],
     },
+    {
+      provide: PROVIDERS.REDIS_QUEUE,
+      useFactory: (configService: ConfigService) => {
+        const host = configService.get<string>(CONFIG_PATHS.REDIS_QUEUE_HOST);
+        const port = configService.get<number>(CONFIG_PATHS.REDIS_QUEUE_PORT);
+        const password = configService.get<string>(
+          CONFIG_PATHS.REDIS_QUEUE_PASSWORD,
+        );
+
+        return new Redis({
+          host,
+          port,
+          password,
+          retryStrategy: (times) => Math.min(times * 50, 2000),
+        });
+      },
+      inject: [ConfigService],
+    },
     RedisService,
   ],
-  exports: [PROVIDERS.REDIS_TICKET, RedisService],
+  exports: [PROVIDERS.REDIS_TICKET, PROVIDERS.REDIS_QUEUE, RedisService],
 })
 export class RedisModule {}

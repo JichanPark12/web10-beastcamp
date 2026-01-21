@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@beastcamp/backend-config": "workspace:*",
     "@beastcamp/shared-constants": "workspace:*",
     "@beastcamp/shared-types": "workspace:*",
     "@nestjs/axios": "^4.0.1",
