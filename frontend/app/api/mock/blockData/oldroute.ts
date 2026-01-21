@@ -1,3 +1,5 @@
+// 현재 사용하지 않는 nol 신버전 관련 코드
+
 export const GET = async () => {
   const blockData = [
     {

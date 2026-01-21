@@ -3,6 +3,7 @@ import SidebarHeader from "./SidebarHeader";
 import SelectedSeatsList from "./SelectedSeatsList";
 import PriceSummary from "./PriceSummary";
 import ReserveButton from "./ReserveButton";
+import ReservationTip from "./ReservationTip";
 
 export default function ReservationSidebar() {
   return (
@@ -14,6 +15,7 @@ export default function ReservationSidebar() {
       </div>
       <PriceSummary />
       <ReserveButton />
+      <ReservationTip />
     </div>
   );
 }

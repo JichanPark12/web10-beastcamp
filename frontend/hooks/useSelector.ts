@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 
 interface SelectionOptions {
@@ -5,11 +7,11 @@ interface SelectionOptions {
 }
 
 const useSelection = <K, T>(
-  initialValues: Map<K, T> = new Map(),
-  options?: SelectionOptions
+  initialValues?: Map<K, T>,
+  options?: SelectionOptions,
 ) => {
   const [selected, setSelected] = useState<Map<K, T>>(() => {
-    return new Map(initialValues);
+    return initialValues ? new Map(initialValues) : new Map();
   });
   const { max = Infinity } = options || {};
 

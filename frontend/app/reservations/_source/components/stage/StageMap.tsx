@@ -1,223 +1,95 @@
-/* eslint-disable @next/next/no-img-element */
-
-import { gradeInfo } from "../../data/seat";
+import { useEffect, useState } from "react";
 import {
-  useBlockSeatQuery,
-  useReservedSeatQuery,
-  useSeatMetaQuery,
-} from "../../queries/seat";
-import { BlockArea, Seat } from "../../types/reservationType";
+  useReservationData,
+  useReservationState,
+  useReservationDispatch,
+} from "../../contexts/ReservationProvider";
+import AreaSeats from "./AreaSeats";
+import { gradeInfoColor } from "../../data/seat";
 
-interface StageMapProps {
-  contentRef: React.Ref<HTMLDivElement>;
-  containerRef: React.Ref<HTMLDivElement>;
-  isMinScale: boolean;
-  selectedSeats: ReadonlyMap<string, Seat>;
-  moveTo: (
-    targetX: number,
-    targetY: number,
-    newScale: number,
-    w: number,
-    h: number
-  ) => void;
-  handleToggleSeat: (seatId: string, data: Seat) => void;
-  handleWheel: (e: React.WheelEvent, rect?: DOMRect) => void;
-  handleMouseDown: (e: React.MouseEvent) => void;
-  handleMouseMove: (e: React.MouseEvent) => void;
-  handleMouseUp: () => void;
-}
+export default function StageMap() {
+  const { venue, blockGrades } = useReservationData();
+  const { isShowArea } = useReservationState();
+  const { handleSelectArea } = useReservationDispatch();
 
-export default function StageMap({
-  contentRef,
-  containerRef,
-  isMinScale,
-  selectedSeats,
-  moveTo,
-  handleToggleSeat,
-  handleWheel,
-  handleMouseDown,
-  handleMouseMove,
-  handleMouseUp,
-}: StageMapProps) {
-  const { data: reservedSeats } = useReservedSeatQuery();
-  const { data: blocks } = useBlockSeatQuery();
-  const { data: seats } = useSeatMetaQuery();
+  const blockMapUrl = venue?.blockMapUrl;
 
-  const releasedSeatSet = new Set(
-    reservedSeats
-      .map((b) =>
-        b.seats
-          .filter((s) => s.statusInfo === "RELEASED")
-          .map((s) => s.seatInfoId)
-      )
-      .flat()
-  );
+  const [svgContent, setSvgContent] = useState<string | null>(null);
 
-  const onSectionClick = (block: BlockArea) => {
-    const centerX = (block.absoluteLeft + block.absoluteRight) / 2;
-    const centerY = (block.absoluteTop + block.absoluteBottom) / 2;
+  useEffect(() => {
+    if (!blockMapUrl) return;
+    const fetchSvg = async () => {
+      try {
+        const response = await fetch(blockMapUrl); // 일단 public에 넣어둔 상태라 api mock하면 에러남 고로 api.get 대신 fetch사용
+        const text = await response.text();
+        setSvgContent(text);
+      } catch (err) {
+        console.error("svg로딩에러", err);
+      }
+    };
+    fetchSvg();
+  }, [blockMapUrl]);
 
-    moveTo(centerX, centerY, 6, 510, 435); // 나중에 svg 동적으로 변경 할 예정 아마도..;
+  const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const blockElement = target.closest("[data-block-name]");
+    const blockName = blockElement?.getAttribute("data-block-name");
+
+    if (blockName) {
+      const block = venue?.blocks.find((b) => b.blockDataName === blockName);
+      if (block) {
+        handleSelectArea(String(block.id));
+      }
+    }
   };
 
+  const blockColorMap = (() => {
+    if (!venue?.blocks || !blockGrades) return {};
+
+    const map: Record<string, string> = {};
+
+    venue.blocks.forEach((block) => {
+      const grade = blockGrades.find((bg) => bg.blockId === block.id);
+      if (grade) {
+        const gradeKey = String(grade.gradeId) as keyof typeof gradeInfoColor;
+        const color = gradeInfoColor[gradeKey]?.fillColor;
+        if (color) {
+          map[block.blockDataName] = color;
+        }
+      }
+    });
+
+    return map;
+  })();
+
+  const dynamicStyles = Object.entries(blockColorMap)
+    .map(
+      ([name, color]) => `
+        [data-block-name="${name}"] { fill: ${color} !important; transition: opacity 0.2s; } 
+        [data-block-name="${name}"]:hover { cursor: pointer; }
+      `,
+    )
+    .join("\n");
+
   return (
-    <div
-      ref={containerRef}
-      onWheel={handleWheel}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      className="relative h-full w-full bg-[#EDEFF3] rounded-lg overflow-hidden flex items-center justify-center"
-    >
-      <div
-        ref={contentRef}
-        className="relative h-full w-full flex items-center justify-center"
-        style={{
-          transformOrigin: "0 0",
-        }}
-      >
-        <div className="relative w-127.5 h-108.75">
-          {isMinScale ? (
-            <img
-              className="absolute inset-0 w-full h-full select-none pointer-events-none z-30"
-              src="494b5ac0ae674853956bb73037051895.svg"
-              alt=""
-            />
-          ) : (
-            <img
-              className="absolute inset-0 w-full h-full select-none pointer-events-none"
-              src={"/7079e87b843d4852a5ee78d9fd346c19.svg"}
-              alt="좌석배치도"
-            />
-          )}
-
-          <svg
-            className={`absolute inset-0 w-full h-full ${
-              isMinScale ? "pointer-events-none" : "pointer-events-auto"
-            }`}
-            viewBox="0 0 510 435"
-          >
-            {seats?.map((b) => (
-              <g key={b.blockKey} id={b.blockKey}>
-                {b.seats.map((seat) => {
-                  const isSelected = selectedSeats.has(seat.seatInfoId);
-
-                  return (
-                    <circle
-                      key={seat.seatInfoId}
-                      cx={seat.posLeft}
-                      cy={seat.posTop}
-                      r={1}
-                      fill={
-                        isSelected
-                          ? "#FF0000"
-                          : releasedSeatSet.has(seat.seatInfoId)
-                          ? gradeInfo[seat.seatGrade]?.fillColor || "#7c68ee"
-                          : "#EDEFF3"
-                      }
-                      stroke={
-                        isSelected
-                          ? "#FF0000"
-                          : releasedSeatSet.has(seat.seatInfoId)
-                          ? "#000"
-                          : "#EDEFF3"
-                      }
-                      strokeWidth={isSelected ? 0.3 : 0.1}
-                      className={
-                        releasedSeatSet.has(seat.seatInfoId)
-                          ? "cursor-pointer hover:r-2"
-                          : ""
-                      }
-                      style={{ pointerEvents: "auto" }}
-                      onClick={() => {
-                        if (!releasedSeatSet.has(seat.seatInfoId)) return;
-                        handleToggleSeat(seat.seatInfoId, seat);
-                      }}
-                    />
-                  );
-                })}
-              </g>
-            ))}
-          </svg>
-
-          <svg
-            className={`absolute inset-0 w-full h-full ${
-              isMinScale ? "pointer-events-none" : "pointer-events-auto"
-            }`}
-            viewBox="0 0 510 435"
-          >
-            {seats?.map((b) => (
-              <g key={b.blockKey} id={b.blockKey}>
-                {b.seats.map((seat) => {
-                  const isSelected = selectedSeats.has(seat.seatInfoId);
-
-                  return (
-                    <circle
-                      key={seat.seatInfoId}
-                      cx={seat.posLeft}
-                      cy={seat.posTop}
-                      r={1}
-                      fill={
-                        isSelected
-                          ? "#FF0000"
-                          : releasedSeatSet.has(seat.seatInfoId)
-                          ? gradeInfo[seat.seatGrade]?.fillColor || "#7c68ee"
-                          : "#EDEFF3"
-                      }
-                      stroke={
-                        isSelected
-                          ? "#FF0000"
-                          : releasedSeatSet.has(seat.seatInfoId)
-                          ? "#000"
-                          : "#EDEFF3"
-                      }
-                      strokeWidth={isSelected ? 0.3 : 0.1}
-                      className={
-                        releasedSeatSet.has(seat.seatInfoId)
-                          ? "cursor-pointer hover:r-2"
-                          : ""
-                      }
-                      style={{ pointerEvents: "auto" }}
-                      onClick={() => {
-                        if (!releasedSeatSet.has(seat.seatInfoId)) return;
-                        handleToggleSeat(seat.seatInfoId, seat);
-                      }}
-                    />
-                  );
-                })}
-              </g>
-            ))}
-          </svg>
-          <svg
-            className={`absolute inset-0 w-full h-full ${
-              isMinScale ? "pointer-events-auto" : "pointer-events-none"
-            }`}
-            viewBox="0 0 510 435"
-          >
-            {isMinScale &&
-              blocks?.map((block) => {
-                const width = block.absoluteRight - block.absoluteLeft;
-                const height = block.absoluteBottom - block.absoluteTop;
-
-                return (
-                  <g
-                    key={block.blockKey}
-                    className="cursor-pointer group"
-                    onClick={() => onSectionClick(block)}
-                  >
-                    <rect
-                      x={block.absoluteLeft}
-                      y={block.absoluteTop}
-                      width={width}
-                      height={height}
-                      fill="rgba(255, 255, 255, 0.01)"
-                    />
-                  </g>
-                );
-              })}
-          </svg>
-        </div>
+    <div className="relative h-full w-full bg-[#EDEFF3] rounded-lg overflow-hidden flex items-center justify-center">
+      <div className="relative h-full w-full flex items-center justify-center">
+        {isShowArea ? (
+          <AreaSeats />
+        ) : (
+          <div className="relative w-127.5 h-108.75">
+            <>
+              <style>{dynamicStyles}</style>
+              <div
+                className="w-full h-full [&>svg]:w-full [&>svg]:h-full select-none pointer-events-auto"
+                dangerouslySetInnerHTML={{
+                  __html: svgContent ? svgContent : "",
+                }}
+                onClick={handleStageClick}
+              />
+            </>
+          </div>
+        )}
       </div>
     </div>
   );

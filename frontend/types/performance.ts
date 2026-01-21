@@ -2,9 +2,13 @@ export interface Performance {
   performance_id: number;
   performance_name: string;
   ticketing_date: string;
-  performance_date: string;
-  venue_id: number;
-  venue_name: string;
+}
+
+export interface Session {
+  id: number;
+  performanceId: number;
+  venueId: number;
+  sessionDate: string;
 }
 
 export interface ResponsePerformances {

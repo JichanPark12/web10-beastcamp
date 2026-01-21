@@ -1,9 +1,13 @@
 "use client";
 
-import { useReservation } from "../../contexts/ReservationProvider";
+import {
+  useReservationState,
+  useReservationDispatch,
+} from "../../contexts/ReservationProvider";
 
 export default function SidebarHeader() {
-  const { selectedSeats, handleResetSeats } = useReservation();
+  const { selectedSeats } = useReservationState();
+  const { handleResetSeats } = useReservationDispatch();
 
   return (
     <div className="flex items-center justify-between mb-6">
