@@ -12,6 +12,16 @@ export const REDIS_KEYS = {
   WAITING_QUEUE: "queue:waiting",
   // 활성 큐
   ACTIVE_QUEUE: "queue:active",
+  // 하트비트 큐
+  HEARTBEAT_QUEUE: "queue:heartbeat",
+};
+
+export const REDIS_KEY_PREFIXES = {
+  ACTIVE_USER: "queue:active:user:",
+};
+
+export const REDIS_CHANNELS = {
+  QUEUE_EVENT_DONE: "queue:event:done",
 };
 
 // ConfigService 경로
