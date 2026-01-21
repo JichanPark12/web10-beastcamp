@@ -28,6 +28,10 @@ describe('RedisService', () => {
           provide: PROVIDERS.REDIS_TICKET,
           useValue: redisClient,
         },
+        {
+          provide: PROVIDERS.REDIS_QUEUE,
+          useValue: redisClient,
+        },
       ],
     }).compile();
 
