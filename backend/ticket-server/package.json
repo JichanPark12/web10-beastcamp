@@ -84,7 +84,8 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@beastcamp/shared-types$": "<rootDir>/../../packages/shared-types/src"
+      "^@beastcamp/shared-types$": "<rootDir>/../../../packages/shared-types/src",
+      "^@beastcamp/shared-constants$": "<rootDir>/../../../packages/shared-constants/src"
     }
   }
 }
