@@ -23,9 +23,9 @@ import { REDIS_COMMANDS } from './redis.commands';
           retryStrategy: (times) => Math.min(times * 50, 2000),
         });
 
-        redis.defineCommand(REDIS_COMMANDS.TRANSFER_USER.name, {
-          numberOfKeys: REDIS_COMMANDS.TRANSFER_USER.numberOfKeys,
-          lua: REDIS_COMMANDS.TRANSFER_USER.lua,
+        redis.defineCommand(REDIS_COMMANDS.SYNC_AND_PROMOTE_WAITERS.name, {
+          numberOfKeys: REDIS_COMMANDS.SYNC_AND_PROMOTE_WAITERS.numberOfKeys,
+          lua: REDIS_COMMANDS.SYNC_AND_PROMOTE_WAITERS.lua,
         });
 
         return redis;

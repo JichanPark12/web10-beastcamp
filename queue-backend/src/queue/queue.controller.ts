@@ -10,12 +10,14 @@ import {
 import {
   ApiCookieAuth,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
-  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { QueueService } from './queue.service';
 import type { Request, Response } from 'express';
+import { QueueEntryResponseDto } from './dto/queue-entry-response.dto';
+import { QueueStatusResponseDto } from './dto/queue-status-response.dto';
 
 @ApiTags('queue')
 @Controller('queue')
@@ -32,21 +34,17 @@ export class QueueController {
   @ApiCookieAuth('waiting-token')
   @ApiCreatedResponse({
     description: '대기열 진입 및 등록 결과',
-    schema: {
-      type: 'object',
-      properties: {
-        userId: { type: 'string', example: 'uGxk5wTQ5VQw9Hqz' },
-        position: { type: 'number', nullable: true, example: 1 },
-      },
-      required: ['userId', 'position'],
-    },
+    type: QueueEntryResponseDto,
   })
-  async join(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async createEntry(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<QueueEntryResponseDto> {
     const existingToken = req.cookies?.['waiting-token'] as string;
-    const result = await this.queueService.createQueueEntry(existingToken);
+    const response = await this.queueService.createEntry(existingToken);
 
-    if (result.position) {
-      res.cookie('waiting-token', result.userId, {
+    if (response.position) {
+      res.cookie('waiting-token', response.userId, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -54,10 +52,7 @@ export class QueueController {
       });
     }
 
-    return {
-      userId: result.userId,
-      position: result.position,
-    };
+    return response;
   }
 
   @Get('entries/me')
@@ -67,22 +62,13 @@ export class QueueController {
       '쿠키의 토큰을 읽고 현재 대기열에서의 실시간 순번을 반환합니다. 토큰이 없으면 null을 반환합니다.',
   })
   @ApiCookieAuth('waiting-token')
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponse({
     description: '순번 조회 성공',
-    schema: {
-      type: 'object',
-      properties: {
-        position: { type: 'number', nullable: true, example: 5 },
-      },
-    },
+    type: QueueStatusResponseDto,
   })
-  async getMyPosition(@Req() req: Request) {
+  async getStatus(@Req() req: Request): Promise<QueueStatusResponseDto> {
     const userId = req.cookies?.['waiting-token'] as string;
-    const position = await this.queueService.getQueuePosition(userId);
-
-    return {
-      position,
-    };
+    const response = await this.queueService.getStatus(userId);
+    return response;
   }
 }
