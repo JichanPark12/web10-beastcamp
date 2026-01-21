@@ -1,10 +1,14 @@
 "use client";
 
-import { useReservation } from "../../contexts/ReservationProvider";
+import {
+  useReservationState,
+  useReservationDispatch,
+} from "../../contexts/ReservationProvider";
 import { gradeInfoColor } from "../../data/seat";
 
 export default function SelectedSeatsList() {
-  const { selectedSeats, handleRemoveSeat } = useReservation();
+  const { selectedSeats } = useReservationState();
+  const { handleRemoveSeat } = useReservationDispatch();
 
   if (selectedSeats.size === 0) {
     return (

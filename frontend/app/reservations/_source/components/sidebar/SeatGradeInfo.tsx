@@ -1,10 +1,10 @@
 "use client";
 
-import { useReservation } from "../../contexts/ReservationProvider";
+import { useReservationData } from "../../contexts/ReservationProvider";
 import { gradeInfoColor } from "../../data/seat";
 
 export default function SeatGradeInfo() {
-  const { grades } = useReservation();
+  const { grades } = useReservationData();
   return (
     <div className="mb-6 bg-gray-50 rounded-xl p-4 border border-gray-200">
       <h4 className="text-sm mb-3">좌석 등급 & 가격</h4>
