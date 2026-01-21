@@ -18,7 +18,20 @@ async function bootstrap() {
     .setTitle('티켓팅 API Server')
     .setDescription('티켓 예약 및 좌석 조회 기능을 제공합니다.')
     .setVersion('0.1')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        in: 'header',
+        name: 'Authorization',
+        description: 'JWT Authorization header using the Bearer scheme',
+      },
+      'access-token',
+    )
+    .addSecurityRequirements('access-token')
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 

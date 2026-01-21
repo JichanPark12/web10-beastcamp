@@ -1,6 +1,15 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: ticket-redis
+    ports:
+      - "6380:6379"
+    networks:
+      - backend-network
+    # volumes:
+    #   - ./backend/redis_data:/data
   api-server:
     build:
       context: ..
