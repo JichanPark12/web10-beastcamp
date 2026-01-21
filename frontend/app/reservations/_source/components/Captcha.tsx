@@ -1,4 +1,3 @@
-// components/reservation/Captcha.tsx
 "use client";
 
 import { useState } from "react";
