@@ -5,6 +5,7 @@ import ReservationStage from "./stage/ReservationStage";
 import ReservationSidebar from "./sidebar/ReservationSidebar";
 import { getLatestPerformance, getSessions } from "@/services/performance";
 import { getBlockGrades, getGradeInfo, getVenue } from "@/services/venue";
+import Captcha from "./Captcha";
 
 export default async function Reservation() {
   const performance = await getLatestPerformance();
@@ -25,6 +26,7 @@ export default async function Reservation() {
       grades={grades}
     >
       <ReservationTimeTracker />
+      <Captcha />
       <div className="h-screen flex flex-col overflow-hidden">
         <ReservationHeader />
         <div className="flex-1 flex overflow-hidden min-h-0">
