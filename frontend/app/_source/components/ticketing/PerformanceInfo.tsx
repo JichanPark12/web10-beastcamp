@@ -1,37 +1,40 @@
-import { Performance } from "@/types/performance";
-import { Calendar, MapPin, DollarSign, TrendingUp } from "lucide-react";
-
-const getDifficultyColor = (difficulty: string) => {
-  switch (difficulty) {
-    case "상":
-      return "bg-red-100 text-red-700";
-    case "중":
-      return "bg-yellow-100 text-yellow-700";
-    case "하":
-      return "bg-green-100 text-green-700";
-    default:
-      return "bg-gray-100 text-gray-700";
-  }
-};
+import { Performance, Session } from "@/types/performance";
+import { Calendar, MapPin } from "lucide-react";
 
 interface PerformanceInfoProps {
   performance: Performance;
+  sessions?: Session[];
+  venueName?: string;
 }
 
-export default function PerformanceInfo({ performance }: PerformanceInfoProps) {
-  const performanceDate = new Date(performance.performance_date);
+export default function PerformanceInfo({
+  performance,
+  sessions,
+  venueName,
+}: PerformanceInfoProps) {
+  let dateDisplay = "";
 
-  console.log(performanceDate);
-  const formattedDate = performanceDate.toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-  });
+  if (sessions && sessions.length > 0) {
+    const dates = sessions.map((s) => new Date(s.sessionDate).getTime());
+    const minDate = new Date(Math.min(...dates));
+    const maxDate = new Date(Math.max(...dates));
+
+    const formatDate = (d: Date) =>
+      d.toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
+    if (minDate.getTime() === maxDate.getTime()) {
+      dateDisplay = formatDate(minDate);
+    } else {
+      dateDisplay = `${formatDate(minDate)} ~ ${formatDate(maxDate)}`;
+    }
+  }
 
   return (
-    <div>
+    <div className="h-full flex flex-col justify-center w-full">
       <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
         <span className="text-sm">다음 티켓팅</span>
       </div>
@@ -43,11 +46,19 @@ export default function PerformanceInfo({ performance }: PerformanceInfoProps) {
       <div className="space-y-3 mb-6">
         <div className="flex items-center gap-3">
           <Calendar className="w-5 h-5 text-white/80" />
-          <span>{formattedDate}</span>
+          <span>
+            {dateDisplay || (
+              <span className="animate-pulse bg-white/20 rounded h-5 w-48 inline-block" />
+            )}
+          </span>
         </div>
         <div className="flex items-center gap-3">
           <MapPin className="w-5 h-5 text-white/80" />
-          <span>{performance.venue_name}</span>
+          <span>
+            {venueName || (
+              <span className="animate-pulse bg-white/20 rounded h-5 w-32 inline-block" />
+            )}
+          </span>
         </div>
       </div>
     </div>

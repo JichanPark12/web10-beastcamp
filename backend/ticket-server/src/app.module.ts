@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { redisConfig } from '@beastcamp/backend-config';
 import { ReservationModule } from './reservation/reservation.module';
 import { TicketSchedulerModule } from './ticket-scheduler/ticket-scheduler.module';
+import { CaptchaModule } from './captcha/captcha.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { TicketSchedulerModule } from './ticket-scheduler/ticket-scheduler.modul
     ScheduleModule.forRoot(),
     ReservationModule,
     TicketSchedulerModule,
+    CaptchaModule,
   ],
   controllers: [],
   providers: [],

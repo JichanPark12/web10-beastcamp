@@ -1,25 +1,26 @@
-import { api } from "@/lib/api";
-import { ResponsePerformances } from "@/types/performance";
+import { getLatestPerformance, getSessions } from "@/services/performance";
+import { getVenue } from "@/services/venue";
 import PerformanceInfo from "./PerformanceInfo";
 import TicketingControls from "./TicketingControls";
 
-async function getLatestPerformance() {
-  const response = await api.get<ResponsePerformances>(
-    `/performances?limit=1`,
-    { next: { revalidate: 3000 } }
-  );
-
-  return response;
-}
-
 export default async function TicketingData() {
-  const data = await getLatestPerformance();
-  const performance = data?.performances[0];
+  const performance = await getLatestPerformance();
+  const sessions = performance
+    ? await getSessions(performance.performance_id)
+    : [];
+  const venueId = sessions.length > 0 ? sessions[0].venueId : 0;
+  const venue = venueId ? await getVenue(venueId) : null;
 
   return (
     <>
-      <PerformanceInfo performance={performance} />
-      <TicketingControls performance={performance} />
+      <div className="flex flex-col gap-8 h-full">
+        <PerformanceInfo
+          performance={performance}
+          sessions={sessions}
+          venueName={venue?.venueName}
+        />
+      </div>
+      <TicketingControls performance={performance} sessions={sessions} />
     </>
   );
 }
