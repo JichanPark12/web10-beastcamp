@@ -1,28 +1,28 @@
 const datas = [
   {
     performance_id: 1,
-    performance_name: "wave to earth - 사랑으로 0.3",
-    ticketing_date: "2026-02-01T18:00:00Z",
+    performance_name: 'wave to earth - 사랑으로 0.3',
+    ticketing_date: '2026-02-01T18:00:00Z',
   },
 ];
 
 export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
 
-  const startAfter = searchParams.get("start_after");
-  const limitParam = searchParams.get("limit");
+  const startAfter = searchParams.get('start_after');
+  const limitParam = searchParams.get('limit');
   const limit = limitParam ? parseInt(limitParam, 10) : 6;
 
   const result = [...datas]
     .sort(
       (a, b) =>
         new Date(b.ticketing_date).getTime() -
-        new Date(a.ticketing_date).getTime()
+        new Date(a.ticketing_date).getTime(),
     )
     .filter(
       (performance) =>
         !startAfter ||
-        new Date(performance.ticketing_date) < new Date(startAfter)
+        new Date(performance.ticketing_date) < new Date(startAfter),
     )
     .slice(0, limit);
 

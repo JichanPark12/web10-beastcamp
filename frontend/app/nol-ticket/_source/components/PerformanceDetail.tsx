@@ -30,6 +30,11 @@ export default function PerformanceDetail({
     seconds: number;
   } | null>(null);
   const [isActive, setIsActive] = useState(false);
+  const [target, setTarget] = useState<number>(
+    new Date(new Date().getTime() + 10000).getTime(),
+  );
+
+  // 현재는 개발 모드에서 테스트 하려고 마감 시간을 항상 현재시간 + 10초로 잡음
 
   // 카운트다운 계산
   useEffect(() => {
@@ -37,7 +42,9 @@ export default function PerformanceDetail({
 
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
-      const target = new Date(performance.ticketing_date).getTime();
+      console.log('현재 시간:', new Date(now).toISOString());
+
+      //const target = new Date(performance.ticketing_date).getTime();
       const difference = target - now;
 
       if (difference <= 0) {
@@ -166,7 +173,7 @@ export default function PerformanceDetail({
           </div>
 
           {/* 중앙: 공연 정보 */}
-          <div className="lg:col-span-6 space-y-6">
+          <div className="lg:col-span-5 space-y-6">
             {/* 기본 정보 */}
             <div className="space-y-4 pb-6 border-b border-gray-200">
               <div className="flex">
@@ -282,13 +289,13 @@ export default function PerformanceDetail({
           </div>
 
           {/* 우측: 예약 패널 */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-4 ml-10">
             <div className="sticky top-24">
               {!isActive ? (
                 <>
                   <button
                     onClick={handleConfirm}
-                    disabled={!selectedDate || !selectedRound}
+                    disabled
                     className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
                       selectedDate && selectedRound
                         ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'
