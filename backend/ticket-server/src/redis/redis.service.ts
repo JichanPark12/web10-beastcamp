@@ -1,5 +1,4 @@
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
-
 import { PROVIDERS } from '@beastcamp/shared-constants';
 import { Redis } from 'ioredis';
 

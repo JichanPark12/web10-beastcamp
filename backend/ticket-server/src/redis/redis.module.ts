@@ -1,6 +1,5 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-
 import { PROVIDERS, CONFIG_PATHS } from '@beastcamp/shared-constants';
 import { Redis } from 'ioredis';
 import { RedisService } from './redis.service';

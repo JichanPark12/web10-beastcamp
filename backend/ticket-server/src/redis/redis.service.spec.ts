@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RedisService } from './redis.service';
-
 import { PROVIDERS } from '@beastcamp/shared-constants';
 import { Redis } from 'ioredis';
 
