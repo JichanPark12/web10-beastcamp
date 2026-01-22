@@ -5,7 +5,7 @@
 
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import Header from '../_source/components/Header';
+
 import Yes24PerformanceDetailData from './_source/components/Yes24PerformanceDetailData';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic';
 export default function Yes24Page() {
   return (
     <>
-      <Header />
       <ErrorBoundary
         fallback={
           <div className="min-h-screen flex items-center justify-center">
