@@ -20,7 +20,11 @@ export default async function TicketingData() {
           venueName={venue?.venueName}
         />
       </div>
-      <TicketingControls performance={performance} sessions={sessions} />
+      <TicketingControls
+        performance={performance}
+        sessions={sessions}
+        venue={venue}
+      />
     </>
   );
 }
