@@ -74,7 +74,7 @@ export class ReservationService {
           );
         }
 
-        const key = `reservation:session:${sessionId}_block:${blockId}_row:${row}_col:${col}`;
+        const key = `reservation:session:${sessionId}:block:${blockId}:row:${row}:col:${col}`;
         if (reservationMap[key]) {
           throw new BadRequestException('Duplicate seats in request');
         }
@@ -150,7 +150,7 @@ export class ReservationService {
     for (let r = 0; r < rowSize; r++) {
       for (let c = 0; c < colSize; c++) {
         keys.push(
-          `reservation:session:${sessionId}_block:${blockId}_row:${r}_col:${c}`,
+          `reservation:session:${sessionId}:block:${blockId}:row:${r}:col:${c}`,
         );
       }
     }
