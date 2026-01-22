@@ -1,5 +1,10 @@
+import { useResult } from "@/contexts/ResultContext";
+
 export default function UserRank() {
-  const userRank = 1000;
+  const { result } = useResult();
+  const userRank = result?.rank ?? 0;
+
+  if (!result) return null;
 
   return (
     <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6 text-center">

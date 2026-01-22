@@ -3,8 +3,21 @@
 import { createContext, ReactNode, use, useState } from "react";
 import { useRouter } from "next/navigation";
 import useSelection from "@/hooks/useSelector";
+import { api } from "@/lib/api";
+import { useResult } from "@/contexts/ResultContext";
 import { RESERVATION_LIMIT } from "../constants/reservationConstants";
 import { Seat } from "../types/reservationType";
+
+interface ReservedSeat {
+  block_id: number;
+  row: number;
+  col: number;
+}
+
+interface ReservationResult {
+  rank: number;
+  seats: ReservedSeat[];
+}
 
 interface ReservationStateContextValue {
   selectedSeats: ReadonlyMap<string, Seat>;
@@ -15,7 +28,7 @@ interface ReservationDispatchContextValue {
   handleToggleSeat: (seatId: string, seat: Seat) => void;
   handleRemoveSeat: (seatId: string) => void;
   handleResetSeats: () => void;
-  handleClickReserve: () => void;
+  handleClickReserve: (sessionId: number) => void;
   handleSelectArea: (areaId: string) => void;
   handleDeselectArea: () => void;
   completeCaptcha: () => void;
@@ -57,12 +70,26 @@ export function ReservationStateProvider({
 
   const router = useRouter();
 
-  const handleClickReserve = () => {
+  const { setResult } = useResult();
+
+  const handleClickReserve = async (sessionId: number) => {
     try {
-      // throw new Error("예매 실패");
       if (!isCaptchaVerified) {
         alert("보안문자가 입력되지 않았습니다.");
+        return;
       }
+      const seats = [...selectedSeats.values()].map((seat) => ({
+        block_id: +seat.blockNum,
+        row: +seat.rowNum,
+        col: +seat.colNum,
+      }));
+      console.log(seats);
+      const response = await api.post<ReservationResult>("/reservations", {
+        session_id: sessionId,
+        seats,
+      });
+
+      setResult(response);
       router.push("/result");
     } catch (e) {
       console.error(e);
