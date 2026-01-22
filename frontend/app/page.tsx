@@ -4,16 +4,13 @@
  * Resources: app/_source/
  */
 
-import Header from './_source/components/Header';
-import Ticketing from './_source/components/ticketing/Ticketing';
-
+import UpcomingTicketing from './_source/components/ticketing/UpcomingTicketing';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   return (
     <>
-      <Header />
-      <Ticketing />
+      <UpcomingTicketing />
     </>
   );
 }

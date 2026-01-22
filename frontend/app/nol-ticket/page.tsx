@@ -5,7 +5,6 @@
 
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import Header from '../_source/components/Header';
 import PerformanceDetailData from './_source/components/PerformanceDetailData';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +12,6 @@ export const dynamic = 'force-dynamic';
 export default function NolTicketPage() {
   return (
     <>
-      <Header />
       <ErrorBoundary
         fallback={
           <div className="min-h-screen flex items-center justify-center">
