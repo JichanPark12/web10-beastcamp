@@ -18,7 +18,10 @@ export default function AreaSeats() {
   const { venue, blockGrades, grades } = useReservationData();
   const { area, selectedSeats } = useReservationState();
   const { handleDeselectArea, handleToggleSeat } = useReservationDispatch();
-  const { data: reservationData } = useReservationSeatsQuery(sessionId, area);
+  const { data: reservationData, refetch } = useReservationSeatsQuery(
+    sessionId,
+    area,
+  );
 
   const targetBlock = venue?.blocks.find((b) => String(b.id) === area);
   const blockGrade = blockGrades?.find((bg) => bg.blockId === targetBlock?.id);
@@ -54,12 +57,20 @@ export default function AreaSeats() {
         <h2 className="text-lg font-bold">
           {targetBlock.blockDataName} 구역 좌석 선택
         </h2>
-        <button
-          onClick={handleDeselectArea}
-          className="px-3 py-1.5 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700"
-        >
-          지도 보기
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => refetch()}
+            className="px-3 py-1.5 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700"
+          >
+            새로고침
+          </button>
+          <button
+            onClick={handleDeselectArea}
+            className="px-3 py-1.5 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700"
+          >
+            지도 보기
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-auto p-8 bg-gray-50/50">
