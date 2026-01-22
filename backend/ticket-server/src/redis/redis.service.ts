@@ -21,6 +21,20 @@ export class RedisService implements OnModuleDestroy {
     return result === 1;
   }
 
+  async setNxWithTtl(
+    key: string,
+    value: string,
+    ttlMs: number,
+  ): Promise<boolean> {
+    const result = await this.ticketClient.set(key, value, 'PX', ttlMs, 'NX');
+    return result === 'OK';
+  }
+
+  async msetnx(kv: Record<string, string>): Promise<boolean> {
+    const result = await this.ticketClient.msetnx(...Object.entries(kv).flat());
+    return Number(result) === 1;
+  }
+
   async set(key: string, value: string): Promise<string> {
     return this.ticketClient.set(key, value);
   }

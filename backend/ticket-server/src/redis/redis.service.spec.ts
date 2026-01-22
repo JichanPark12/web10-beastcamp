@@ -18,6 +18,7 @@ describe('RedisService', () => {
       sadd: jest.fn(),
       sismember: jest.fn(),
       mget: jest.fn(),
+      msetnx: jest.fn(),
       disconnect: jest.fn(),
     };
 
@@ -99,6 +100,20 @@ describe('RedisService', () => {
       const result = await service.mget([]);
       expect(result).toEqual([]);
       expect(jest.mocked(redisClient.mget!)).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('msetnx', () => {
+    it('모든 키가 설정되면 true를 반환해야 한다', async () => {
+      jest.mocked(redisClient.msetnx!).mockResolvedValue(1);
+      const result = await service.msetnx({ k1: 'v1', k2: 'v2' });
+      expect(result).toBe(true);
+    });
+
+    it('하나의 키라도 존재하여 설정되지 않으면 false를 반환해야 한다', async () => {
+      jest.mocked(redisClient.msetnx!).mockResolvedValue(0);
+      const result = await service.msetnx({ k1: 'v1', k2: 'v2' });
+      expect(result).toBe(false);
     });
   });
 });

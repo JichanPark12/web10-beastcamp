@@ -1,45 +1,50 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useCountdown } from "../../hooks/useCountdown";
-import CountdownTimer from "./CountdownTimer";
-import DateSelector from "./DateSelector";
-import RoundSelector from "./RoundSelector";
-import type { Performance, Session } from "@/types/performance";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import { useCountdown } from '../../hooks/useCountdown';
+import CountdownTimer from './CountdownTimer';
+import DateSelector from './DateSelector';
+import RoundSelector from './RoundSelector';
+import type { Performance, Session } from '@/types/performance';
+import type { VenueDetail } from '@/types/venue';
+import { useRouter } from 'next/navigation';
+import { useTicketContext } from '../../../../contexts/TicketContext';
 
 interface TicketingControlsProps {
   performance?: Performance;
   sessions?: Session[];
+  venue: VenueDetail | null;
 }
 
 export default function TicketingControls({
   performance,
   sessions,
+  venue,
 }: TicketingControlsProps) {
   const router = useRouter();
+  const { setPerformance, setVenue, selectSession } = useTicketContext();
 
   const { timeLeft, isActive } = useCountdown(performance?.ticketing_date);
 
   const handleBooking = () => {
-    router.push("/nol-ticket");
+    router.push('/nol-ticket');
   };
 
   const handleDemoStart = () => {
     if (!performance?.platform) {
-      router.push("/nol-ticket");
+      router.push('/nol-ticket');
       return;
     }
 
     const platformRoutes = {
-      interpark: "/interpark",
-      yes24: "/yes24",
-      "melon-ticket": "/melon-ticket",
+      interpark: '/interpark',
+      yes24: '/yes24',
+      'melon-ticket': '/melon-ticket',
     };
 
     const route =
       platformRoutes[performance.platform as keyof typeof platformRoutes];
-    router.push(route || "/nol-ticket");
+    router.push(route || '/nol-ticket');
   };
 
   return (
@@ -51,11 +56,11 @@ export default function TicketingControls({
         disabled={!isActive}
         className={`w-full py-4 rounded-xl transition-all ${
           isActive
-            ? "bg-white text-purple-600 hover:bg-gray-100 shadow-lg hover:shadow-xl"
-            : "bg-white/30 text-white/50 cursor-not-allowed"
+            ? 'bg-white text-purple-600 hover:bg-gray-100 shadow-lg hover:shadow-xl'
+            : 'bg-white/30 text-white/50 cursor-not-allowed'
         }`}
       >
-        {isActive ? "예매하기" : "대기 중..."}
+        {isActive ? '예매하기' : '대기 중...'}
       </button>
 
       {!isActive && (

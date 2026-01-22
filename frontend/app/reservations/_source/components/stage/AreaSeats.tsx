@@ -1,5 +1,7 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+
 import {
   useReservationData,
   useReservationState,
@@ -7,11 +9,19 @@ import {
 } from "../../contexts/ReservationProvider";
 import { gradeInfoColor } from "../../data/seat";
 import { Seat } from "../../types/reservationType";
+import { useReservationSeatsQuery } from "../../queries/seat";
 
 export default function AreaSeats() {
+  const searchParams = useSearchParams();
+  const sessionId = Number(searchParams.get("sId"));
+
   const { venue, blockGrades, grades } = useReservationData();
   const { area, selectedSeats } = useReservationState();
   const { handleDeselectArea, handleToggleSeat } = useReservationDispatch();
+  const { data: reservationData, refetch } = useReservationSeatsQuery(
+    sessionId,
+    area,
+  );
 
   const targetBlock = venue?.blocks.find((b) => String(b.id) === area);
   const blockGrade = blockGrades?.find((bg) => bg.blockId === targetBlock?.id);
@@ -27,6 +37,7 @@ export default function AreaSeats() {
     const seats: Seat[] = [];
     for (let c = 1; c <= colSize; c++) {
       const seatId = `${blockDataName}-${r}-${c}`;
+      const isReserved = reservationData?.seats?.[r - 1]?.[c - 1] ?? false;
 
       seats.push({
         id: seatId,
@@ -34,6 +45,7 @@ export default function AreaSeats() {
         rowNum: r + "",
         colNum: c + "",
         blockNum: targetBlock.blockDataName,
+        isReserved,
       });
     }
     rows.push({ rowNum: String(r), seats });
@@ -45,12 +57,20 @@ export default function AreaSeats() {
         <h2 className="text-lg font-bold">
           {targetBlock.blockDataName} 구역 좌석 선택
         </h2>
-        <button
-          onClick={handleDeselectArea}
-          className="px-3 py-1.5 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700"
-        >
-          지도 보기
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => refetch()}
+            className="px-3 py-1.5 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700"
+          >
+            새로고침
+          </button>
+          <button
+            onClick={handleDeselectArea}
+            className="px-3 py-1.5 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700"
+          >
+            지도 보기
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-auto p-8 bg-gray-50/50">
@@ -67,18 +87,26 @@ export default function AreaSeats() {
               <div className="flex gap-1.5">
                 {seats.map((seat) => {
                   const isSelected = selectedSeats.has(seat.id);
+                  const isReserved = seat.isReserved;
 
                   return (
                     <button
                       key={seat.id}
+                      disabled={isReserved}
                       onClick={() => handleToggleSeat(seat.id, seat)}
                       className={`w-6 h-6 rounded-md text-[10px] font-medium flex items-center justify-center text-white ${
-                        isSelected
-                          ? "z-10 border-2 border-gray-900"
-                          : "hover:opacity-80"
+                        isReserved
+                          ? "bg-gray-300 cursor-not-allowed"
+                          : isSelected
+                            ? "z-10 border-2 border-gray-900"
+                            : "hover:opacity-80"
                       }`}
-                      style={{ backgroundColor: gradeColor }}
-                      title={`${seat.rowNum}열 ${seat.colNum}번`}
+                      style={{
+                        backgroundColor: isReserved ? "#d1d5db" : gradeColor,
+                      }}
+                      title={`${seat.rowNum}열 ${seat.colNum}번${
+                        isReserved ? " (예약됨)" : ""
+                      }`}
                     ></button>
                   );
                 })}

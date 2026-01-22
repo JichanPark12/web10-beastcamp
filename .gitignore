@@ -3,7 +3,7 @@ redis_data
 
 node_modules
 dist
-env*
+.env*
 !.env.example
 /mysql_data
 /redis_data

@@ -62,12 +62,12 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
       await this.setupService.openTicketing();
 
       await this.delay(this.duration);
-      await this.setupService.tearDown();
 
       this.logger.log('Ticketing cycle completed successfully.');
     } catch (e) {
       const err = e as Error;
       this.logger.error(`Ticketing cycle failed: ${err.message}`, err.stack);
+    } finally {
       await this.setupService.tearDown();
     }
   }

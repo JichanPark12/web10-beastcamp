@@ -18,6 +18,8 @@ services:
       - "3003:3003"
     environment:
       - NODE_ENV=production
+    env_file:
+      - .env
     restart: unless-stopped
     depends_on:
       - redis

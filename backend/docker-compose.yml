@@ -1,15 +1,28 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: ticket-redis
+    ports:
+      - "6380:6379"
+    networks:
+      - backend-network
+    # volumes:
+    #   - ./backend/redis_data:/data
   api-server:
     build:
       context: ..
       dockerfile: backend/api-server/Dockerfile
     ports:
-      - "3001:3001"
+      - "3002:3002"
     environment:
       - NODE_ENV=production
+    env_file:
+      - .env
     restart: unless-stopped
+    depends_on:
+      - redis
     networks:
       - backend-network
 
@@ -18,10 +31,14 @@ services:
       context: ..
       dockerfile: backend/ticket-server/Dockerfile
     ports:
-      - "3002:3002"
+      - "3001:3001"
     environment:
       - NODE_ENV=production
+    env_file:
+      - .env
     restart: unless-stopped
+    depends_on:
+      - redis
     networks:
       - backend-network
 

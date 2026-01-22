@@ -1,11 +1,16 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import {
   useReservationData,
   useReservationState,
   useReservationDispatch,
 } from "../../contexts/ReservationProvider";
-import AreaSeats from "./AreaSeats";
 import { gradeInfoColor } from "../../data/seat";
+import dynamic from "next/dynamic";
+import { ErrorBoundary } from "react-error-boundary";
+
+const AreaSeats = dynamic(() => import("./AreaSeats"), {
+  ssr: false,
+});
 
 export default function StageMap() {
   const { venue, blockGrades } = useReservationData();
@@ -75,7 +80,15 @@ export default function StageMap() {
     <div className="relative h-full w-full bg-[#EDEFF3] rounded-lg overflow-hidden flex items-center justify-center">
       <div className="relative h-full w-full flex items-center justify-center">
         {isShowArea ? (
-          <AreaSeats />
+          <ErrorBoundary
+            fallback={
+              <div>구역 좌석 정보를 불러오는 중 오류가 발생했습니다.</div>
+            }
+          >
+            <Suspense>
+              <AreaSeats />
+            </Suspense>
+          </ErrorBoundary>
         ) : (
           <div className="relative w-127.5 h-108.75">
             <>

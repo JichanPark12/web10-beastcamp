@@ -36,7 +36,7 @@ export interface VenueResponse {
 export class PerformanceApiService {
   private readonly logger = new Logger(PerformanceApiService.name);
   private readonly baseUrl =
-    process.env.PERFORMANCE_API_URL || 'http://localhost:3000';
+    process.env.PERFORMANCE_API_URL || 'http://localhost:3002';
 
   constructor(private readonly httpService: HttpService) {}
 

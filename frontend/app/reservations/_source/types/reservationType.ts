@@ -8,6 +8,7 @@ export interface Seat {
   rowNum: string;
   colNum: string;
   blockNum: string;
+  isReserved?: boolean;
 }
 
 // nol 티켓 타입 : 더이상 안씀

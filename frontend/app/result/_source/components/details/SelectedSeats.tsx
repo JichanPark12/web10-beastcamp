@@ -1,10 +1,11 @@
 "use client";
 
 import { CheckCircle } from "lucide-react";
-import { useResultQuery } from "../../queries/result";
+import { useResult } from "@/contexts/ResultContext";
 
 export default function SelectedSeats() {
-  const { data: seats } = useResultQuery();
+  const { result } = useResult();
+  const seats = result?.seats || [];
 
   return (
     <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
@@ -13,11 +14,11 @@ export default function SelectedSeats() {
 
       {seats.map((seat) => (
         <div
-          key={seat.seatInfoId}
+          key={`${seat.block_id}-${seat.row}-${seat.col}`}
           className="flex justify-center items-center text-sm"
         >
           <span className="text-gray-600">
-            {seat.seatGradeName} {seat.rowNo} {seat.seatNo}번
+            {seat.block_id}구역 {seat.row}열 {seat.col}번
           </span>
         </div>
       ))}
