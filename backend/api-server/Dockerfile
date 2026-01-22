@@ -45,7 +45,7 @@ COPY --from=builder --chown=nestjs:nodejs /app/backend/api-server/dist ./backend
 COPY --from=builder --chown=nestjs:nodejs /app/backend/api-server/package.json ./backend/api-server/package.json
 COPY --from=deps --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=deps --chown=nestjs:nodejs /app/backend/api-server/node_modules ./backend/api-server/node_modules
-COPY --from=deps --chown=nestjs:nodejs /app/packages ./packages
+COPY --from=builder --chown=nestjs:nodejs /app/packages ./packages
 
 USER nestjs
 
