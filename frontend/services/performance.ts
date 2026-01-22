@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+import { api } from "@/lib/api/api";
 import { ResponsePerformances, Session } from "@/types/performance";
 
 export async function getLatestPerformance() {
@@ -9,11 +9,11 @@ export async function getLatestPerformance() {
         revalidate: 60,
         tags: ["performance", "latest-performance"],
       },
-    }
+    },
   );
 
   if (!response.performances || response.performances.length === 0) {
-    throw new Error('공연 정보를 찾을 수 없습니다.');
+    throw new Error("공연 정보를 찾을 수 없습니다.");
   }
 
   return response.performances[0];
@@ -28,7 +28,7 @@ export async function getSessions(performanceId: number) {
         revalidate: 60,
         tags: ["performance", `performance-${performanceId}`, "sessions"],
       },
-    }
+    },
   );
 
   return response;

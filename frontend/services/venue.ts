@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+import { api } from "@/lib/api/api";
 import { VenueDetail, BlockGrade, Grade } from "@/types/venue";
 
 export async function getVenue(venueId: number) {
@@ -21,7 +21,7 @@ export async function getBlockGrades(sessionId: number) {
         tags: ["block-grades", `session-${sessionId}-grades`],
       },
       cache: "force-cache",
-    }
+    },
   );
   return response;
 }

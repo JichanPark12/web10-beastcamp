@@ -5,4 +5,5 @@ export interface EntryResponse {
 
 export interface CurrentQueueResponse {
   position: number;
+  token?: string;
 }

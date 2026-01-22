@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CurrentQueueResponse, EntryResponse } from "../types/entryType";
-import { api } from "@/lib/api";
+import { api } from "@/lib/api/api";
 
 export const useEnterQueue = () => {
   return useMutation({
@@ -10,6 +10,7 @@ export const useEnterQueue = () => {
         {},
         {
           serverType: "queue",
+          credentials: "include",
         },
       );
       return response;
@@ -23,7 +24,7 @@ export const useCurrentQueue = (hasToken: boolean = false) => {
     queryFn: async () => {
       const response = await api.get<CurrentQueueResponse>(
         `/queue/entries/me`,
-        { serverType: "queue" },
+        { serverType: "queue", credentials: "include" },
       );
       return response;
     },

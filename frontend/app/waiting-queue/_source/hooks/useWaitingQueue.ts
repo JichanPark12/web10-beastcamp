@@ -20,6 +20,7 @@ export const useWaitingQueue = () => {
     isError,
     initialOrder: entryData?.position,
     currentOrder: currentData?.position,
-    isFinished: currentData?.position && currentData?.position <= 0,
+    isFinished: !!currentData?.token,
+    token: currentData?.token ?? null,
   };
 };

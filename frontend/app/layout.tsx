@@ -5,6 +5,7 @@ import QueryProvider from "@/providers/QueryProvider";
 import { TicketProvider } from "../contexts/TicketContext";
 import { ResultProvider } from "../contexts/ResultContext";
 import { Toaster } from "sonner";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +33,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <QueryProvider>
-          <ResultProvider>
-            <TicketProvider>{children}</TicketProvider>
-          </ResultProvider>
+          <AuthProvider>
+            <ResultProvider>
+              <TicketProvider>{children}</TicketProvider>
+            </ResultProvider>
+          </AuthProvider>
         </QueryProvider>
         <Toaster />
       </body>

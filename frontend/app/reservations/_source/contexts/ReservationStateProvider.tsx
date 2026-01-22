@@ -3,7 +3,7 @@
 import { createContext, ReactNode, use, useState } from "react";
 import { useRouter } from "next/navigation";
 import useSelection from "@/hooks/useSelector";
-import { api } from "@/lib/api";
+import { api } from "@/lib/api/api";
 import { useResult } from "@/contexts/ResultContext";
 import { RESERVATION_LIMIT } from "../constants/reservationConstants";
 import { Seat } from "../types/reservationType";

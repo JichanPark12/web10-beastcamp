@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api } from "@/lib/api/api";
 import { Seat } from "@/types/seat";
 
 export const useResultQuery = (resultId: string = "") => {

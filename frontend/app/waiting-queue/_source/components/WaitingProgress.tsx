@@ -5,21 +5,24 @@ import ProgressBar from "./ProgressBar";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useWaitingQueue } from "../hooks/useWaitingQueue";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function WaitingProgress() {
   const router = useRouter();
-  const { initialOrder, currentOrder, isFinished, isLoading, isError } =
+  const { initialOrder, currentOrder, isFinished, isLoading, isError, token } =
     useWaitingQueue();
+  const { setToken } = useAuth();
 
   usePreventRefresh();
 
   useEffect(() => {
-    if (isFinished) {
+    if (isFinished && token) {
+      setToken(token);
       // sessionId 전달을 위해 URL 파라미터를 유지했습니다. (메인 페이지에서 sessionId 넘기는 중)
       const searchParams = new URLSearchParams(window.location.search);
       router.replace(`/reservations?${searchParams.toString()}`);
     }
-  }, [isFinished, router]);
+  }, [isFinished, router, token, setToken]);
 
   if (isError || initialOrder === undefined)
     return <div>오류가 발생했습니다. 다시 시도해주세요.</div>;

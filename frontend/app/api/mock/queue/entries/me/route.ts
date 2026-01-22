@@ -10,11 +10,15 @@ let currentOrder = MAX_ORDER;
 export function GET() {
   currentOrder -= DECREASE_GAP;
 
-  const mockWaitingOrder = {
+  let mockWaitingOrder: { position: number; token?: string } = {
     position: currentOrder,
   };
 
   if (currentOrder <= 0) {
+    mockWaitingOrder = {
+      position: currentOrder,
+      token: "test-token",
+    };
     currentOrder = MAX_ORDER;
   }
 
