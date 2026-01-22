@@ -3,7 +3,7 @@
 import { createContext, ReactNode, use } from "react";
 import { BlockGrade, VenueDetail, Grade } from "@/types/venue";
 import { Performance, Session } from "@/types/performance";
-import { useTicketContext } from "@/app/_source/contexts/TicketContext";
+import { useTicketContext } from "@/contexts/TicketContext";
 import useRefreshGuard from "@/hooks/useRefreshGuard";
 
 interface ReservationDataContextValue {

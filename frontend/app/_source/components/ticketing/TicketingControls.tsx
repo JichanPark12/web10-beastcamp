@@ -8,7 +8,7 @@ import RoundSelector from "./RoundSelector";
 import type { Performance, Session } from "@/types/performance";
 import type { VenueDetail } from "@/types/venue";
 import { useRouter } from "next/navigation";
-import { useTicketContext } from "../../contexts/TicketContext";
+import { useTicketContext } from "../../../../contexts/TicketContext";
 
 interface TicketingControlsProps {
   performance?: Performance;

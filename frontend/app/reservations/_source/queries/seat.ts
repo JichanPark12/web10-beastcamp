@@ -1,6 +1,28 @@
+import { api } from "@/lib/api";
+import { useSuspenseQuery } from "@tanstack/react-query";
+
+interface ReservationResponse {
+  seats: boolean[][];
+}
+
+export const useReservationSeatsQuery = (
+  sessionId: number,
+  blockId: string | null,
+) => {
+  return useSuspenseQuery<ReservationResponse>({
+    queryKey: ["reservation-seats", sessionId, blockId],
+    queryFn: async () => {
+      const res = await api.get<ReservationResponse>(
+        `/reservations?session_id=${sessionId}&block_id=${blockId}`,
+      );
+      return res;
+    },
+    staleTime: 0,
+    gcTime: 0,
+  });
+};
 
 // 구버전...
-
 
 // export const useSeatMetaQuery = (id: string = "") => {
 //   return useSuspenseQuery({
@@ -33,5 +55,3 @@
 //     },
 //   });
 // };
-
-
