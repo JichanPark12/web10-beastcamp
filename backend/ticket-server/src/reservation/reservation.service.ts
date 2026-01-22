@@ -35,7 +35,7 @@ export class ReservationService {
     dto: CreateReservationRequestDto,
     userId: string,
   ): Promise<CreateReservationResponseDto> {
-    const { session_id: sessionId, block_id: blockId, row, col } = dto;
+    const { session_id: sessionId, seats } = dto;
 
     const lockKey = `reservation:lock:user:${userId}`;
     const lockAcquired = await this.redisService.setNxWithTtl(
@@ -50,16 +50,46 @@ export class ReservationService {
 
     try {
       await this.validateTicketingOpen();
-      await this.validateSessionBlock(sessionId, blockId);
-      await this.validateBlockSize(blockId, row, col);
 
-      const key = `reservation:session:${sessionId}_block:${blockId}_row:${row}_col:${col}`;
-      const success = await this.redisService.setNx(key, userId);
+      const reservationMap: Record<string, string> = {};
+      const blockInfoMap = new Map<
+        number,
+        { rowSize: number; colSize: number }
+      >();
 
-      if (!success) throw new BadRequestException('Seat already reserved');
+      for (const seat of seats) {
+        const { block_id: blockId, row, col } = seat;
+
+        await this.validateSessionBlock(sessionId, blockId);
+
+        if (!blockInfoMap.has(blockId)) {
+          const info = await this.getBlockInfo(blockId);
+          blockInfoMap.set(blockId, info);
+        }
+        const { rowSize, colSize } = blockInfoMap.get(blockId)!;
+
+        if (row < 0 || row >= rowSize || col < 0 || col >= colSize) {
+          throw new BadRequestException(
+            `Invalid coordinates for block ${blockId}`,
+          );
+        }
+
+        const key = `reservation:session:${sessionId}_block:${blockId}_row:${row}_col:${col}`;
+        if (reservationMap[key]) {
+          throw new BadRequestException('Duplicate seats in request');
+        }
+        reservationMap[key] = userId;
+      }
+
+      const success = await this.redisService.msetnx(reservationMap);
+
+      if (!success)
+        throw new BadRequestException('Some seats are already reserved');
 
       const rank = await this.redisService.incr(`rank:session:${sessionId}`);
-      this.logger.log(`Reserved: ${userId} -> ${key} (Rank: ${rank})`);
+      this.logger.log(
+        `Reserved: ${userId} -> ${Object.keys(reservationMap).length} seats (Rank: ${rank})`,
+      );
 
       try {
         await this.redisService.publishToQueue(
@@ -77,7 +107,7 @@ export class ReservationService {
         );
       }
 
-      return { rank };
+      return { rank, seats };
     } finally {
       try {
         await this.redisService.del(lockKey);
@@ -108,13 +138,6 @@ export class ReservationService {
     const data = await this.redisService.get(`block:${blockId}`);
     if (!data) throw new BadRequestException(`Block ${blockId} data not found`);
     return JSON.parse(data) as { rowSize: number; colSize: number };
-  }
-
-  private async validateBlockSize(blockId: number, row: number, col: number) {
-    const { rowSize, colSize } = await this.getBlockInfo(blockId);
-    if (row < 0 || row >= rowSize || col < 0 || col >= colSize) {
-      throw new BadRequestException('Invalid coordinates');
-    }
   }
 
   private generateSeatKeys(
