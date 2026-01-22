@@ -41,8 +41,8 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
 # Copy built application and dependencies
-COPY --from=builder --chown=nestjs:nodejs /app/backend/ticket-server/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/backend/ticket-server/package.json ./
+COPY --from=builder --chown=nestjs:nodejs /app/backend/ticket-server/dist ./backend/ticket-server/dist
+COPY --from=builder --chown=nestjs:nodejs /app/backend/ticket-server/package.json ./backend/ticket-server/package.json
 COPY --from=deps --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=deps --chown=nestjs:nodejs /app/backend/ticket-server/node_modules ./backend/ticket-server/node_modules
 COPY --from=deps --chown=nestjs:nodejs /app/packages ./packages
@@ -51,4 +51,5 @@ USER nestjs
 
 EXPOSE 3001
 
+WORKDIR /app/backend/ticket-server
 CMD ["node", "dist/main.js"]
