@@ -14,10 +14,6 @@ on:
           - ticket-server
           - queue-backend
           - all
-      branch:
-        description: "배포할 브랜치 (예: dev)"
-        required: true
-        default: "dev"
 
 jobs:
   resolve-targets:
@@ -93,7 +89,7 @@ jobs:
       - name: 코드 체크아웃
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch }}
+          ref: ${{ github.ref_name }}
 
       - name: 이미지 태그 설정
         id: meta
@@ -149,7 +145,7 @@ jobs:
           NCP_REGISTRY_PASSWORD: ${{ secrets.NCP_REGISTRY_PASSWORD }}
           API_SERVER_CHANGED: ${{ needs.resolve-targets.outputs.api_server }}
           TICKET_SERVER_CHANGED: ${{ needs.resolve-targets.outputs.ticket_server }}
-          TARGET_BRANCH: ${{ github.event.inputs.branch }}
+          TARGET_BRANCH: ${{ github.ref_name }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
         run: |
           # SSH 비밀번호 기반 접속 준비
@@ -203,7 +199,7 @@ jobs:
           NCP_REGISTRY_URL: ${{ secrets.NCP_REGISTRY_URL }}
           NCP_REGISTRY_USERNAME: ${{ secrets.NCP_REGISTRY_USERNAME }}
           NCP_REGISTRY_PASSWORD: ${{ secrets.NCP_REGISTRY_PASSWORD }}
-          TARGET_BRANCH: ${{ github.event.inputs.branch }}
+          TARGET_BRANCH: ${{ github.ref_name }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
         run: |
           # SSH 비밀번호 기반 접속 준비
