@@ -21,6 +21,8 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+    depends_on:
+      - redis
     networks:
       - backend-network
 
@@ -35,6 +37,8 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+    depends_on:
+      - redis
     networks:
       - backend-network
 
