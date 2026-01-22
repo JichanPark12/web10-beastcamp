@@ -4,7 +4,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
 # Copy root workspace files
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.json ./
 COPY packages ./packages
 
 # Copy ticket-server package.json
@@ -25,7 +25,7 @@ COPY --from=deps /app/packages ./packages
 
 # Copy source files
 COPY backend/ticket-server ./backend/ticket-server
-COPY pnpm-workspace.yaml package.json ./
+COPY pnpm-workspace.yaml package.json tsconfig.json ./
 
 # Build application
 WORKDIR /app/backend/ticket-server

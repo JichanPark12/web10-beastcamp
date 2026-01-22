@@ -1,5 +1,6 @@
 import { ArrowLeft } from "lucide-react";
-import SelectedSeatCount from "./header/SelectedSeatCount";
+import SelectedSeatCount from "./SelectedSeatCount";
+import PerformanceInfo from "./PerformanceInfo";
 
 export default function ReservationHeader() {
   return (
@@ -10,12 +11,7 @@ export default function ReservationHeader() {
             <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div>
-              <h2 className="text-xl">2025 아이유 콘서트 &lt;HEREH&gt;</h2>
-              <p className="text-sm text-gray-500">
-                2025년 10월 11일 저녁 8시 · 서울 잠실 종합운동장
-              </p>
-            </div>
+            <PerformanceInfo />
           </div>
           <div className="flex items-center gap-3">
             <SelectedSeatCount />

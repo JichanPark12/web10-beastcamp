@@ -1,12 +1,9 @@
-export interface QueueToken {
-  token: string;
+export interface QueueEntryResponse {
   userId: string;
-  position: number;
-  estimatedWaitTime: number;
+  position: number | null;
 }
 
-export interface QueueStatus {
-  isActive: boolean;
-  position?: number;
-  totalWaiting: number;
+export interface QueueStatusResponse {
+  position: number | null;
+  token?: string;
 }

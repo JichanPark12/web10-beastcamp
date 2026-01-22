@@ -26,7 +26,9 @@ export default function WaitingProgress() {
   useEffect(() => {
     if (isFinished) {
       endWaitingQueue();
-      router.replace("/reservations");
+      // sessionId 전달을 위해 URL 파라미터를 유지했습니다. (메인 페이지에서 sessionId 넘기는 중)
+      const searchParams = new URLSearchParams(window.location.search);
+      router.replace(`/reservations?${searchParams.toString()}`);
     }
   }, [isFinished, router, endWaitingQueue]);
 

@@ -7,10 +7,15 @@ import { Logger } from '@nestjs/common';
 describe('QueueWorker', () => {
   let worker: QueueWorker;
   let redisMock: Record<string, jest.Mock>;
+  const configValues: Record<string, number> = {
+    'queue.maxCapacity': 10,
+    'queue.heartbeatTimeoutMs': 60000,
+    'queue.activeTTLMs': 300000,
+  };
 
   beforeEach(async () => {
     redisMock = {
-      transferUser: jest.fn(),
+      syncAndPromoteWaiters: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -23,7 +28,7 @@ describe('QueueWorker', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn().mockReturnValue(10),
+            get: jest.fn((key: string) => configValues[key]),
           },
         },
       ],
@@ -35,26 +40,30 @@ describe('QueueWorker', () => {
   it('대기열 스케줄링 로직 호출 시 커스텀 루아 명령어가 올바른 인자로 실행되어야 한다', async () => {
     // 상황 설정: 루아 스크립트가 유저 2명을 이동시켰다고 가정
     const movedUsers = ['user1', 'user2'];
-    redisMock.transferUser.mockResolvedValue(movedUsers);
+    redisMock.syncAndPromoteWaiters.mockResolvedValue(movedUsers);
 
     await worker.processQueueTransfer();
 
     // 검증: 루아 명령어가 한 번 호출되었는가?
-    expect(redisMock.transferUser).toHaveBeenCalledTimes(1);
+    expect(redisMock.syncAndPromoteWaiters).toHaveBeenCalledTimes(1);
 
-    // 검증: 인자가 순서대로 잘 들어갔는가? (KEYS[1], KEYS[2], ARGV[1], ARGV[2])
-    // 1: 대기큐, 2: 활성큐, 3: MAX_CAPACITY, 4: 타임스탬프(문자열)
-    expect(redisMock.transferUser).toHaveBeenCalledWith(
+    // 검증: 인자가 순서대로 잘 들어갔는가?
+    expect(redisMock.syncAndPromoteWaiters).toHaveBeenCalledWith(
       REDIS_KEYS.WAITING_QUEUE,
       REDIS_KEYS.ACTIVE_QUEUE,
-      10, // MAX_CAPACITY
-      expect.any(String), // Date.now().toString()
+      REDIS_KEYS.HEARTBEAT_QUEUE,
+      10, // maxCapacity
+      expect.any(Number), // Date.now()
+      60000, // heartbeatTimeoutMs
+      300000, // activeTTLMs
+      'queue:active:user:', // ACTIVE_USER prefix
+      true, // heartbeatEnabled
     );
   });
 
   it('이동된 유저가 있으면 로그를 남겨야 한다', async () => {
     const movedUsers = ['user1'];
-    redisMock.transferUser.mockResolvedValue(movedUsers);
+    redisMock.syncAndPromoteWaiters.mockResolvedValue(movedUsers);
 
     // Logger spy 생성 (선택 사항)
     const loggerSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -70,7 +79,7 @@ describe('QueueWorker', () => {
 
   it('에러 발생 시 에러 로그를 남겨야 한다', async () => {
     // 상황 설정: Redis 실행 중 에러 발생
-    redisMock.transferUser.mockRejectedValue(new Error('Redis Error'));
+    redisMock.syncAndPromoteWaiters.mockRejectedValue(new Error('Redis Error'));
     const loggerErrorSpy = jest
       .spyOn(Logger.prototype, 'error')
       .mockImplementation();

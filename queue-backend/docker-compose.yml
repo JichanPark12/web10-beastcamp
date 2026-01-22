@@ -1,6 +1,15 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: queue-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - queue-network
+    # volumes:
+    #   - ./queue-backend/redis_data:/data
   queue-backend:
     build:
       context: ..
@@ -10,6 +19,8 @@ services:
     environment:
       - NODE_ENV=production
     restart: unless-stopped
+    depends_on:
+      - redis
     networks:
       - queue-network
 

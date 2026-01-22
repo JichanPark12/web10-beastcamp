@@ -6,28 +6,40 @@ import CountdownTimer from "./CountdownTimer";
 import DateSelector from "./DateSelector";
 import RoundSelector from "./RoundSelector";
 import type { Performance, Session } from "@/types/performance";
+import type { VenueDetail } from "@/types/venue";
 import { useRouter } from "next/navigation";
+import { useTicketContext } from "../../contexts/TicketContext";
 
 interface TicketingControlsProps {
   performance?: Performance;
   sessions?: Session[];
+  venue: VenueDetail | null;
 }
 
 export default function TicketingControls({
   performance,
   sessions,
+  venue,
 }: TicketingControlsProps) {
   const router = useRouter();
+  const { setPerformance, setVenue, selectSession } = useTicketContext();
 
   const { timeLeft, isActive } = useCountdown(performance?.ticketing_date);
   const [showDateSelection, setShowDateSelection] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedRound, setSelectedRound] = useState<string | null>(null);
+  const [selectedRound, setSelectedRound] = useState<Session | null>(null);
 
   const handleConfirm = () => {
-    if (selectedDate && selectedRound) {
-      router.push("/waiting-queue");
-      console.log("예매 확정:", { selectedDate, selectedRound });
+    // 예매하기 버튼 클릭 시 context에 공연, 공연장, 세션 정보 저장
+    if (selectedDate && selectedRound && venue && performance) {
+      setPerformance(performance);
+      setVenue(venue);
+      selectSession(selectedRound);
+      const queryParams = new URLSearchParams({
+        sId: selectedRound.id.toString(),
+      });
+
+      router.push(`/waiting-queue?${queryParams.toString()}`);
     }
   };
 
@@ -42,6 +54,11 @@ export default function TicketingControls({
     if (!date) return;
     setSelectedDate(date);
     setSelectedRound(null);
+  };
+
+  const handleRoundSelect = (roundId: string) => {
+    const session = sessions?.find((s) => s.id.toString() === roundId);
+    setSelectedRound(session || null);
   };
 
   return (
@@ -90,8 +107,8 @@ export default function TicketingControls({
           />
 
           <RoundSelector
-            selectedRound={selectedRound}
-            onRoundSelect={setSelectedRound}
+            selectedRound={selectedRound?.id.toString() || null}
+            onRoundSelect={handleRoundSelect}
             sessions={sessions}
             selectedDate={selectedDate}
           />

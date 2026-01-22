@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { QueueTrigger } from './queue.trigger';
 import { QueueWorker } from './queue.worker';
-import { PROVIDERS } from '@beastcamp/shared-constants';
+import { PROVIDERS, REDIS_CHANNELS } from '@beastcamp/shared-constants';
 
 describe('QueueTrigger', () => {
   let trigger: QueueTrigger;
@@ -43,7 +43,9 @@ describe('QueueTrigger', () => {
   it('onModuleInit 시 Redis 구독을 설정해야 한다', async () => {
     await trigger.onModuleInit();
 
-    expect(subClientMock.subscribe).toHaveBeenCalledWith('channel:finish');
+    expect(subClientMock.subscribe).toHaveBeenCalledWith(
+      REDIS_CHANNELS.QUEUE_EVENT_DONE,
+    );
     expect(subClientMock.on).toHaveBeenCalledWith(
       'message',
       expect.any(Function),

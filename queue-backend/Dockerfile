@@ -30,6 +30,6 @@ WORKDIR /usr/src/app
 COPY --from=base /usr/src/app/out .
     
 ENV NODE_ENV=production
-EXPOSE 3000
+EXPOSE 3003
     
 CMD ["node", "dist/main.js"]

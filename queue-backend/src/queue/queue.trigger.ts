@@ -1,4 +1,4 @@
-import { PROVIDERS } from '@beastcamp/shared-constants';
+import { PROVIDERS, REDIS_CHANNELS } from '@beastcamp/shared-constants';
 import {
   Inject,
   Injectable,
@@ -22,11 +22,11 @@ export class QueueTrigger implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     this.subClient = this.redis.duplicate();
-    await this.subClient.subscribe('channel:finish');
+    await this.subClient.subscribe(REDIS_CHANNELS.QUEUE_EVENT_DONE);
 
     this.subClient.on('message', (channel: string, message: string) => {
-      if (channel === 'channel:finish') {
-        this.logger.log('🔔 작업 완료 메시지 수신 - 즉시 이동 시도');
+      if (channel === REDIS_CHANNELS.QUEUE_EVENT_DONE) {
+        this.logger.log('🔔 티켓팅 완료 메시지 수신 - 즉시 이동 시도');
         void (async () => {
           await this.worker.removeActiveUser(message);
           await this.worker.processQueueTransfer();

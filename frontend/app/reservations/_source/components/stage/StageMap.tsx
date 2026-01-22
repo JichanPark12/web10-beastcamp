@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
-import { useReservation } from "../../contexts/ReservationProvider";
+import {
+  useReservationData,
+  useReservationState,
+  useReservationDispatch,
+} from "../../contexts/ReservationProvider";
 import AreaSeats from "./AreaSeats";
 import { gradeInfoColor } from "../../data/seat";
 
 export default function StageMap() {
-  const { venue, handleSelectArea, isShowArea, blockGrades, selectedSeats } =
-    useReservation();
-  console.log(selectedSeats);
+  const { venue, blockGrades } = useReservationData();
+  const { isShowArea } = useReservationState();
+  const { handleSelectArea } = useReservationDispatch();
+
   const blockMapUrl = venue?.blockMapUrl;
 
   const [svgContent, setSvgContent] = useState<string | null>(null);
@@ -24,6 +29,19 @@ export default function StageMap() {
     };
     fetchSvg();
   }, [blockMapUrl]);
+
+  const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const blockElement = target.closest("[data-block-name]");
+    const blockName = blockElement?.getAttribute("data-block-name");
+
+    if (blockName) {
+      const block = venue?.blocks.find((b) => b.blockDataName === blockName);
+      if (block) {
+        handleSelectArea(String(block.id));
+      }
+    }
+  };
 
   const blockColorMap = (() => {
     if (!venue?.blocks || !blockGrades) return {};
@@ -49,7 +67,7 @@ export default function StageMap() {
       ([name, color]) => `
         [data-block-name="${name}"] { fill: ${color} !important; transition: opacity 0.2s; } 
         [data-block-name="${name}"]:hover { cursor: pointer; }
-      `
+      `,
     )
     .join("\n");
 
@@ -67,21 +85,7 @@ export default function StageMap() {
                 dangerouslySetInnerHTML={{
                   __html: svgContent ? svgContent : "",
                 }}
-                onClick={(e) => {
-                  const target = e.target as HTMLElement;
-                  const blockElement = target.closest("[data-block-name]");
-                  const blockName =
-                    blockElement?.getAttribute("data-block-name");
-
-                  if (blockName) {
-                    const block = venue?.blocks.find(
-                      (b) => b.blockDataName === blockName
-                    );
-                    if (block) {
-                      handleSelectArea(String(block.id));
-                    }
-                  }
-                }}
+                onClick={handleStageClick}
               />
             </>
           </div>
