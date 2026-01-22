@@ -3,6 +3,7 @@ import {
   Logger,
   BadRequestException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { REDIS_CHANNELS } from '@beastcamp/shared-constants';
 import { RedisService } from '../redis/redis.service';
@@ -13,6 +14,7 @@ import { CreateReservationResponseDto } from './dto/create-reservation-response.
 @Injectable()
 export class ReservationService {
   private readonly logger = new Logger(ReservationService.name);
+  private readonly lockTtlMs = 5000;
 
   constructor(private readonly redisService: RedisService) {}
 
@@ -35,29 +37,55 @@ export class ReservationService {
   ): Promise<CreateReservationResponseDto> {
     const { session_id: sessionId, block_id: blockId, row, col } = dto;
 
-    await this.validateTicketingOpen();
-    await this.validateSessionBlock(sessionId, blockId);
-    await this.validateBlockSize(blockId, row, col);
+    const lockKey = `reservation:lock:user:${userId}`;
+    const lockAcquired = await this.redisService.setNxWithTtl(
+      lockKey,
+      '1',
+      this.lockTtlMs,
+    );
 
-    const key = `reservation:session:${sessionId}_block:${blockId}_row:${row}_col:${col}`;
-    const success = await this.redisService.setNx(key, userId);
-
-    if (!success) throw new BadRequestException('Seat already reserved');
-
-    const rank = await this.redisService.incr(`rank:session:${sessionId}`);
-    this.logger.log(`Reserved: ${userId} -> ${key} (Rank: ${rank})`);
-
-    try {
-      await this.redisService.publishToQueue(
-        REDIS_CHANNELS.QUEUE_EVENT_DONE,
-        userId,
-      );
-      this.logger.log(`이벤트 발행 성공: ${userId}님이 티켓팅을 완료했습니다.`);
-    } catch (error) {
-      this.logger.error('이벤트 발행 중 오류 발생:', error as Error);
+    if (!lockAcquired) {
+      throw new ConflictException('티켓팅 요청이 이미 진행 중입니다.');
     }
 
-    return { rank };
+    try {
+      await this.validateTicketingOpen();
+      await this.validateSessionBlock(sessionId, blockId);
+      await this.validateBlockSize(blockId, row, col);
+
+      const key = `reservation:session:${sessionId}_block:${blockId}_row:${row}_col:${col}`;
+      const success = await this.redisService.setNx(key, userId);
+
+      if (!success) throw new BadRequestException('Seat already reserved');
+
+      const rank = await this.redisService.incr(`rank:session:${sessionId}`);
+      this.logger.log(`Reserved: ${userId} -> ${key} (Rank: ${rank})`);
+
+      try {
+        await this.redisService.publishToQueue(
+          REDIS_CHANNELS.QUEUE_EVENT_DONE,
+          userId,
+        );
+        this.logger.log(
+          `이벤트 발행 성공: ${userId}님이 티켓팅을 완료했습니다.`,
+        );
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error('Unknown error');
+        this.logger.error(
+          '이벤트 발행 중 오류 발생:',
+          err.stack ?? err.message,
+        );
+      }
+
+      return { rank };
+    } finally {
+      try {
+        await this.redisService.del(lockKey);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error('Unknown error');
+        this.logger.error('유저 락 해제 실패:', err.stack ?? err.message);
+      }
+    }
   }
 
   private async validateTicketingOpen() {
