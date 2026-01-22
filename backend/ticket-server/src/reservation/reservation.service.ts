@@ -35,62 +35,121 @@ export class ReservationService {
     dto: CreateReservationRequestDto,
     userId: string,
   ): Promise<CreateReservationResponseDto> {
-    const { session_id: sessionId, block_id: blockId, row, col } = dto;
-
-    const lockKey = `reservation:lock:user:${userId}`;
-    const lockAcquired = await this.redisService.setNxWithTtl(
-      lockKey,
-      '1',
-      this.lockTtlMs,
-    );
-
-    if (!lockAcquired) {
-      throw new ConflictException('티켓팅 요청이 이미 진행 중입니다.');
-    }
-
+    const { session_id: sessionId, seats } = dto;
+    await this.acquireUserLock(userId);
     try {
       await this.validateTicketingOpen();
-      await this.validateSessionBlock(sessionId, blockId);
-      await this.validateBlockSize(blockId, row, col);
 
-      const key = `reservation:session:${sessionId}_block:${blockId}_row:${row}_col:${col}`;
-      const success = await this.redisService.setNx(key, userId);
+      const reservationMap = await this.prepareReservationMap(
+        sessionId,
+        seats,
+        userId,
+      );
+      const rank = await this.executeAtomicReservation(
+        reservationMap,
+        sessionId,
+        userId,
+      );
+      await this.publishReservationDoneEvent(userId);
 
-      if (!success) throw new BadRequestException('Seat already reserved');
-
-      const rank = await this.redisService.incr(`rank:session:${sessionId}`);
-      this.logger.log(`Reserved: ${userId} -> ${key} (Rank: ${rank})`);
-
-      try {
-        await this.redisService.publishToQueue(
-          REDIS_CHANNELS.QUEUE_EVENT_DONE,
-          userId,
-        );
-        this.logger.log(
-          `이벤트 발행 성공: ${userId}님이 티켓팅을 완료했습니다.`,
-        );
-      } catch (error: unknown) {
-        const err = error instanceof Error ? error : new Error('Unknown error');
-        this.logger.error(
-          '이벤트 발행 중 오류 발생:',
-          err.stack ?? err.message,
-        );
-      }
-
-      return { rank };
+      return { rank, seats };
     } finally {
-      try {
-        await this.redisService.del(lockKey);
-      } catch (error: unknown) {
-        const err = error instanceof Error ? error : new Error('Unknown error');
-        this.logger.error('유저 락 해제 실패:', err.stack ?? err.message);
-      }
+      await this.releaseUserLock(userId);
     }
   }
 
   private async validateTicketingOpen() {
     const isOpen = await this.redisService.get('is_ticketing_open');
     if (isOpen !== 'true') throw new ForbiddenException('Ticketing not open');
+  }
+
+  private async acquireUserLock(userId: string): Promise<void> {
+    const lockKey = `reservation:lock:user:${userId}`;
+    const acquired = await this.redisService.setNxWithTtl(
+      lockKey,
+      '1',
+      this.lockTtlMs,
+    );
+    if (!acquired) {
+      throw new ConflictException('티켓팅 요청이 이미 진행 중입니다.');
+    }
+  }
+
+  private async releaseUserLock(userId: string): Promise<void> {
+    const lockKey = `reservation:lock:user:${userId}`;
+    try {
+      await this.redisService.del(lockKey);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error('Unknown error');
+      this.logger.error('유저 락 해제 실패:', err.stack ?? err.message);
+    }
+  }
+
+  private async publishReservationDoneEvent(userId: string): Promise<void> {
+    try {
+      await this.redisService.publishToQueue(
+        REDIS_CHANNELS.QUEUE_EVENT_DONE,
+        userId,
+      );
+      this.logger.log(`이벤트 발행 성공: ${userId}님이 티켓팅을 완료했습니다.`);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error('Unknown error');
+      this.logger.error('이벤트 발행 중 오류 발생:', err.stack ?? err.message);
+    }
+  }
+
+  private async prepareReservationMap(
+    sessionId: number,
+    seats: { block_id: number; row: number; col: number }[],
+    userId: string,
+  ): Promise<Record<string, string>> {
+    const reservationMap: Record<string, string> = {};
+    const blockInfoMap = new Map<
+      number,
+      { rowSize: number; colSize: number }
+    >();
+
+    for (const seat of seats) {
+      const { block_id: blockId, row, col } = seat;
+
+      await this.validateSessionBlock(sessionId, blockId);
+
+      if (!blockInfoMap.has(blockId)) {
+        const info = await this.getBlockInfo(blockId);
+        blockInfoMap.set(blockId, info);
+      }
+      const { rowSize, colSize } = blockInfoMap.get(blockId)!;
+
+      if (row < 0 || row >= rowSize || col < 0 || col >= colSize) {
+        throw new BadRequestException(
+          `Invalid coordinates for block ${blockId}`,
+        );
+      }
+      const key = `reservation:session:${sessionId}:block:${blockId}:row:${row}:col:${col}`;
+
+      if (reservationMap[key]) {
+        throw new BadRequestException('Duplicate seats in request');
+      }
+      reservationMap[key] = userId;
+    }
+    return reservationMap;
+  }
+
+  private async executeAtomicReservation(
+    reservationMap: Record<string, string>,
+    sessionId: number,
+    userId: string,
+  ): Promise<number> {
+    const success = await this.redisService.msetnx(reservationMap);
+
+    if (!success)
+      throw new BadRequestException('Some seats are already reserved');
+
+    const rank = await this.redisService.incr(`rank:session:${sessionId}`);
+    this.logger.log(
+      `Reserved: ${userId} -> ${Object.keys(reservationMap).length} seats (Rank: ${rank})`,
+    );
+    return rank;
   }
 
   private async validateSessionBlock(sessionId: number, blockId: number) {
@@ -110,13 +169,6 @@ export class ReservationService {
     return JSON.parse(data) as { rowSize: number; colSize: number };
   }
 
-  private async validateBlockSize(blockId: number, row: number, col: number) {
-    const { rowSize, colSize } = await this.getBlockInfo(blockId);
-    if (row < 0 || row >= rowSize || col < 0 || col >= colSize) {
-      throw new BadRequestException('Invalid coordinates');
-    }
-  }
-
   private generateSeatKeys(
     sessionId: number,
     blockId: number,
@@ -127,7 +179,7 @@ export class ReservationService {
     for (let r = 0; r < rowSize; r++) {
       for (let c = 0; c < colSize; c++) {
         keys.push(
-          `reservation:session:${sessionId}_block:${blockId}_row:${r}_col:${c}`,
+          `reservation:session:${sessionId}:block:${blockId}:row:${r}:col:${c}`,
         );
       }
     }
