@@ -6,6 +6,7 @@ import { Heart, ChevronRight } from 'lucide-react';
 import { Performance, Session } from '@/types/performance';
 import Yes24Calendar from './Yes24Calendar';
 import { useRouter } from 'next/navigation';
+import { useTicketContext } from '@/contexts/TicketContext';
 
 interface Yes24PerformanceDetailProps {
   performance: Performance;
@@ -19,11 +20,18 @@ export default function Yes24PerformanceDetail({
   venueName,
 }: Yes24PerformanceDetailProps) {
   const router = useRouter();
+  const { setPerformance, selectSession } = useTicketContext();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(436);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [isTicketingOpen, setIsTicketingOpen] = useState(false);
+
+  // 날짜 선택 핸들러 - 날짜 변경 시 선택된 회차 초기화
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    setSelectedSession(null);
+  };
 
   // 날짜 범위 계산
   let dateRange = '';
@@ -69,7 +77,15 @@ export default function Yes24PerformanceDetail({
 
   const handleReservation = () => {
     if (selectedDate && selectedSession && isTicketingOpen) {
-      router.push('/waiting-queue');
+      // Context에 공연 정보와 세션 정보 저장
+      setPerformance(performance);
+      const session = sessions.find(s => s.id.toString() === selectedSession);
+      if (session) {
+        selectSession(session);
+      }
+
+      // URL로도 세션 ID 전달
+      router.push(`/waiting-queue?sId=${selectedSession}`);
     }
   };
 
@@ -295,7 +311,7 @@ export default function Yes24PerformanceDetail({
                 <div className="flex-1">
                   <Yes24Calendar
                     selectedDate={selectedDate}
-                    onDateSelect={setSelectedDate}
+                    onDateSelect={handleDateSelect}
                     sessions={sessions}
                   />
                 </div>

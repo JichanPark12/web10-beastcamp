@@ -7,6 +7,7 @@ import { Performance, Session } from '@/types/performance';
 import DetailDateSelector from './DetailDateSelector';
 import DetailRoundSelector from './DetailRoundSelector';
 import { useRouter } from 'next/navigation';
+import { useTicketContext } from '@/contexts/TicketContext';
 
 interface PerformanceDetailProps {
   performance: Performance;
@@ -20,6 +21,7 @@ export default function PerformanceDetail({
   venueName,
 }: PerformanceDetailProps) {
   const router = useRouter();
+  const { setPerformance, selectSession } = useTicketContext();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(2076);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -77,8 +79,16 @@ export default function PerformanceDetail({
 
   const handleConfirm = () => {
     if (selectedDate && selectedRound) {
-      router.push('/waiting-queue');
-      console.log('예매 확정:', { selectedDate, selectedRound });
+      // Context에 공연 정보와 세션 정보 저장
+      setPerformance(performance);
+      const session = sessions.find(s => s.id.toString() === selectedRound);
+      if (session) {
+        selectSession(session);
+      }
+
+      // URL로도 세션 ID 전달
+      router.push(`/waiting-queue?sId=${selectedRound}`);
+      console.log('예매 확정:', { selectedDate, selectedRound, session });
     }
   };
 
