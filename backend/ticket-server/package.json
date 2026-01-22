@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "prebuild": "pnpm --filter @beastcamp/backend-config build && pnpm --filter @beastcamp/shared-types build",
+    "prebuild": "pnpm --filter @beastcamp/backend-config build && pnpm --filter @beastcamp/shared-types build && pnpm --filter @beastcamp/shared-constants build",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
