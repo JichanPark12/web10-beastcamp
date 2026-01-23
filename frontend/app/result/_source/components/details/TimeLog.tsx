@@ -4,7 +4,13 @@ import { Clock } from "lucide-react";
 import { useTimeLog } from "../../hooks/useTimeLog";
 
 export default function TimeLog() {
-  const { timeLog, totalTime } = useTimeLog();
+  let { timeLog, totalTime } = useTimeLog();
+  timeLog = {
+    queue: 10.4,
+    captcha: 4.3,
+    seats: 2.3,
+  };
+  totalTime = 17;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6">
@@ -17,11 +23,10 @@ export default function TimeLog() {
           <span className="text-gray-600">대기열 통과</span>
           <span>{timeLog.queue?.toFixed(1)}초</span>
         </div>
-        {/* 보안 문자 섹션 개발 후 적용 */}
-        {/* <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center">
           <span className="text-gray-600">보안문자 입력</span>
           <span>{timeLog.captcha?.toFixed(1)}초</span>
-        </div> */}
+        </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-600">좌석 선택</span>
           <span>{timeLog.seats?.toFixed(1)}초</span>
