@@ -42,6 +42,7 @@ RUN adduser --system --uid 1001 nestjs
 
 # Copy built application and dependencies
 COPY --from=builder --chown=nestjs:nodejs /app/backend/api-server/dist ./backend/api-server/dist
+COPY --from=builder --chown=nestjs:nodejs /app/backend/api-server/public ./backend/api-server/public
 COPY --from=builder --chown=nestjs:nodejs /app/backend/api-server/package.json ./backend/api-server/package.json
 COPY --from=deps --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=deps --chown=nestjs:nodejs /app/backend/api-server/node_modules ./backend/api-server/node_modules
