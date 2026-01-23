@@ -1,10 +1,14 @@
 import { getServerUrl, type ServerType } from "@/constants/api";
 
+
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
-interface ApiRequestOptions extends Omit<RequestInit, "method" | "body"> {
+export interface ApiRequestOptions extends Omit<
+  RequestInit,
+  "method" | "body"
+> {
   params?: Record<string, string | number | boolean>;
-  requireAuth?: boolean;
+
   serverType?: ServerType; // 요청을 보낼 서버 타입
 }
 
@@ -13,26 +17,16 @@ export class ApiError extends Error {
     message: string,
     public status: number,
     public statusText: string,
-    public data?: unknown
+    public data?: unknown,
   ) {
     super(message);
     this.name = "ApiError";
   }
 }
 
-// 인증 절차가 어찌될진 아직 잘 모르지만 일단 localStorage와 sessionStorage를 사용한다 가정하고 진행
-// 추후 next auth사용해서 구현할 수도 있음 next auth 사용 시 코드 변경 필요
-function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null;
-
-  return (
-    localStorage.getItem("queue_token") || sessionStorage.getItem("queue_token")
-  );
-}
-
 function buildUrl(
   url: string,
-  params?: Record<string, string | number | boolean>
+  params?: Record<string, string | number | boolean>,
 ): string {
   if (!params || Object.keys(params).length === 0) {
     return url;
@@ -51,34 +45,28 @@ async function request<T = unknown>(
   method: HttpMethod,
   endpoint: string,
   data?: unknown,
-  options: ApiRequestOptions = {}
+  options: ApiRequestOptions = {},
 ): Promise<T> {
-  const { params, headers = {}, requireAuth = false, serverType = "api", ...restOptions } = options;
+  const {
+    params,
+    headers = {},
+    serverType = "api",
+    ...restOptions
+  } = options;
 
   let baseUrl = getServerUrl(serverType);
 
   // 서버 사이드에서 상대 경로인 경우 절대 URL로 변환
-  if (typeof window === 'undefined' && baseUrl.startsWith('/')) {
+  if (typeof window === "undefined" && baseUrl.startsWith("/")) {
     baseUrl = `http://localhost:${process.env.PORT || 3000}${baseUrl}`;
   }
 
   const url = buildUrl(`${baseUrl}${endpoint}`, params);
 
-  // 인증이 필요한 경우 토큰 확인 및 추가
-  const authHeaders: Record<string, string> = {};
-  if (requireAuth) {
-    const token = getAuthToken();
-    if (!token) {
-      throw new ApiError("인증 토큰이 없습니다", 401, "Unauthorized");
-    }
-    authHeaders.Authorization = `Bearer ${token}`;
-  }
-
   const requestOptions: RequestInit = {
     method,
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders,
       ...headers,
     },
     ...restOptions,
@@ -104,7 +92,7 @@ async function request<T = unknown>(
         `HTTP ${response.status}: ${response.statusText}`,
         response.status,
         response.statusText,
-        errorData
+        errorData,
       );
     }
 
@@ -132,7 +120,7 @@ async function request<T = unknown>(
 
 export async function get<T = unknown>(
   endpoint: string,
-  options?: ApiRequestOptions
+  options?: ApiRequestOptions,
 ): Promise<T> {
   return request<T>("GET", endpoint, undefined, options);
 }
@@ -140,7 +128,7 @@ export async function get<T = unknown>(
 export async function post<T = unknown>(
   endpoint: string,
   data?: unknown,
-  options?: ApiRequestOptions
+  options?: ApiRequestOptions,
 ): Promise<T> {
   return request<T>("POST", endpoint, data, options);
 }
@@ -148,14 +136,14 @@ export async function post<T = unknown>(
 export async function put<T = unknown>(
   endpoint: string,
   data?: unknown,
-  options?: ApiRequestOptions
+  options?: ApiRequestOptions,
 ): Promise<T> {
   return request<T>("PUT", endpoint, data, options);
 }
 
 export async function del<T = unknown>(
   endpoint: string,
-  options?: ApiRequestOptions
+  options?: ApiRequestOptions,
 ): Promise<T> {
   return request<T>("DELETE", endpoint, undefined, options);
 }

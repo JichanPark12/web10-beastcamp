@@ -18,3 +18,7 @@ backend/api-server/dist/
 /queue-backend/node_modules
 /node_modules/.bin
 /node_modules
+PR.md
+ticketing-simulator-key.pem
+이슈.md
+backend/.env

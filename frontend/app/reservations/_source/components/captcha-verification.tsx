@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { fetchCaptcha, verifyCaptcha } from '@/services/ticket';
+import { useState, useEffect, useRef } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { fetchCaptcha, verifyCaptcha } from "@/services/ticket";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CaptchaVerificationProps {
   onVerified: () => void;
@@ -15,17 +16,24 @@ export function CaptchaVerification({
   onError,
 }: CaptchaVerificationProps) {
   const [refreshKey, setRefreshKey] = useState(0);
-  const [userInput, setUserInput] = useState<string>('');
-  const [error, setError] = useState<string>('');
+  const [userInput, setUserInput] = useState<string>("");
+  const [error, setError] = useState<string>("");
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { token } = useAuth();
 
   // useSuspenseQuery로 보안 문자 데이터 로드
   // Suspense와 ErrorBoundary가 로딩/에러 상태를 처리
   // ssr: false로 클라이언트에서만 실행 (Blob URL hydration 에러 방지)
   const { data: captchaData } = useSuspenseQuery({
-    queryKey: ['captcha', refreshKey],
-    queryFn: fetchCaptcha,
+    queryKey: ["captcha", refreshKey],
+    queryFn: () => {
+      if (!token) {
+        throw new Error("인증 토큰이 없습니다.");
+      }
+      return fetchCaptcha(token);
+    },
     staleTime: 0, // 항상 새로운 보안문자 요청
   });
 
@@ -34,8 +42,8 @@ export function CaptchaVerification({
   // 보안 문자 새로고침
   const refreshCaptcha = () => {
     setRefreshKey((prev) => prev + 1);
-    setUserInput('');
-    setError('');
+    setUserInput("");
+    setError("");
   };
 
   // 언마운트 시 URL 정리
@@ -55,30 +63,33 @@ export function CaptchaVerification({
   // 포커스 시 에러 메시지 초기화
   const handleInputFocus = () => {
     if (error) {
-      setError('');
+      setError("");
     }
   };
 
   // 검증 처리
   const handleVerify = async () => {
     if (!userInput.trim()) {
-      setError('보안 문자를 입력해주세요.');
+      setError("보안 문자를 입력해주세요.");
       return;
     }
 
     setIsVerifying(true);
-    setError('');
+    setError("");
 
     try {
-      const result = await verifyCaptcha(captchaId, userInput);
+      if (!token) {
+        throw new Error("인증 토큰이 없습니다.");
+      }
+      const result = await verifyCaptcha(token, captchaId, userInput);
 
       if (result.success) {
-        toast.success('보안 문자 검증 성공');
+        toast.success("보안 문자 검증 성공");
         onVerified();
       } else {
         // 에러 표시하고 입력창 리셋 후 포커스
         setError(result.message);
-        setUserInput('');
+        setUserInput("");
         onError?.(result.message);
         // 포커스 복원
         setTimeout(() => {
@@ -87,10 +98,10 @@ export function CaptchaVerification({
       }
     } catch (err) {
       const errorMsg =
-        err instanceof Error ? err.message : '보안 문자 검증에 실패했습니다.';
+        err instanceof Error ? err.message : "보안 문자 검증에 실패했습니다.";
       // 에러 표시하고 입력창 리셋 후 포커스
       setError(errorMsg);
-      setUserInput('');
+      setUserInput("");
       onError?.(errorMsg);
       // 포커스 복원
       setTimeout(() => {
@@ -149,18 +160,18 @@ export function CaptchaVerification({
           value={userInput}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
-          onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
+          onKeyDown={(e) => e.key === "Enter" && handleVerify()}
           placeholder="보안문자 입력"
           className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-center text-lg tracking-widest transition-colors ${
             error
-              ? 'border-red-300 focus:ring-red-500 bg-red-50'
-              : 'border-gray-200 focus:ring-purple-500'
+              ? "border-red-300 focus:ring-red-500 bg-red-50"
+              : "border-gray-200 focus:ring-purple-500"
           }`}
           maxLength={6}
           autoFocus
           disabled={isVerifying}
           aria-invalid={!!error}
-          aria-describedby={error ? 'captcha-error' : undefined}
+          aria-describedby={error ? "captcha-error" : undefined}
         />
 
         {/* 에러 메시지 - 입력창 바로 아래 caption 형태 */}
@@ -181,7 +192,7 @@ export function CaptchaVerification({
         disabled={isVerifying || !userInput.trim()}
         className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
       >
-        {isVerifying ? '검증 중...' : '확인'}
+        {isVerifying ? "검증 중..." : "확인"}
       </button>
 
       {/* 힌트 */}

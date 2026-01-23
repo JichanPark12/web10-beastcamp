@@ -1,6 +1,5 @@
-import { getServerUrl } from '@/constants/api';
-
-import { api } from '@/lib/api';
+import { getServerUrl } from "@/constants/api";
+import { createAuthenticatedApi } from "@/lib/api/authenticatedClient";
 
 export interface CaptchaResponse {
   captchaId: string;
@@ -23,21 +22,25 @@ export interface VerifyCaptchaResponse {
  *
  * 대신 getServerUrl을 활용하여 서버 URL을 가져옵니다.
  */
-export async function fetchCaptcha(): Promise<CaptchaResponse> {
-  const ticketServerUrl = getServerUrl('ticket');
+export async function fetchCaptcha(token: string): Promise<CaptchaResponse> {
+  const ticketServerUrl = getServerUrl("ticket");
+
   const response = await fetch(`${ticketServerUrl}/captcha`, {
-    method: 'GET',
-    credentials: 'include',
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    credentials: "include",
   });
 
   if (!response.ok) {
-    throw new Error('보안 문자 이미지를 가져오는데 실패했습니다.');
+    throw new Error("보안 문자 이미지를 가져오는데 실패했습니다.");
   }
 
   // X-Captcha-Id 헤더에서 captchaId 가져오기
-  const captchaId = response.headers.get('X-Captcha-Id');
+  const captchaId = response.headers.get("X-Captcha-Id");
   if (!captchaId) {
-    throw new Error('보안 문자 ID를 찾을 수 없습니다.');
+    throw new Error("보안 문자 ID를 찾을 수 없습니다.");
   }
 
   // 이미지 데이터를 Blob으로 받아서 URL 생성
@@ -55,12 +58,18 @@ export async function fetchCaptcha(): Promise<CaptchaResponse> {
  * api.post 유틸 함수를 사용하여 티켓 서버에 검증 요청
  */
 export async function verifyCaptcha(
+  token: string,
   captchaId: string,
   userInput: string,
-): Promise<VerifyCaptchaResponse> {
-  return api.post<VerifyCaptchaResponse>(
-    '/captcha/verify',
+) {
+  const authApi = createAuthenticatedApi(token);
+
+  return authApi.post<VerifyCaptchaResponse>(
+    "/captcha/verify",
     { captchaId, userInput },
-    { serverType: 'ticket', credentials: 'include' },
+    {
+      serverType: "ticket",
+      credentials: "include",
+    },
   );
 }

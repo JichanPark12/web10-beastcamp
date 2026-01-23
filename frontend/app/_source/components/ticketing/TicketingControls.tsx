@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useCountdown } from "../../hooks/useCountdown";
-import CountdownTimer from "./CountdownTimer";
-import DateSelector from "./DateSelector";
-import RoundSelector from "./RoundSelector";
-import type { Performance, Session } from "@/types/performance";
-import type { VenueDetail } from "@/types/venue";
-import { useRouter } from "next/navigation";
-import { useTicketContext } from "../../../../contexts/TicketContext";
+import { useState } from 'react';
+import { useCountdown } from '../../hooks/useCountdown';
+import CountdownTimer from './CountdownTimer';
+import DateSelector from './DateSelector';
+import RoundSelector from './RoundSelector';
+import type { Performance, Session } from '@/types/performance';
+import type { VenueDetail } from '@/types/venue';
+import { useRouter } from 'next/navigation';
+import { useTicketContext } from '../../../../contexts/TicketContext';
 
 interface TicketingControlsProps {
   performance?: Performance;
@@ -25,115 +25,56 @@ export default function TicketingControls({
   const { setPerformance, setVenue, selectSession } = useTicketContext();
 
   const { timeLeft, isActive } = useCountdown(performance?.ticketing_date);
-  const [showDateSelection, setShowDateSelection] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedRound, setSelectedRound] = useState<Session | null>(null);
 
-  const handleConfirm = () => {
-    // 예매하기 버튼 클릭 시 context에 공연, 공연장, 세션 정보 저장
-    if (selectedDate && selectedRound && venue && performance) {
-      setPerformance(performance);
-      setVenue(venue);
-      selectSession(selectedRound);
-      const queryParams = new URLSearchParams({
-        sId: selectedRound.id.toString(),
-      });
+  const handleBooking = () => {
+    router.push('/nol-ticket');
+  };
 
-      router.push(`/waiting-queue?${queryParams.toString()}`);
+  const handleDemoStart = () => {
+    if (!performance?.platform) {
+      router.push('/nol-ticket');
+      return;
     }
-  };
 
-  const handleBackToCountdown = () => {
-    setShowDateSelection(false);
-    setSelectedDate(undefined);
-    setSelectedRound(null);
-  };
+    const platformRoutes = {
+      interpark: '/interpark',
+      yes24: '/yes24',
+      'melon-ticket': '/melon-ticket',
+    };
 
-  const onDateSelect = (date: Date | undefined) => {
-    if (date === selectedDate) return;
-    if (!date) return;
-    setSelectedDate(date);
-    setSelectedRound(null);
-  };
-
-  const handleRoundSelect = (roundId: string) => {
-    const session = sessions?.find((s) => s.id.toString() === roundId);
-    setSelectedRound(session || null);
+    const route =
+      platformRoutes[performance.platform as keyof typeof platformRoutes];
+    router.push(route || '/nol-ticket');
   };
 
   return (
-    <div
-      className={`${
-        showDateSelection
-          ? "flex flex-col items-end"
-          : "bg-white/10 p-3 backdrop-blur-lg rounded-2xl border border-white/20"
-      }`}
-    >
-      {!showDateSelection ? (
-        <>
-          <CountdownTimer timeLeft={timeLeft} />
+    <div className="bg-white/10 p-3 backdrop-blur-lg rounded-2xl border border-white/20">
+      <CountdownTimer timeLeft={timeLeft} />
 
-          <button
-            onClick={() => setShowDateSelection(true)}
-            disabled={!isActive}
-            className={`w-full py-4 rounded-xl transition-all ${
-              isActive
-                ? "bg-white text-purple-600 hover:bg-gray-100 shadow-lg hover:shadow-xl"
-                : "bg-white/30 text-white/50 cursor-not-allowed"
-            }`}
-          >
-            {isActive ? "예매하기" : "대기 중..."}
-          </button>
+      <button
+        onClick={handleBooking}
+        disabled={!isActive}
+        className={`w-full py-4 rounded-xl transition-all ${
+          isActive
+            ? 'bg-white text-purple-600 hover:bg-gray-100 shadow-lg hover:shadow-xl'
+            : 'bg-white/30 text-white/50 cursor-not-allowed'
+        }`}
+      >
+        {isActive ? '예매하기' : '대기 중...'}
+      </button>
 
-          {!isActive && (
-            <p className="text-center text-sm text-white/60 mt-3">
-              티켓팅 시작 시간에 활성화됩니다
-            </p>
-          )}
-
-          <button
-            onClick={() => setShowDateSelection(true)}
-            className="w-full mt-3 py-3 rounded-xl bg-white/20 hover:bg-white/30 transition-all text-sm border border-white/30"
-          >
-            데모 시작하기
-          </button>
-        </>
-      ) : (
-        <div className=" w-fit">
-          <DateSelector
-            selectedDate={selectedDate}
-            onDateSelect={onDateSelect}
-            sessions={sessions}
-          />
-
-          <RoundSelector
-            selectedRound={selectedRound?.id.toString() || null}
-            onRoundSelect={handleRoundSelect}
-            sessions={sessions}
-            selectedDate={selectedDate}
-          />
-
-          <div className="flex gap-2">
-            <button
-              onClick={handleBackToCountdown}
-              className="flex-1 py-3 rounded-xl bg-white/20 hover:bg-white/30 transition-colors text-sm"
-            >
-              취소
-            </button>
-            <button
-              onClick={handleConfirm}
-              disabled={!selectedDate || !selectedRound}
-              className={`flex-1 py-3 rounded-xl transition-all text-sm ${
-                selectedDate && selectedRound
-                  ? "bg-white text-purple-600 hover:bg-gray-100"
-                  : "bg-white/30 text-white/50 cursor-not-allowed"
-              }`}
-            >
-              예매하기
-            </button>
-          </div>
-        </div>
+      {!isActive && (
+        <p className="text-center text-sm text-white/60 mt-3">
+          티켓팅 시작 시간에 활성화됩니다
+        </p>
       )}
+
+      <button
+        onClick={handleDemoStart}
+        className="w-full mt-3 py-3 rounded-xl bg-white/20 hover:bg-white/30 transition-all text-sm border border-white/30"
+      >
+        데모 시작하기
+      </button>
     </div>
   );
 }

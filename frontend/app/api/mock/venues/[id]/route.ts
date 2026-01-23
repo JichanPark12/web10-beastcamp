@@ -1,7 +1,7 @@
 const venueDetail = {
   id: 1,
-  venueName: "인천 남동 체육관",
-  blockMapUrl: "/incheon_namdong_gymnasium.svg",
+  venueName: "올림픽공원 올림픽홀",
+  blockMapUrl: "/olympic_hall.svg",
   blocks: [
     { id: 1, blockDataName: "C2", rowSize: 10, colSize: 10 },
     { id: 2, blockDataName: "G2", rowSize: 10, colSize: 10 },

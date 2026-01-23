@@ -2,7 +2,10 @@ import { IsISO8601, IsNotEmpty, IsString, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePerformanceRequestDto {
-  @ApiProperty({ description: '공연 이름', example: '임영웅 콘서트' })
+  @ApiProperty({
+    description: '공연 이름',
+    example: 'wave to earth - 사랑으로 0.3',
+  })
   @IsString()
   @IsNotEmpty()
   performance_name: string;
