@@ -15,6 +15,7 @@ export default function PerformanceInfo({
   let dateDisplay = '';
 
   if (sessions && sessions.length > 0) {
+    console.log('Sessions in PerformanceInfo:', sessions);
     const dates = sessions.map((s) => new Date(s.sessionDate).getTime());
     const minDate = new Date(Math.min(...dates));
     const maxDate = new Date(Math.max(...dates));
@@ -38,21 +39,8 @@ export default function PerformanceInfo({
         interpark: '인터파크',
         yes24: 'YES24',
         'melon-ticket': '멜론티켓',
-      }[performance.platform] || '인터파크'
-    : '인터파크';
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case '상':
-        return 'bg-red-500/90 text-white';
-      case '중':
-        return 'bg-yellow-500/90 text-white';
-      case '하':
-        return 'bg-green-500/90 text-white';
-      default:
-        return 'bg-white/20 text-white';
-    }
-  };
+      }[performance.platform]
+    : 'nol-ticket';
 
   return (
     <div className="grid md:grid-cols-2 gap-8 items-center">
