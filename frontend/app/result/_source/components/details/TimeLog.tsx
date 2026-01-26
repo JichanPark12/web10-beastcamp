@@ -1,16 +1,14 @@
 "use client";
 
 import { Clock } from "lucide-react";
-import { useTimeLog } from "../../hooks/useTimeLog";
+import { useTimeLogStore } from "@/hooks/timeLogStore";
+import { formatTime } from "@/lib/utils";
 
 export default function TimeLog() {
-  let { timeLog, totalTime } = useTimeLog();
-  timeLog = {
-    queue: 10.4,
-    captcha: 4.3,
-    seats: 2.3,
-  };
-  totalTime = 17;
+  const { waitingQueue, captcha, seatSelection, getTotalDuration } =
+    useTimeLogStore();
+
+  const totalTime = getTotalDuration();
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6">
@@ -21,19 +19,19 @@ export default function TimeLog() {
       <div className="space-y-3">
         <div className="flex justify-between items-center">
           <span className="text-gray-600">대기열 통과</span>
-          <span>{timeLog.queue?.toFixed(1)}초</span>
+          <span>{formatTime(waitingQueue.duration)}</span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-600">보안문자 입력</span>
-          <span>{timeLog.captcha?.toFixed(1)}초</span>
+          <span>{formatTime(captcha.duration)}</span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-600">좌석 선택</span>
-          <span>{timeLog.seats?.toFixed(1)}초</span>
+          <span>{formatTime(seatSelection.duration)}</span>
         </div>
         <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
           <span>총 소요 시간</span>
-          <span className="text-purple-600">{totalTime.toFixed(1)}초</span>
+          <span className="text-purple-600">{formatTime(totalTime)}</span>
         </div>
       </div>
     </div>

@@ -1,5 +1,4 @@
 import { ReservationProvider } from "../contexts/ReservationProvider";
-import ReservationTimeTracker from "./ReservationTimeTracker";
 import ReservationStage from "./stage/ReservationStage";
 import ReservationSidebar from "./sidebar/ReservationSidebar";
 import { getBlockGrades, getGradeInfo } from "@/services/venue";
@@ -30,7 +29,6 @@ export default async function Reservation({ searchParams }: ReservationProps) {
 
   return (
     <ReservationProvider blockGrades={blockGrades} grades={grades}>
-      <ReservationTimeTracker />
       <Captcha />
       <div className="h-screen flex flex-col overflow-hidden">
         <ReservationHeader />

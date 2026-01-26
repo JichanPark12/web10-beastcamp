@@ -1,6 +1,5 @@
 {
   "name": "@beastcamp/monorepo",
-  "packageManager": "pnpm@10.28.1",
   "version": "1.0.0",
   "private": true,
   "description": "Beastcamp ticketing system monorepo",

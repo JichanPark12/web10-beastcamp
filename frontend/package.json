@@ -1,7 +1,6 @@
 {
   "name": "frontend",
   "version": "0.1.0",
-  "packageManager": "pnpm@10.28.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -24,7 +23,8 @@
     "react-dom": "19.2.3",
     "react-error-boundary": "^6.0.2",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

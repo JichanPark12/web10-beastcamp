@@ -1,16 +1,17 @@
-'use client';
+"use client";
 
-import { Suspense } from 'react';
-import dynamic from 'next/dynamic';
-import { ErrorBoundary } from 'react-error-boundary';
+import { Suspense, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { ErrorBoundary } from "react-error-boundary";
+import { useTimeLogStore } from "@/hooks/timeLogStore";
 
 // 동적 import로 클라이언트 전용 로드 (SSR 비활성화)
 const CaptchaVerification = dynamic(
   () =>
-    import('./captcha-verification').then((mod) => ({
+    import("./captcha-verification").then((mod) => ({
       default: mod.CaptchaVerification,
     })),
-  { ssr: false }
+  { ssr: false },
 );
 
 interface CaptchaModalProps {
@@ -47,7 +48,9 @@ function CaptchaLoadingFallback() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       </div>
-      <p className="text-sm text-gray-500 text-center">보안 문자를 불러오는 중...</p>
+      <p className="text-sm text-gray-500 text-center">
+        보안 문자를 불러오는 중...
+      </p>
     </div>
   );
 }
@@ -61,7 +64,7 @@ function CaptchaErrorFallback({
   resetErrorBoundary: () => void;
 }) {
   const errorMessage =
-    error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+    error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
   return (
     <div className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl">
       <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -101,14 +104,35 @@ export function CaptchaModal({
   onVerified,
   onClose,
 }: CaptchaModalProps) {
-  if (!isOpen) return null;
+  const startCaptcha = useTimeLogStore((state) => state.startCaptcha);
+  const endCaptcha = useTimeLogStore((state) => state.endCaptcha);
+  const startSeatSelection = useTimeLogStore(
+    (state) => state.startSeatSelection,
+  );
+
+  // 모달 체류 시간 측정 시작
+  useEffect(() => {
+    if (isOpen) {
+      startCaptcha();
+    }
+  }, [isOpen, startCaptcha]);
+
+  const handleVerified = () => {
+    endCaptcha();
+    startSeatSelection();
+    onVerified();
+  };
+
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="relative z-10 w-full max-w-md">
         <ErrorBoundary FallbackComponent={CaptchaErrorFallback}>
           <Suspense fallback={<CaptchaLoadingFallback />}>
-            <CaptchaVerification onVerified={onVerified} />
+            <CaptchaVerification onVerified={handleVerified} />
           </Suspense>
         </ErrorBoundary>
       </div>
