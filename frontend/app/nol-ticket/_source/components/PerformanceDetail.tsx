@@ -7,19 +7,22 @@ import { Performance, Session } from '@/types/performance';
 import DetailDateSelector from './DetailDateSelector';
 import DetailRoundSelector from './DetailRoundSelector';
 import { useRouter } from 'next/navigation';
+import { useTicketContext } from '@/contexts/TicketContext';
+import { VenueDetail } from '@/types/venue';
 
 interface PerformanceDetailProps {
   performance: Performance;
   sessions: Session[];
-  venueName?: string;
+  venue: VenueDetail;
 }
 
 export default function PerformanceDetail({
   performance,
   sessions,
-  venueName,
+  venue,
 }: PerformanceDetailProps) {
   const router = useRouter();
+  const { setPerformance, selectSession, setVenue } = useTicketContext();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(2076);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -76,9 +79,18 @@ export default function PerformanceDetail({
   };
 
   const handleConfirm = () => {
-    if (selectedDate && selectedRound) {
-      router.push('/waiting-queue');
-      console.log('예매 확정:', { selectedDate, selectedRound });
+    if (selectedDate && selectedRound && venue) {
+      // Context에 공연 정보와 세션 정보 저장
+      setPerformance(performance);
+      const session = sessions.find((s) => s.id.toString() === selectedRound);
+      if (session) {
+        selectSession(session);
+      }
+      setVenue(venue);
+
+      // URL로도 세션 ID 전달
+      router.push(`/waiting-queue?sId=${selectedRound}`);
+      console.log('예매 확정:', { selectedDate, selectedRound, session });
     }
   };
 
@@ -180,7 +192,7 @@ export default function PerformanceDetail({
                 <div className="w-24 text-gray-600 font-medium">장소</div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 text-gray-900">
-                    <span>{venueName || '올림픽공원 올림픽홀'}</span>
+                    <span>{venue.venueName || '올림픽공원 올림픽홀'}</span>
                     <ChevronRight className="w-4 h-4 text-gray-400" />
                   </div>
                 </div>

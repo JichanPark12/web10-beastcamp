@@ -1,0 +1,12 @@
+language: ko
+auto_pr:
+  enabled: false  # CodeRabbit이 새 PR 열지 않게 함 (중요)
+
+reviews:
+  profile: assertive  # 직설적이지만 공격적이지 않음
+  request_changes_workflow: false  # 사소한 건 코멘트만
+  high_level_summary: true  # PR 요약 제공
+  poem: false  # 시적 표현 ❌
+
+chat:
+  auto_reply: true

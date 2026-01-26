@@ -11,7 +11,7 @@ export default async function PerformanceDetailData() {
   const venueId = sessions.length > 0 ? sessions[0].venueId : 0;
   const venue = venueId ? await getVenue(venueId) : null;
 
-  if (!performance) {
+  if (!performance || !venue || !sessions) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-500">공연 정보를 불러올 수 없습니다.</p>
@@ -23,7 +23,7 @@ export default async function PerformanceDetailData() {
     <PerformanceDetail
       performance={performance}
       sessions={sessions}
-      venueName={venue?.venueName}
+      venue={venue}
     />
   );
 }

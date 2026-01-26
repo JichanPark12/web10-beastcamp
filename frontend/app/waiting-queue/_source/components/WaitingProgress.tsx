@@ -37,10 +37,11 @@ export default function WaitingProgress() {
     }
   }, [isFinished, router, token, setToken, endWaitingQueue]);
 
-  if (isError || initialOrder === undefined)
-    return <div>오류가 발생했습니다. 다시 시도해주세요.</div>;
   if (isLoading) {
     return <div>대기열 진입 중...</div>;
+  }
+  if (isError || initialOrder === undefined) {
+    return <div>오류가 발생했습니다. 다시 시도해주세요.</div>;
   }
   const statusText = isFinished ? "입장 중입니다" : `${currentOrder ?? 0}번`;
 

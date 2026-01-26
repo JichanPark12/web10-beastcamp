@@ -29,11 +29,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: Request) {
-  console.log("요청옴");
-
   try {
     const body = await request.json();
-    console.log(body);
     const { session_id, seats } = body;
 
     if (!session_id || !seats || !Array.isArray(seats)) {
@@ -42,8 +39,6 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    console.log("세션ID:", session_id);
-    console.log("좌석들:", seats);
 
     const rank = Math.floor(Math.random() * 100) + 1;
 

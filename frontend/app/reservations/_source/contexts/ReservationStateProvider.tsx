@@ -29,7 +29,11 @@ interface ReservationDispatchContextValue {
   handleToggleSeat: (seatId: string, seat: Seat) => void;
   handleRemoveSeat: (seatId: string) => void;
   handleResetSeats: () => void;
-  handleClickReserve: (sessionId: number, token: string) => void;
+  handleClickReserve: (
+    sessionId: number,
+    token: string,
+    selectedSeats: ReadonlyMap<string, Seat>,
+  ) => void;
   handleSelectArea: (areaId: string) => void;
   handleDeselectArea: () => void;
   completeCaptcha: () => void;
@@ -75,7 +79,11 @@ export function ReservationStateProvider({
 
   const { setResult } = useResult();
 
-  const handleClickReserve = async (sessionId: number, token: string) => {
+  const handleClickReserve = async (
+    sessionId: number,
+    token: string,
+    selectedSeats: ReadonlyMap<string, Seat>,
+  ) => {
     try {
       if (!isCaptchaVerified) {
         alert("보안문자가 입력되지 않았습니다.");
@@ -87,7 +95,7 @@ export function ReservationStateProvider({
         row: +seat.rowNum,
         col: +seat.colNum,
       }));
-      console.log(seats);
+
       const response = await api.post<ReservationResult>(
         "/reservations",
         {
