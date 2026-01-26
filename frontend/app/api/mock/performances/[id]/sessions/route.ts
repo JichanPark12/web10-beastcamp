@@ -24,11 +24,10 @@ const data = [
 
 export const GET = async (
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) => {
   const { id: idString } = await params;
   const id = parseInt(idString);
-  console.log(id);
 
   if (id !== 1) {
     return Response.json({}, { status: 404 });

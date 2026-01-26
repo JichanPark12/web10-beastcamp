@@ -1,7 +1,7 @@
 const venueDetail = {
   id: 1,
   venueName: "올림픽공원 올림픽홀",
-  blockMapUrl: "/olympic_hall.svg",
+  blockMapUrl: "/incheon_namdong_gymnasium.svg",
   blocks: [
     { id: 1, blockDataName: "C2", rowSize: 10, colSize: 10 },
     { id: 2, blockDataName: "G2", rowSize: 10, colSize: 10 },
@@ -42,7 +42,7 @@ const venueDetail = {
 
 export const GET = async (
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) => {
   const { id: idString } = await params;
   const id = parseInt(idString);

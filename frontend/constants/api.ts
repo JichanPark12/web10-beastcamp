@@ -25,6 +25,7 @@ export function getServerUrl(serverType: ServerType = 'api'): string {
     case 'queue':
       return QUEUE_PREFIX;
     case 'api':
+      return API_PREFIX;
     default:
       return API_PREFIX;
   }

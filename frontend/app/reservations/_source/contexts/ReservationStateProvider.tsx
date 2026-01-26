@@ -7,6 +7,7 @@ import { api } from "@/lib/api/api";
 import { useResult } from "@/contexts/ResultContext";
 import { RESERVATION_LIMIT } from "../constants/reservationConstants";
 import { Seat } from "../types/reservationType";
+import { useTimeLogStore } from "@/hooks/timeLogStore";
 
 interface ReservedSeat {
   block_id: number;
@@ -28,7 +29,11 @@ interface ReservationDispatchContextValue {
   handleToggleSeat: (seatId: string, seat: Seat) => void;
   handleRemoveSeat: (seatId: string) => void;
   handleResetSeats: () => void;
-  handleClickReserve: (sessionId: number, token: string) => void;
+  handleClickReserve: (
+    sessionId: number,
+    token: string,
+    selectedSeats: ReadonlyMap<string, Seat>,
+  ) => void;
   handleSelectArea: (areaId: string) => void;
   handleDeselectArea: () => void;
   completeCaptcha: () => void;
@@ -53,6 +58,8 @@ export function ReservationStateProvider({
     reset: handleResetSeats,
   } = useSelection<string, Seat>(new Map(), { max: RESERVATION_LIMIT });
 
+  const endSeatSelection = useTimeLogStore((state) => state.endSeatSelection); // 체류 시간 측정
+
   const [area, setArea] = useState<string | null>(null);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
 
@@ -72,18 +79,23 @@ export function ReservationStateProvider({
 
   const { setResult } = useResult();
 
-  const handleClickReserve = async (sessionId: number, token: string) => {
+  const handleClickReserve = async (
+    sessionId: number,
+    token: string,
+    selectedSeats: ReadonlyMap<string, Seat>,
+  ) => {
     try {
       if (!isCaptchaVerified) {
         alert("보안문자가 입력되지 않았습니다.");
         return;
       }
+
       const seats = [...selectedSeats.values()].map((seat) => ({
         block_id: +seat.blockNum,
         row: +seat.rowNum,
         col: +seat.colNum,
       }));
-      console.log(seats);
+
       const response = await api.post<ReservationResult>(
         "/reservations",
         {
@@ -92,7 +104,7 @@ export function ReservationStateProvider({
         },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-
+      endSeatSelection();
       setResult(response);
       router.push("/result");
     } catch (e) {
