@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { TimeLogEntry, TimeLogActions, TimeLogState } from "../types/time";
+import { TimeLogActions, TimeLogState } from "../types/time";
 
 const calculateDuration = (
   startTime: number | null,

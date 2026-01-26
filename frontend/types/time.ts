@@ -1,4 +1,4 @@
-export interface TimeLogEntry {
+interface TimeLogEntry {
   startTime: number | null;
   endTime: number | null;
   duration: number;
