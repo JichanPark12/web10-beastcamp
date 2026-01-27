@@ -25,7 +25,9 @@ export default function StageMap() {
     if (!blockMapUrl) return;
     const fetchSvg = async () => {
       try {
-        const response = await fetch(blockMapUrl); // 일단 public에 넣어둔 상태라 api mock하면 에러남 고로 api.get 대신 fetch사용
+        const response = await fetch(
+          process.env.NEXT_PUBLIC_API_URL + blockMapUrl,
+        ); // 일단 public에 넣어둔 상태라 api mock하면 에러남 고로 api.get 대신 fetch사용
         const text = await response.text();
         setSvgContent(text);
       } catch (err) {
