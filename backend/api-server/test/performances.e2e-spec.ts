@@ -481,10 +481,13 @@ describe('공연 (Performances) API', () => {
       });
 
       it('할당된 구역 매핑 정보가 포함되어야 한다', () => {
-        const body = response.body as { blockId: number; gradeId: number }[];
+        const body = response.body as {
+          blockId: number;
+          grade: { id: number };
+        }[];
         const mapping = body.find((m) => m.blockId === blockId1);
         expect(mapping).toBeDefined();
-        expect(mapping?.gradeId).toBe(gradeId);
+        expect(mapping?.grade.id).toBe(gradeId);
       });
     });
   });

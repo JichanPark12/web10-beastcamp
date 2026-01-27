@@ -110,19 +110,19 @@ export class SessionsController {
       example: [
         {
           blockId: 1,
-          gradeId: 1,
+          grade: {
+            id: 1,
+            name: 'VIP',
+            price: 150000,
+          },
         },
         {
           blockId: 2,
-          gradeId: 1,
-        },
-        {
-          blockId: 3,
-          gradeId: 2,
-        },
-        {
-          blockId: 4,
-          gradeId: 2,
+          grade: {
+            id: 1,
+            name: 'VIP',
+            price: 150000,
+          },
         },
       ],
     },
