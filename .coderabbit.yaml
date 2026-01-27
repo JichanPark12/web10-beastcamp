@@ -1,6 +1,4 @@
 language: ko
-auto_pr:
-  enabled: false  # CodeRabbit이 새 PR 열지 않게 함 (중요)
 
 reviews:
   profile: assertive  # 직설적이지만 공격적이지 않음
