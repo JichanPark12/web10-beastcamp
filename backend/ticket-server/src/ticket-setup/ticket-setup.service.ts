@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { REDIS_KEYS } from '@beastcamp/shared-constants';
 import {
   PerformanceApiService,
   SessionResponse,
@@ -25,6 +26,14 @@ export class TicketSetupService {
     this.logger.log(`Starting setup for performance: ${performanceId}`);
 
     const sessions = await this.performanceApi.getSessions(performanceId);
+    if (sessions.length === 0) {
+      throw new Error('No sessions found');
+    }
+
+    await this.redisService.set(
+      REDIS_KEYS.CURRENT_TICKETING_SESSION,
+      sessions[0].id.toString(),
+    );
 
     const registTasks = sessions.map((session) => this.registToRedis(session));
 
@@ -46,6 +55,7 @@ export class TicketSetupService {
   async tearDown(): Promise<void> {
     try {
       await this.redisService.set('is_ticketing_open', 'false');
+      await this.redisService.del(REDIS_KEYS.CURRENT_TICKETING_SESSION);
       this.logger.log('Ticketing closed (tear-down)');
     } catch (e) {
       const err = e as Error;

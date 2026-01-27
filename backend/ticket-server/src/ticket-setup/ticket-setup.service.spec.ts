@@ -8,6 +8,7 @@ import {
   VenueResponse,
 } from '../performance-api/performance-api.service';
 import { RedisService } from '../redis/redis.service';
+import { REDIS_KEYS } from '@beastcamp/shared-constants';
 
 describe('TicketSetupService', () => {
   let service: TicketSetupService;
@@ -31,6 +32,7 @@ describe('TicketSetupService', () => {
           useValue: {
             set: jest.fn(),
             sadd: jest.fn(),
+            del: jest.fn(),
             flushAll: jest.fn(),
           },
         },
@@ -90,6 +92,10 @@ describe('TicketSetupService', () => {
       const expectedKey = 'block:100';
       const expectedData = JSON.stringify({ rowSize: 10, colSize: 10 });
       expect(jest.mocked(redisService.set)).toHaveBeenCalledWith(
+        REDIS_KEYS.CURRENT_TICKETING_SESSION,
+        '1',
+      );
+      expect(jest.mocked(redisService.set)).toHaveBeenCalledWith(
         expectedKey,
         expectedData,
       );
@@ -123,6 +129,9 @@ describe('TicketSetupService', () => {
       expect(jest.mocked(redisService.set)).toHaveBeenCalledWith(
         'is_ticketing_open',
         'false',
+      );
+      expect(jest.mocked(redisService.del)).toHaveBeenCalledWith(
+        REDIS_KEYS.CURRENT_TICKETING_SESSION,
       );
     });
   });
