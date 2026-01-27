@@ -1,10 +1,10 @@
 language: ko
 
 reviews:
-  profile: assertive  # 직설적이지만 공격적이지 않음
-  request_changes_workflow: false  # 사소한 건 코멘트만
-  high_level_summary: true  # PR 요약 제공
-  poem: false  # 시적 표현 ❌
+  profile: assertive # 직설적이지만 공격적이지 않음
+  request_changes_workflow: false # 사소한 건 코멘트만
+  high_level_summary: true # PR 요약 제공
+  poem: false # 시적 표현 ❌
   auto_review:
     auto_incremental_review: true
     base_branches: [dev]
