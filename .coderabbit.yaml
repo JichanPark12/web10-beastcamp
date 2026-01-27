@@ -6,6 +6,7 @@ reviews:
   high_level_summary: true  # PR 요약 제공
   poem: false  # 시적 표현 ❌
   auto_review:
+    auto_incremental_review: true
     base_branches: [dev]
 
 chat:
