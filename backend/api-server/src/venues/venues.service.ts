@@ -66,7 +66,7 @@ export class VenuesService {
     }
 
     const blocks = requestDto.blocks.map((dto) => {
-      return new Block(venue, dto.blockDataName, dto.rowSize, dto.colSize);
+      return new Block(venue.id, dto.blockDataName, dto.rowSize, dto.colSize);
     });
 
     await this.blocksRepository.save(blocks);

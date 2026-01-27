@@ -13,6 +13,12 @@ import { Grade } from './grade.entity';
 @Entity('block_grades')
 @Unique(['sessionId', 'blockId'])
 export class BlockGrade {
+  constructor(sessionId?: number, blockId?: number, gradeId?: number) {
+    if (sessionId) this.sessionId = sessionId;
+    if (blockId) this.blockId = blockId;
+    if (gradeId) this.gradeId = gradeId;
+  }
+
   @PrimaryGeneratedColumn()
   id: number;
 

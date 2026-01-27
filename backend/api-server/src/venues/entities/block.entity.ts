@@ -12,12 +12,12 @@ import { Venue } from './venue.entity';
 @Unique(['venueId', 'blockDataName'])
 export class Block {
   constructor(
-    venue?: Venue,
+    venueId?: number,
     blockDataName?: string,
     rowSize?: number,
     colSize?: number,
   ) {
-    if (venue) this.venue = venue;
+    if (venueId) this.venueId = venueId;
     if (blockDataName) this.blockDataName = blockDataName;
     if (rowSize) this.rowSize = rowSize;
     if (colSize) this.colSize = colSize;
