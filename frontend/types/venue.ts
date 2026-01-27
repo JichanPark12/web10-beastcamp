@@ -14,7 +14,7 @@ export interface VenueDetail {
 
 export interface BlockGrade {
   blockId: number;
-  gradeId: number;
+  grade: Grade;
 }
 
 export interface Grade {
