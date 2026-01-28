@@ -6,6 +6,7 @@ import { join } from 'path';
 import { VenuesModule } from './venues/venues.module';
 import { PerformancesModule } from './performances/performances.module';
 import { SeedingModule } from './seeding/seeding.module';
+import { KopisModule } from './kopis/kopis.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SeedingModule } from './seeding/seeding.module';
     }),
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
       useFactory: () => {
@@ -44,6 +46,7 @@ import { SeedingModule } from './seeding/seeding.module';
     VenuesModule,
     PerformancesModule,
     SeedingModule,
+    KopisModule,
   ],
   controllers: [],
   providers: [],
