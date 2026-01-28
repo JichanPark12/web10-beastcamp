@@ -1,6 +1,6 @@
-import { PLATFORM_DISPLAY_NAME } from "@/constants/performance";
-import { Performance, Session } from "@/types/performance";
-import { Calendar, MapPin, TrendingUp } from "lucide-react";
+import { PLATFORM_DISPLAY_NAME } from '@/constants/performance';
+import { Performance, Session } from '@/types/performance';
+import { Calendar, MapPin, TrendingUp } from 'lucide-react';
 
 interface PerformanceInfoProps {
   performance: Performance;
@@ -13,10 +13,10 @@ export default function PerformanceInfo({
   sessions,
   venueName,
 }: PerformanceInfoProps) {
-  let dateDisplay = "";
+  let dateDisplay = '';
 
   if (sessions && sessions.length > 0) {
-    console.log("Sessions in PerformanceInfo:", sessions);
+    console.log('Sessions in PerformanceInfo:', sessions);
     const dates = sessions.map((s) => new Date(s.sessionDate).getTime());
     const minDate = new Date(Math.min(...dates));
     const maxDate = new Date(Math.max(...dates));
@@ -25,9 +25,8 @@ export default function PerformanceInfo({
       const year = d.getFullYear();
       const month = d.getMonth() + 1;
       const day = d.getDate();
-      const hours = String(d.getHours()).padStart(2, '0');
-      const minutes = String(d.getMinutes()).padStart(2, '0');
-      return `${year}년 ${month}월 ${day}일 ${hours}:${minutes}`;
+
+      return `${year}년 ${month}월 ${day}일 `;
     };
 
     if (minDate.getTime() === maxDate.getTime()) {
@@ -39,7 +38,7 @@ export default function PerformanceInfo({
 
   const platformDisplayName = performance.platform
     ? PLATFORM_DISPLAY_NAME[performance.platform]
-    : PLATFORM_DISPLAY_NAME["nol-ticket"];
+    : PLATFORM_DISPLAY_NAME['nol-ticket'];
 
   return (
     <div className="grid md:grid-cols-2 gap-8 items-center">
