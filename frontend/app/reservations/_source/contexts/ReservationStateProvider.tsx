@@ -106,7 +106,7 @@ export function ReservationStateProvider({
       );
       endSeatSelection();
       setResult(response);
-      router.push("/result");
+      router.replace("/result");
     } catch (e) {
       console.error(e);
       alert("예매에 실패했습니다. 다시 시도해주세요.");

@@ -6,7 +6,7 @@ export default function CompleteButton() {
   const router = useRouter();
 
   const handleClickComplete = () => {
-    router.push("/");
+    router.replace("/");
   };
 
   return (
