@@ -328,7 +328,6 @@ export class KopisService {
   /**
    * dtguidance 파싱하여 공연 세션 일정 생성
    * 예: "토요일(18:00), 일요일(15:00)" -> [토요일 18:00, 일요일 15:00]
-   * 예: "목요일(19:00), 토요일 ~ 일요일(19:00)" -> [목요일 19:00, 토요일 19:00, 일요일 19:00]
    *
    * @param detail KOPIS 공연 상세 정보
    * @returns 공연 세션 일정 배열
@@ -343,7 +342,20 @@ export class KopisService {
       return sessions;
     }
 
+    // dtguidance 파싱: "토요일(18:00), 일요일(15:00)" 형식
     const dtguidance = detail.dtguidance || '';
+
+    // 요일과 시간 추출: 정규식으로 "요일(시간)" 패턴 찾기
+    const pattern = /(월|화|수|목|금|토|일)요일\((\d{1,2}):(\d{2})\)/g;
+    const matches = [...dtguidance.matchAll(pattern)];
+
+    if (matches.length === 0) {
+      // 파싱 실패 시 시작일 19:00로 기본 세션 하나 생성
+      const defaultSession = new Date(startDate);
+      defaultSession.setHours(19, 0, 0, 0);
+      sessions.push(defaultSession);
+      return sessions;
+    }
 
     const dayMap: Record<string, number> = {
       일: 0,
@@ -355,69 +367,17 @@ export class KopisService {
       토: 6,
     };
 
-    const performanceTimes = new Set<string>();
-
-    // 패턴 1: 요일 범위 - "토요일 ~ 일요일(19:00)"
-    const rangePattern =
-      /(월|화|수|목|금|토|일)요일\s*~\s*(월|화|수|목|금|토|일)요일\((\d{1,2}):(\d{2})\)/g;
-    const rangeMatches = [...dtguidance.matchAll(rangePattern)];
-
-    for (const match of rangeMatches) {
-      const [, startDay, endDay, hour, minute] = match;
-      const startDayNum = dayMap[startDay];
-      const endDayNum = dayMap[endDay];
-
-      if (startDayNum <= endDayNum) {
-        for (let day = startDayNum; day <= endDayNum; day++) {
-          performanceTimes.add(`${day}:${hour}:${minute}`);
-        }
-      } else {
-        // 주를 넘어가는 경우 (예: 토요일 ~ 일요일)
-        for (let day = startDayNum; day <= 6; day++) {
-          performanceTimes.add(`${day}:${hour}:${minute}`);
-        }
-        for (let day = 0; day <= endDayNum; day++) {
-          performanceTimes.add(`${day}:${hour}:${minute}`);
-        }
-      }
-    }
-
-    // 패턴 2: 단일 요일 - "목요일(19:00)"
-    const singlePattern = /(월|화|수|목|금|토|일)요일\((\d{1,2}):(\d{2})\)/g;
-    const singleMatches = [...dtguidance.matchAll(singlePattern)];
-
-    for (const match of singleMatches) {
-      const fullMatch = match[0];
-      if (
-        dtguidance.includes(`~ ${fullMatch}`) ||
-        dtguidance.includes(`~${fullMatch}`)
-      ) {
-        continue;
-      }
-
-      const [, day, hour, minute] = match;
-      const dayNum = dayMap[day];
-      performanceTimes.add(`${dayNum}:${hour}:${minute}`);
-    }
-
-    // 파싱 실패 시 시작일 19:00로 기본 세션 하나 생성
-    if (performanceTimes.size === 0) {
-      const defaultSession = new Date(startDate);
-      defaultSession.setHours(19, 0, 0, 0);
-      sessions.push(defaultSession);
-      return sessions;
-    }
-
     const currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
       const dayOfWeek = currentDate.getDay();
 
-      for (const timeStr of performanceTimes) {
-        const [day, hour, minute] = timeStr.split(':').map(Number);
-        if (day === dayOfWeek) {
+      // 현재 요일에 해당하는 공연 시간 찾기
+      for (const match of matches) {
+        const [, day, hour, minute] = match;
+        if (dayMap[day] === dayOfWeek) {
           const sessionDate = new Date(currentDate);
-          sessionDate.setHours(hour, minute, 0, 0);
+          sessionDate.setHours(parseInt(hour, 10), parseInt(minute, 10), 0, 0);
           sessions.push(sessionDate);
         }
       }
