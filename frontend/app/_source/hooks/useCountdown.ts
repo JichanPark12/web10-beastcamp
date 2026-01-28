@@ -9,14 +9,17 @@ interface TimeLeft {
   seconds: number;
 }
 
+export type CountdownStatus = "waiting" | "ticketing" | "ended";
+
 interface UseCountdownReturn {
   timeLeft: TimeLeft;
-  isActive: boolean;
+  status: CountdownStatus;
 }
 
-function calculateTimeLeft(targetDate: Date, offset: number): TimeLeft {
-  const now = new Date(Date.now() + offset);
-  const difference = targetDate.getTime() - now.getTime();
+const TICKETING_DURATION_MS = 3 * 60 * 1000; // 3분
+
+function calculateTimeLeft(targetTime: number, now: number): TimeLeft {
+  const difference = targetTime - now;
 
   if (difference <= 0) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0 };
@@ -30,8 +33,16 @@ function calculateTimeLeft(targetDate: Date, offset: number): TimeLeft {
   };
 }
 
-export function useCountdown(targetDate?: string): UseCountdownReturn {
+export function useCountdown(targetDateStr?: string): UseCountdownReturn {
   const [offset, setOffset] = useState<number>(0);
+  const [status, setStatus] = useState<CountdownStatus>("ended");
+
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
 
   useEffect(() => {
     const syncTime = async () => {
@@ -40,57 +51,53 @@ export function useCountdown(targetDate?: string): UseCountdownReturn {
         const serverTime = await getServerTime();
         const endTime = Date.now();
         const latency = (endTime - startTime) / 2;
-
         const timeOffset = serverTime + latency - endTime;
-
         setOffset(timeOffset);
       } catch (error) {
         console.error("Failed to sync time:", error);
       }
     };
 
-    if (targetDate) {
+    if (targetDateStr) {
       syncTime();
     }
-  }, [targetDate]);
-
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>(() => {
-    if (!targetDate) {
-      return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-    }
-
-    return calculateTimeLeft(new Date(targetDate), 0);
-  });
-
-  const [isActive, setIsActive] = useState(() => !targetDate);
+  }, [targetDateStr]);
 
   useEffect(() => {
-    const target = targetDate ? new Date(targetDate) : null;
-    if (!target) {
+    if (!targetDateStr) {
       return;
     }
 
-    // offset이 변경되면 즉시 시간을 다시 계산하여 UI에 반영 (1초 딜레이 방지)
-    // eslint-disable-next-line
-    setTimeLeft(calculateTimeLeft(target, offset));
+    const targetDate = new Date(targetDateStr);
+    const targetTime = targetDate.getTime();
 
-    const timer = setInterval(() => {
-      const newTimeLeft = calculateTimeLeft(target, offset);
-      setTimeLeft(newTimeLeft);
+    const updateTimer = () => {
+      const serverNow = Date.now() + offset;
 
-      if (
-        newTimeLeft.days === 0 &&
-        newTimeLeft.hours === 0 &&
-        newTimeLeft.minutes === 0 &&
-        newTimeLeft.seconds === 0
-      ) {
-        setIsActive(true);
-        refreshPerformance();
+      if (serverNow < targetTime) {
+        setStatus("waiting");
+        setTimeLeft(calculateTimeLeft(targetTime, serverNow));
+      } else if (serverNow < targetTime + TICKETING_DURATION_MS) {
+        setStatus("ticketing");
+        setTimeLeft(
+          calculateTimeLeft(targetTime + TICKETING_DURATION_MS, serverNow),
+        );
+      } else {
+        setStatus((prevStatus) => {
+          if (prevStatus === "ticketing") {
+            refreshPerformance();
+          }
+          return "ended";
+        });
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
-    }, 1000);
+    };
 
+    updateTimer();
+
+    const timer = setInterval(updateTimer, 1000);
     return () => clearInterval(timer);
-  }, [targetDate, offset]);
+  }, [targetDateStr, offset]);
 
-  return { timeLeft, isActive };
+  return { timeLeft, status };
 }
