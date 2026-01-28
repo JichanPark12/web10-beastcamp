@@ -129,7 +129,7 @@ jobs:
             docker compose up -d --no-build $SERVICE_NAME
             
             # 5. 디스크 청소
-            docker image prune -f
+            docker image prune -af --filter "until=24h"
             echo "✅ $SERVICE_NAME 배포 완료"
         env:
           NCP_REGISTRY_URL: ${{ secrets.NCP_REGISTRY_URL }}
