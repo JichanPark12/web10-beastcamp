@@ -19,10 +19,10 @@ export class PerformanceDto {
 
   @ApiProperty({
     description: '티켓팅 플랫폼',
-    example: 'interpark',
-    enum: ['interpark', 'yes24', 'melon-ticket'],
+    example: 'nol-ticket',
+    enum: ['nol-ticket', 'yes24', 'melon-ticket', 'interpark'],
   })
-  platform: 'interpark' | 'yes24' | 'melon-ticket';
+  platform: 'nol-ticket' | 'yes24' | 'melon-ticket' | 'interpark';
 
   static fromEntity(performance: Performance): PerformanceDto {
     const dto = new PerformanceDto();

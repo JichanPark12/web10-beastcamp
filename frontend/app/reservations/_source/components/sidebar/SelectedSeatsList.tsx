@@ -29,7 +29,8 @@ export default function SelectedSeatsList() {
             <div>
               <div
                 className={`text-sm ${
-                  gradeInfoColor[seat.seatGrade.id].textColor
+                  gradeInfoColor[seat.seatGrade.name]?.textColor ??
+                  "text-red-600"
                 }`}
               >
                 {seat.seatGrade.name}
