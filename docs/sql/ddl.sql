@@ -24,7 +24,7 @@ CREATE TABLE `performances` (
   `id` int NOT NULL AUTO_INCREMENT,
   `performance_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '공연 이름',
   `ticketing_date` datetime NOT NULL COMMENT '티켓팅 일시 (ISO 8601)',
-  `platform` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'interpark' COMMENT '티켓팅 플랫폼 (interpark, yes24, melon-ticket)',
+  `platform` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'nol-ticket' COMMENT '티켓팅 플랫폼 (interpark, yes24, melon-ticket)',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
