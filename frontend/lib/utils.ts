@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from "clsx";
+import { format } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -18,3 +19,9 @@ export function formatTime(seconds: number) {
 
   return `${minutes}분 ${Math.floor(remainingSeconds)}초`;
 }
+
+export const formatDateTime = (iso: string) => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return format(date, "yyyy.MM.dd HH:mm");
+};

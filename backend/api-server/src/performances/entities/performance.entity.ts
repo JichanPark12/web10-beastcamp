@@ -6,7 +6,7 @@ export class Performance {
   constructor(
     performanceName?: string,
     ticketingDate?: Date,
-    platform?: 'interpark' | 'yes24' | 'melon-ticket',
+    platform?: 'nol-ticket' | 'yes24' | 'melon-ticket' | 'interpark',
   ) {
     if (performanceName) this.performanceName = performanceName;
     if (ticketingDate) this.ticketingDate = ticketingDate;
@@ -35,10 +35,10 @@ export class Performance {
     type: 'varchar',
     length: 20,
     name: 'platform',
-    comment: '티켓팅 플랫폼 (interpark, yes24, melon-ticket)',
-    default: 'interpark',
+    comment: '티켓팅 플랫폼 (nol-ticket, yes24, melon-ticket)',
+    default: 'nol-ticket',
   })
-  platform: 'interpark' | 'yes24' | 'melon-ticket';
+  platform: 'nol-ticket' | 'yes24' | 'melon-ticket' | 'interpark';
 
   @OneToMany(() => Session, (session) => session.performance)
   sessions: Session[];

@@ -38,24 +38,26 @@ export default function NetworkStatus() {
   }, [checkNetwork]);
 
   return (
-    <div className="w-full mb-6">
-      <div
-        className={`rounded-2xl border backdrop-blur-md p-4 transition-all duration-300 ${getStatusColor(grade, isError)}`}
-      >
-        <NetworkStatusHeader
-          grade={isError ? "bad" : grade}
-          isError={isError}
-          checkNetwork={checkNetwork}
-        />
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+      <div className="w-full mb-6">
+        <div
+          className={`rounded-2xl border backdrop-blur-md p-4 transition-all duration-300 ${getStatusColor(grade, isError)}`}
+        >
+          <NetworkStatusHeader
+            grade={isError ? "bad" : grade}
+            isError={isError}
+            checkNetwork={checkNetwork}
+          />
 
-        <p className="text-sm font-medium mb-3 opacity-90">{message}</p>
+          <p className="text-sm font-medium mb-3 opacity-90">{message}</p>
 
-        {!isError && grade && (
-          <NetworkMetrics pings={pings} bandwidth={bandwidth} />
-        )}
+          {!isError && grade && (
+            <NetworkMetrics pings={pings} bandwidth={bandwidth} />
+          )}
 
-        <NetworkStatusInfo />
+          <NetworkStatusInfo />
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

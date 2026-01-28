@@ -1,5 +1,6 @@
-import { Performance, Session } from '@/types/performance';
-import { Calendar, MapPin, TrendingUp } from 'lucide-react';
+import { PLATFORM_DISPLAY_NAME } from "@/constants/performance";
+import { Performance, Session } from "@/types/performance";
+import { Calendar, MapPin, TrendingUp } from "lucide-react";
 
 interface PerformanceInfoProps {
   performance: Performance;
@@ -12,19 +13,19 @@ export default function PerformanceInfo({
   sessions,
   venueName,
 }: PerformanceInfoProps) {
-  let dateDisplay = '';
+  let dateDisplay = "";
 
   if (sessions && sessions.length > 0) {
-    console.log('Sessions in PerformanceInfo:', sessions);
+    console.log("Sessions in PerformanceInfo:", sessions);
     const dates = sessions.map((s) => new Date(s.sessionDate).getTime());
     const minDate = new Date(Math.min(...dates));
     const maxDate = new Date(Math.max(...dates));
 
     const formatDate = (d: Date) =>
-      d.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
+      d.toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       });
 
     if (minDate.getTime() === maxDate.getTime()) {
@@ -35,12 +36,8 @@ export default function PerformanceInfo({
   }
 
   const platformDisplayName = performance.platform
-    ? {
-        interpark: '인터파크',
-        yes24: 'YES24',
-        'melon-ticket': '멜론티켓',
-      }[performance.platform]
-    : 'nol-ticket';
+    ? PLATFORM_DISPLAY_NAME[performance.platform]
+    : PLATFORM_DISPLAY_NAME["nol-ticket"];
 
   return (
     <div className="grid md:grid-cols-2 gap-8 items-center">
