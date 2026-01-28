@@ -33,11 +33,12 @@ export default function PerformanceDetail({
     seconds: number;
   } | null>(null);
   const [isActive, setIsActive] = useState(false);
+  /*
+   개발 모드에서 테스트 하려고 마감 시간을 항상 현재시간 + 10초로 잡음
   const [target, setTarget] = useState<number>(
     new Date(new Date().getTime() + 10000).getTime(),
   );
-
-  // 현재는 개발 모드에서 테스트 하려고 마감 시간을 항상 현재시간 + 10초로 잡음
+  */
 
   // 카운트다운 계산
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function PerformanceDetail({
       const now = new Date().getTime();
       console.log('현재 시간:', new Date(now).toISOString());
 
-      //const target = new Date(performance.ticketing_date).getTime();
+      const target = new Date(performance.ticketing_date).getTime();
       const difference = target - now;
 
       if (difference <= 0) {

@@ -11,8 +11,6 @@ interface CountdownTimerProps {
 
 export default function CountdownTimer({ timeLeft }: CountdownTimerProps) {
   const timeUnits = [
-    { label: "일", value: timeLeft.days },
-    { label: "시간", value: timeLeft.hours },
     { label: "분", value: timeLeft.minutes },
     { label: "초", value: timeLeft.seconds },
   ];
@@ -23,7 +21,7 @@ export default function CountdownTimer({ timeLeft }: CountdownTimerProps) {
         <Clock className="w-5 h-5" />
         <span className="text-sm text-white/80">티켓팅 시작까지</span>
       </div>
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 ">
         {timeUnits.map((item, index) => (
           <div
             key={index}

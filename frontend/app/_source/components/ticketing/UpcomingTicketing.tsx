@@ -1,6 +1,6 @@
-import { ErrorBoundary } from "react-error-boundary";
-import { Suspense } from "react";
-import TicketingData from "./TicketingData";
+import { ErrorBoundary } from 'react-error-boundary';
+import { Suspense } from 'react';
+import TicketingData from './TicketingData';
 
 export default function UpcomingTicketing() {
   return (
