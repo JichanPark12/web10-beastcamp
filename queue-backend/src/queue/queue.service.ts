@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import {
   PROVIDERS,
   REDIS_KEYS,
@@ -12,13 +12,19 @@ import {
   QueueStatusResponse,
 } from '@beastcamp/shared-types';
 import { HeartbeatService } from './heartbeat.service';
+import { VirtualUserInjector } from './virtual-user.injector';
 
 @Injectable()
 export class QueueService {
+  private readonly logger = new Logger(QueueService.name);
+  private localStartedFlag = false;
+
   constructor(
     @Inject(PROVIDERS.REDIS_QUEUE) private readonly redis: Redis,
+    @Inject(PROVIDERS.REDIS_TICKET) private readonly ticketRedis: Redis,
     private readonly jwtService: JwtService,
     private readonly heartbeatService: HeartbeatService,
+    private readonly virtualUserInjector: VirtualUserInjector,
   ) {}
 
   /**
@@ -34,11 +40,14 @@ export class QueueService {
       }
     }
 
+    await this.validateTicketingOpen();
+
     // 2. 신규 유저 생성
     const newUserId = this.generateUserId();
 
     // 3. 유저 진입 (진입 시 하트비트도 동시에 등록)
     await this.registerUser(newUserId);
+    await this.ensureVirtualInjectionStarted();
 
     return {
       userId: newUserId,
@@ -93,6 +102,24 @@ export class QueueService {
       .exec();
   }
 
+  private async ensureVirtualInjectionStarted() {
+    if (this.localStartedFlag) {
+      return;
+    }
+
+    this.localStartedFlag = true;
+
+    try {
+      const started = await this.redis.setnx('queue:started', Date.now());
+      if (started === 1) {
+        await this.virtualUserInjector.start();
+      }
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error('Unknown error');
+      this.logger.error(`가상 유저 시작 체크 실패: ${err.message}`, err.stack);
+    }
+  }
+
   private async checkActiveStatus(userId: string) {
     const activeUserKey = `${REDIS_KEY_PREFIXES.ACTIVE_USER}${userId}`;
     if (!activeUserKey) {
@@ -113,5 +140,14 @@ export class QueueService {
 
   private async updateHeartbeat(userId: string) {
     await this.heartbeatService.update(userId);
+  }
+
+  private async validateTicketingOpen() {
+    const isOpen = await this.ticketRedis.get(
+      String(REDIS_KEYS.TICKETING_OPEN),
+    );
+    if (isOpen !== 'true') {
+      throw new ForbiddenException('Ticketing not open');
+    }
   }
 }

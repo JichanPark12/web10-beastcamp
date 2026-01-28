@@ -4,6 +4,7 @@ import { QueueService } from './queue.service';
 import crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { HeartbeatService } from './heartbeat.service';
+import { VirtualUserInjector } from './virtual-user.injector';
 
 describe('QueueService', () => {
   let service: QueueService;
@@ -12,12 +13,19 @@ describe('QueueService', () => {
     zadd: jest.fn(),
     exists: jest.fn(),
     multi: jest.fn(),
+    setnx: jest.fn(),
+  };
+  const ticketRedisMock = {
+    get: jest.fn(),
   };
   const jwtServiceMock = {
     signAsync: jest.fn(),
   };
   const heartbeatServiceMock = {
     update: jest.fn(),
+  };
+  const virtualUserInjectorMock = {
+    start: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -26,6 +34,7 @@ describe('QueueService', () => {
       zadd: jest.fn().mockReturnThis(),
       exec: jest.fn(),
     }));
+    redisMock.setnx.mockResolvedValue(1);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         QueueService,
@@ -34,12 +43,20 @@ describe('QueueService', () => {
           useValue: redisMock,
         },
         {
+          provide: PROVIDERS.REDIS_TICKET,
+          useValue: ticketRedisMock,
+        },
+        {
           provide: JwtService,
           useValue: jwtServiceMock,
         },
         {
           provide: HeartbeatService,
           useValue: heartbeatServiceMock,
+        },
+        {
+          provide: VirtualUserInjector,
+          useValue: virtualUserInjectorMock,
         },
       ],
     }).compile();
@@ -73,10 +90,14 @@ describe('QueueService', () => {
       ) as unknown as jest.SpyInstance<Buffer, [number]>;
       randomBytesSpy.mockImplementation(() => randomBuffer);
       redisMock.zrank.mockResolvedValueOnce(5);
+      ticketRedisMock.get.mockResolvedValueOnce('true');
 
       const result = await service.createEntry();
 
       const expectedUserId = randomBuffer.toString('base64url');
+      expect(ticketRedisMock.get).toHaveBeenCalledWith(
+        REDIS_KEYS.TICKETING_OPEN,
+      );
       expect(redisMock.multi).toHaveBeenCalled();
       expect(redisMock.zrank).toHaveBeenCalledWith(
         REDIS_KEYS.WAITING_QUEUE,
