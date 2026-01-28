@@ -43,9 +43,9 @@ export default function AreaSeats() {
       seats.push({
         id: seatId,
         seatGrade: grade || grades[0],
-        rowNum: r + "",
-        colNum: c + "",
-        blockNum: targetBlock.blockDataName,
+        rowNum: r,
+        colNum: c,
+        blockNum: targetBlock.id,
         isReserved,
       });
     }
