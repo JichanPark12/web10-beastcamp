@@ -3,10 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { JwtPayload } from '@beastcamp/shared-types';
+import { REDIS_KEY_PREFIXES } from '@beastcamp/shared-constants';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(configService: ConfigService) {
+  constructor(
+    configService: ConfigService,
+    private readonly redisService: RedisService,
+  ) {
     const secret = configService.get<string>('jwt.secret') || 'secret';
 
     super({
@@ -22,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtPayload) {
+  async validate(payload: JwtPayload) {
     // payload 타입 검증
     if (payload.type !== 'TICKETING') {
       throw new UnauthorizedException('Invalid token type');
@@ -31,6 +36,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // userId 검증
     if (!payload.sub) {
       throw new UnauthorizedException('Invalid token payload');
+    }
+
+    const activeUserKey = `${REDIS_KEY_PREFIXES.ACTIVE_USER}${payload.sub}`;
+    const isActive = await this.redisService.existsInQueue(activeUserKey);
+    if (!isActive) {
+      throw new UnauthorizedException('User is not active in queue');
     }
 
     // validate 메서드가 반환하는 값이 request.user에 할당됨
