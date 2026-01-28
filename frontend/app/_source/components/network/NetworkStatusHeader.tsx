@@ -7,6 +7,21 @@ interface NetworkStatusHeaderProps {
   checkNetwork: () => void;
 }
 
+const getStatusMessage = (
+  grade: NetworkStatusType["grade"],
+  isError: boolean,
+) => {
+  if (isError) return "네트워크 요청 중 에러가 발생했습니다";
+  if (!grade) return "네트워크 확인 필요";
+
+  const messages: Record<string, string> = {
+    "very-good": "최적의 환경",
+    good: "양호한 환경",
+    bad: "불안정",
+  };
+  return messages[grade] ?? "네트워크 확인 필요";
+};
+
 export default function NetworkStatusHeader({
   grade,
   isError,
@@ -30,15 +45,7 @@ export default function NetworkStatusHeader({
       <div className="flex items-center gap-2">
         {renderStatusIcon()}
         <h3 className="font-bold text-lg">
-          {isError
-            ? "네트워크 요청 중 에러가 발생했습니다"
-            : grade
-              ? grade === "very-good"
-                ? "최적의 환경"
-                : grade === "good"
-                  ? "양호한 환경"
-                  : "불안정"
-              : "네트워크 확인 필요"}
+          {getStatusMessage(grade, isError)}
         </h3>
       </div>
       <button

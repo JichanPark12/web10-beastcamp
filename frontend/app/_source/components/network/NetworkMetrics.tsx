@@ -13,7 +13,7 @@ export default function NetworkMetrics({
         <div key={ping.name} className="rounded-lg p-3 bg-white">
           <span className="text-lg font-bold block mb-1">{ping.name}</span>
           <span className="font-mono text-base font-semibold">
-            {ping.latency ? `${Math.round(ping.latency)}ms` : "-"}
+            {ping.latency !== null ? `${Math.round(ping.latency)}ms` : "-"}
           </span>
         </div>
       ))}

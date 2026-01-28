@@ -16,7 +16,8 @@ export default function SeatGradeInfo() {
               <div
                 className="w-4 h-4 rounded"
                 style={{
-                  backgroundColor: gradeInfoColor[grade.name].fillColor,
+                  backgroundColor:
+                    gradeInfoColor[grade.name]?.fillColor ?? "#6f1dad",
                 }}
               ></div>
               <span className="text-sm text-gray-700">{grade.name}</span>

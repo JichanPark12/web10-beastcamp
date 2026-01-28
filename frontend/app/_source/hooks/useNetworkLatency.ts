@@ -10,8 +10,8 @@ export interface NetworkStatusType {
 
 // 각 티케팅 사이트들 주소
 const PING_TARGETS = [
-  { name: "Interpark", url: "http://ticket.interpark.com" },
-  { name: "Yes24", url: "http://ticket.yes24.com" },
+  { name: "Interpark", url: "https://ticket.interpark.com" },
+  { name: "Yes24", url: "https://ticket.yes24.com" },
   { name: "Melon", url: "https://ticket.melon.com" },
 ];
 
