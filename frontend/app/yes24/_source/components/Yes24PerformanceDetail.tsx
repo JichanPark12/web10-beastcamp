@@ -316,19 +316,43 @@ export default function Yes24PerformanceDetail({
                   />
                 </div>
                 <div className="w-56 space-y-2">
-                  <button
-                    onClick={() => setSelectedSession('1')}
-                    className={`w-full py-3 text-center text-sm font-bold rounded transition-colors ${
-                      selectedSession === '1'
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    1회 오후 2시 00분
-                  </button>
-                  <button className="w-full py-3 text-center bg-gray-100 text-sm font-bold text-gray-700 rounded hover:bg-gray-200 transition-colors">
-                    2회 오후 7시 30분
-                  </button>
+                  {selectedDate ? (
+                    sessions
+                      .filter((session) => {
+                        const sessionDate = new Date(session.sessionDate);
+                        return (
+                          sessionDate.getFullYear() === selectedDate.getFullYear() &&
+                          sessionDate.getMonth() === selectedDate.getMonth() &&
+                          sessionDate.getDate() === selectedDate.getDate()
+                        );
+                      })
+                      .map((session, index) => {
+                        const date = new Date(session.sessionDate);
+                        const hours = date.getHours();
+                        const minutes = date.getMinutes();
+                        const period = hours < 12 ? '오전' : '오후';
+                        const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+                        const displayMinutes = String(minutes).padStart(2, '0');
+
+                        return (
+                          <button
+                            key={session.id}
+                            onClick={() => setSelectedSession(session.id.toString())}
+                            className={`w-full py-3 text-center text-sm font-bold rounded transition-colors ${
+                              selectedSession === session.id.toString()
+                                ? 'bg-orange-500 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {index + 1}회 {period} {displayHours}시 {displayMinutes}분
+                          </button>
+                        );
+                      })
+                  ) : (
+                    <div className="text-center text-sm text-gray-500 py-3">
+                      날짜를 먼저 선택해주세요
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
