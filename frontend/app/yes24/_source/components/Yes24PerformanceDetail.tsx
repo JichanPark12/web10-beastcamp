@@ -97,13 +97,15 @@ export default function Yes24PerformanceDetail({
     const month = ticketDate.getMonth() + 1;
     const day = ticketDate.getDate();
     const hours = ticketDate.getHours();
+    const minutes = ticketDate.getMinutes();
     const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][
       ticketDate.getDay()
     ];
     const period = hours < 12 ? '오전' : '오후';
     const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    const displayMinutes = minutes > 0 ? `${minutes}분` : '';
 
-    return `${month}월 ${day}일(${dayOfWeek}) ${period} ${displayHours}시 티켓 오픈`;
+    return `${month}월 ${day}일(${dayOfWeek}) ${period} ${displayHours}시${displayMinutes ? ` ${displayMinutes}` : ''} 티켓 오픈`;
   };
 
   return (
