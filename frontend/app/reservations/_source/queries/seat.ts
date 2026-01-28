@@ -1,3 +1,4 @@
+import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api/api";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -9,11 +10,17 @@ export const useReservationSeatsQuery = (
   sessionId: number,
   blockId: string | null,
 ) => {
+  const { token } = useAuth();
   return useSuspenseQuery<ReservationResponse>({
     queryKey: ["reservation-seats", sessionId, blockId],
     queryFn: async () => {
       const res = await api.get<ReservationResponse>(
         `/reservations?session_id=${sessionId}&block_id=${blockId}`,
+        {
+          serverType: "ticket",
+          credentials: "include",
+          headers: { Authorization: `Bearer ${token}` },
+        },
       );
       return res;
     },
@@ -21,7 +28,6 @@ export const useReservationSeatsQuery = (
     gcTime: 0,
   });
 };
-
 // 구버전...
 
 // export const useSeatMetaQuery = (id: string = "") => {
