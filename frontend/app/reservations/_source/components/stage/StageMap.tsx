@@ -29,7 +29,7 @@ export default function StageMap() {
         const response = await fetch(
           process.env.NEXT_PUBLIC_API_MODE === "mock"
             ? blockMapUrl
-            : process.env.NEXT_PUBLIC_API_URL + blockMapUrl,
+            : "https://api.web10.site" + blockMapUrl,
         ); // 일단 public에 넣어둔 상태라 api mock하면 에러남 고로 api.get 대신 fetch사용
         const text = await response.text();
         setSvgContent(text);
