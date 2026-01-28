@@ -55,7 +55,7 @@ export default function TicketingControls({
       case "ticketing":
         return "티켓팅 진행중";
       case "waiting":
-        return "티켓팅 오픈";
+        return "티켓팅 오픈 대기중";
       case "ended":
         return "티켓팅 시간 계산중";
     }
