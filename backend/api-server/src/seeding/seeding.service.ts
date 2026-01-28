@@ -75,10 +75,11 @@ export class SeedingService implements OnApplicationBootstrap {
     while (currentTime <= endDate) {
       // 1. Performance 생성
       const perfName = PERFORMANCE_NAMES[perfIndex % PERFORMANCE_NAMES.length];
+      const platform = Math.random() < 0.5 ? 'nol-ticket' : 'yes24';
       const performance = new Performance(
         perfName,
         new Date(currentTime),
-        'interpark',
+        platform,
       );
       const savedPerformance =
         await this.performancesRepository.save(performance);
