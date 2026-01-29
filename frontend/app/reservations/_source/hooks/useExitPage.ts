@@ -4,6 +4,8 @@ import { useEffect } from "react";
 export function useExitPage() {
   const { setToken } = useAuth();
   useEffect(() => {
-    setToken(null);
+    return () => {
+      setToken(null);
+    };
   }, [setToken]);
 }
