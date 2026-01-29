@@ -7,20 +7,21 @@ import { Performance, Session } from "@/types/performance";
 import Yes24Calendar from "./Yes24Calendar";
 import { useRouter } from "next/navigation";
 import { useTicketContext } from "@/contexts/TicketContext";
+import { VenueDetail } from "@/types/venue";
 
 interface Yes24PerformanceDetailProps {
   performance: Performance;
   sessions: Session[];
-  venueName?: string;
+  venue: VenueDetail;
 }
 
 export default function Yes24PerformanceDetail({
   performance,
   sessions,
-  venueName,
+  venue,
 }: Yes24PerformanceDetailProps) {
   const router = useRouter();
-  const { setPerformance, selectSession } = useTicketContext();
+  const { setPerformance, selectSession, setVenue } = useTicketContext();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(436);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -76,13 +77,14 @@ export default function Yes24PerformanceDetail({
   };
 
   const handleReservation = () => {
-    if (selectedDate && selectedSession && isTicketingOpen) {
+    if (selectedDate && selectedSession && isTicketingOpen && venue) {
       // Context에 공연 정보와 세션 정보 저장
       setPerformance(performance);
       const session = sessions.find((s) => s.id.toString() === selectedSession);
       if (session) {
         selectSession(session);
       }
+      setVenue(venue);
 
       // URL로도 세션 ID 전달
       router.push(`/waiting-queue?sId=${selectedSession}`);
