@@ -7,12 +7,10 @@ import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import Yes24PerformanceDetailData from "./_source/components/Yes24PerformanceDetailData";
-import { clearQueueCookies } from "../actions/clearQueueCookie";
 
 export const dynamic = "force-dynamic";
 
 export default function Yes24Page() {
-  clearQueueCookies();
   return (
     <>
       <ErrorBoundary

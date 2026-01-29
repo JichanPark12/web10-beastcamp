@@ -3,15 +3,13 @@
  * NOL Ticket Detail Page (/nol-ticket)
  */
 
-import { Suspense } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
-import PerformanceDetailData from './_source/components/PerformanceDetailData';
-import { clearQueueCookies } from '../actions/clearQueueCookie';
+import { Suspense } from "react";
+import { ErrorBoundary } from "react-error-boundary";
+import PerformanceDetailData from "./_source/components/PerformanceDetailData";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default function NolTicketPage() {
-  clearQueueCookies();
   return (
     <>
       <ErrorBoundary
