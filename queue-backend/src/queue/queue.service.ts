@@ -150,7 +150,11 @@ export class QueueService {
     if (isOpen !== 'true') {
       if (this.localStartedFlag) {
         this.localStartedFlag = false;
-        await this.redis.del('queue:started');
+        await this.redis.del('queue:started').catch((error: unknown) => {
+          const err =
+            error instanceof Error ? error : new Error('Unknown error');
+          this.logger.warn(`queue:started 키 삭제 실패: ${err.message}`);
+        });
       }
       throw new ForbiddenException('Ticketing not open');
     }

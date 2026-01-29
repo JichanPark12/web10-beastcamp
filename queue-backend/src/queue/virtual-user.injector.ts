@@ -31,16 +31,17 @@ export class VirtualUserInjector implements OnModuleInit {
       this.logger.debug('가상 유저 주입이 이미 실행 중입니다.');
       return;
     }
+    this.isRunning = true;
 
     await this.seedVirtualConfig();
 
     const isEnabled = await this.isVirtualUserEnabled();
     if (!isEnabled) {
       this.logger.warn('가상 유저 주입이 비활성화되어 있습니다.');
+      this.isRunning = false;
       return;
     }
 
-    this.isRunning = true;
     let config: {
       targetTotal: number;
       initialJumpRatio: number;

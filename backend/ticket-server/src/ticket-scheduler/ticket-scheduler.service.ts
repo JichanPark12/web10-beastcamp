@@ -16,6 +16,8 @@ import {
 export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TicketSchedulerService.name);
   private isRunning = false;
+  private readonly stopController = new AbortController();
+  private runLoopPromise?: Promise<void>;
 
   constructor(
     private readonly setupService: TicketSetupService,
@@ -43,14 +45,18 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
     );
 
     this.isRunning = true;
-    void this.runLoop();
+    this.runLoopPromise = this.runLoop(this.stopController.signal);
   }
 
-  onModuleDestroy() {
+  async onModuleDestroy() {
     this.isRunning = false;
+    this.stopController.abort();
+    if (this.runLoopPromise) {
+      await this.runLoopPromise;
+    }
   }
 
-  async handleCycle() {
+  async handleCycle(signal?: AbortSignal) {
     try {
       this.logger.log('Starting ticketing cycle...');
 
@@ -69,13 +75,16 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
         { min: 0 },
       );
 
-      await this.delay(openDelay);
+      await this.delay(openDelay, signal);
       await this.setupService.openTicketing();
 
-      await this.delay(duration);
+      await this.delay(duration, signal);
 
       this.logger.log('Ticketing cycle completed successfully.');
     } catch (e) {
+      if (signal?.aborted) {
+        return;
+      }
       const err = e as Error;
       this.logger.error(`Ticketing cycle failed: ${err.message}`, err.stack);
     } finally {
@@ -83,8 +92,11 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async runLoop(): Promise<void> {
+  private async runLoop(signal: AbortSignal): Promise<void> {
     while (this.isRunning) {
+      if (signal.aborted) {
+        break;
+      }
       try {
         const intervalSec = await getTicketNumberField(
           this.redisService,
@@ -92,20 +104,37 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
           300,
           { min: 1 },
         );
-        await this.delay(intervalSec * 1000);
+        await this.delay(intervalSec * 1000, signal);
         if (!this.isRunning) {
           break;
         }
-        await this.handleCycle();
+        await this.handleCycle(signal);
       } catch (e) {
+        if (signal.aborted) {
+          break;
+        }
         const err = e as Error;
         this.logger.error(`Scheduler loop failed: ${err.message}`, err.stack);
-        await this.delay(1000);
+        await this.delay(1000, signal);
       }
     }
   }
 
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  private delay(ms: number, signal?: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(new Error('Delay cancelled'));
+        return;
+      }
+
+      const timeoutId = setTimeout(resolve, ms);
+      if (!signal) return;
+
+      const onAbort = () => {
+        clearTimeout(timeoutId);
+        reject(new Error('Delay cancelled'));
+      };
+      signal.addEventListener('abort', onAbort, { once: true });
+    });
   }
 }
