@@ -54,7 +54,7 @@
 
 ### 큐 Redis
 
-```
+```redis
 HSET config:queue schedule.transfer_interval_sec 10
 HSET config:queue virtual.inject_batch_size 50
 HSET config:queue virtual.inject_batch_delay_ms 200
@@ -63,7 +63,7 @@ HSET config:queue heartbeat.enabled false
 
 ### 티켓 Redis
 
-```
+```redis
 HSET config:ticket schedule.setup_interval_sec 120
 HSET config:ticket virtual.max_seat_attempts 5
 HSET config:ticket virtual.process_delay_ms 100

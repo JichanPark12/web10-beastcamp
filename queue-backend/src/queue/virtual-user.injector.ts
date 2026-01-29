@@ -41,7 +41,19 @@ export class VirtualUserInjector implements OnModuleInit {
     }
 
     this.isRunning = true;
-    const config = await this.loadConfig();
+    let config: {
+      targetTotal: number;
+      initialJumpRatio: number;
+      burstDurationSec: number;
+    };
+    try {
+      config = await this.loadConfig();
+    } catch (error: unknown) {
+      this.isRunning = false;
+      const err = error instanceof Error ? error : new Error('Unknown error');
+      this.logger.error(`가상 유저 설정 로드 실패: ${err.message}`, err.stack);
+      throw err;
+    }
     this.targetTotal = Math.max(0, config.targetTotal);
 
     if (this.targetTotal === 0) {
@@ -228,7 +240,13 @@ export class VirtualUserInjector implements OnModuleInit {
         pipeline.zadd(REDIS_KEYS.WAITING_QUEUE, score, userId);
       }
 
-      await pipeline.exec();
+      const results = await pipeline.exec();
+      if (!results) {
+        throw new Error('가상 유저 주입 파이프라인이 중단되었습니다.');
+      }
+      for (const [err] of results) {
+        if (err) throw err;
+      }
 
       if (batchDelayMs > 0 && end < count) {
         await this.delay(batchDelayMs);

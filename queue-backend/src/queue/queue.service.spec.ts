@@ -13,7 +13,7 @@ describe('QueueService', () => {
     zadd: jest.fn(),
     exists: jest.fn(),
     multi: jest.fn(),
-    setnx: jest.fn(),
+    set: jest.fn(),
   };
   const ticketRedisMock = {
     get: jest.fn(),
@@ -34,7 +34,7 @@ describe('QueueService', () => {
       zadd: jest.fn().mockReturnThis(),
       exec: jest.fn(),
     }));
-    redisMock.setnx.mockResolvedValue(1);
+    redisMock.set.mockResolvedValue('OK');
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         QueueService,

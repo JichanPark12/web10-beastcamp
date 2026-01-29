@@ -148,6 +148,10 @@ export class QueueService {
   private async validateTicketingOpen() {
     const isOpen = await this.ticketRedis.get(REDIS_KEYS.TICKETING_OPEN);
     if (isOpen !== 'true') {
+      if (this.localStartedFlag) {
+        this.localStartedFlag = false;
+        await this.redis.del('queue:started');
+      }
       throw new ForbiddenException('Ticketing not open');
     }
   }

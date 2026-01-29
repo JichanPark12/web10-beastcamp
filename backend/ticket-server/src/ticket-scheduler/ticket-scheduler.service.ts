@@ -85,17 +85,23 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
 
   private async runLoop(): Promise<void> {
     while (this.isRunning) {
-      const intervalSec = await getTicketNumberField(
-        this.redisService,
-        'schedule.setup_interval_sec',
-        300,
-        { min: 1 },
-      );
-      await this.delay(intervalSec * 1000);
-      if (!this.isRunning) {
-        break;
+      try {
+        const intervalSec = await getTicketNumberField(
+          this.redisService,
+          'schedule.setup_interval_sec',
+          300,
+          { min: 1 },
+        );
+        await this.delay(intervalSec * 1000);
+        if (!this.isRunning) {
+          break;
+        }
+        await this.handleCycle();
+      } catch (e) {
+        const err = e as Error;
+        this.logger.error(`Scheduler loop failed: ${err.message}`, err.stack);
+        await this.delay(1000);
       }
-      await this.handleCycle();
     }
   }
 
