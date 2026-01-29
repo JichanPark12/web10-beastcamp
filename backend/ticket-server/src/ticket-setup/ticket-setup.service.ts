@@ -50,15 +50,20 @@ export class TicketSetupService {
   async openTicketing(): Promise<void> {
     try {
       await this.redisService.set(REDIS_KEYS.TICKETING_OPEN, 'true');
-      await this.redisService.publishToTicket(
-        REDIS_CHANNELS.TICKETING_STATE_CHANGED,
-        'open',
-      );
       this.logger.log('Ticketing opened');
+
+      void this.redisService
+        .publishToTicket(REDIS_CHANNELS.TICKETING_STATE_CHANGED, 'open')
+        .catch((e) => {
+          const err = e as Error;
+          this.logger.error(`⚠️ 오픈 이벤트 발행 실패: ${err.message}`);
+        });
     } catch (e) {
       const err = e as Error;
       this.logger.error(`Failed to open ticketing: ${err.message}`);
-      await this.redisService.set(REDIS_KEYS.TICKETING_OPEN, 'false');
+      await this.redisService
+        .set(REDIS_KEYS.TICKETING_OPEN, 'false')
+        .catch(() => {});
     }
   }
 
@@ -66,11 +71,14 @@ export class TicketSetupService {
     try {
       await this.redisService.set(REDIS_KEYS.TICKETING_OPEN, 'false');
       await this.redisService.del(REDIS_KEYS.CURRENT_TICKETING_SESSION);
-      await this.redisService.publishToTicket(
-        REDIS_CHANNELS.TICKETING_STATE_CHANGED,
-        'close',
-      );
       this.logger.log('Ticketing closed (tear-down)');
+
+      void this.redisService
+        .publishToTicket(REDIS_CHANNELS.TICKETING_STATE_CHANGED, 'close')
+        .catch((e) => {
+          const err = e as Error;
+          this.logger.error(`⚠️ 종료 이벤트 발행 실패: ${err.message}`);
+        });
     } catch (e) {
       const err = e as Error;
       this.logger.error(`Tear-down failed: ${err.message}`);
