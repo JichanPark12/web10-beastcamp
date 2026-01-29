@@ -9,6 +9,7 @@ import DetailRoundSelector from "./DetailRoundSelector";
 import { useRouter } from "next/navigation";
 import { useTicketContext } from "@/contexts/TicketContext";
 import { VenueDetail } from "@/types/venue";
+import { useResetAuthToken } from "@/hooks/useResetAuthToken";
 
 interface PerformanceDetailProps {
   performance: Performance;
@@ -33,6 +34,8 @@ export default function PerformanceDetail({
     seconds: number;
   } | null>(null);
   const [isActive, setIsActive] = useState(false);
+
+  useResetAuthToken();
   /*
    개발 모드에서 테스트 하려고 마감 시간을 항상 현재시간 + 10초로 잡음
   const [target, setTarget] = useState<number>(

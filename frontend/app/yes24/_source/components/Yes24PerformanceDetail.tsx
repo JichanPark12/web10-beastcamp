@@ -8,6 +8,7 @@ import Yes24Calendar from "./Yes24Calendar";
 import { useRouter } from "next/navigation";
 import { useTicketContext } from "@/contexts/TicketContext";
 import { VenueDetail } from "@/types/venue";
+import { useResetAuthToken } from "@/hooks/useResetAuthToken";
 
 interface Yes24PerformanceDetailProps {
   performance: Performance;
@@ -27,6 +28,8 @@ export default function Yes24PerformanceDetail({
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [isTicketingOpen, setIsTicketingOpen] = useState(false);
+
+  useResetAuthToken();
 
   // 날짜 선택 핸들러 - 날짜 변경 시 선택된 회차 초기화
   const handleDateSelect = (date: Date | undefined) => {
