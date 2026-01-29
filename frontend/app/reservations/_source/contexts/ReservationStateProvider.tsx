@@ -8,6 +8,7 @@ import { useResult } from "@/contexts/ResultContext";
 import { RESERVATION_LIMIT } from "../constants/reservationConstants";
 import { Seat } from "../types/reservationType";
 import { useTimeLogStore } from "@/hooks/timeLogStore";
+import { useReservationData } from "./ReservationDataProvider";
 
 interface ReservedSeat {
   block_id: number;
@@ -62,6 +63,7 @@ export function ReservationStateProvider({
 
   const [area, setArea] = useState<string | null>(null);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+  const { venue } = useReservationData();
 
   const completeCaptcha = () => {
     setIsCaptchaVerified(true);
@@ -104,8 +106,19 @@ export function ReservationStateProvider({
         },
         { serverType: "ticket", headers: { Authorization: `Bearer ${token}` } },
       );
+
+      const result = {
+        rank: response.rank,
+        seats: response.seats.map((seat) => ({
+          blockName:
+            venue?.blocks.find((b) => b.id === seat.block_id)?.blockDataName ||
+            "구역 정보가 없습니다.",
+          row: +seat.row + 1,
+          col: +seat.col + 1,
+        })),
+      };
       endSeatSelection();
-      setResult(response);
+      setResult(result);
       router.replace("/result");
     } catch (e) {
       if (e instanceof ApiError) {

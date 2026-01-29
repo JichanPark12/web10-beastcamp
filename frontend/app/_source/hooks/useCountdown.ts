@@ -1,5 +1,5 @@
 import { refreshPerformance } from "@/app/actions/refreshPerformance";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useEffectEvent } from "react";
 import { getServerTime } from "@/app/actions/getServerTime";
 
 interface TimeLeft {
@@ -36,7 +36,6 @@ function calculateTimeLeft(targetTime: number, now: number): TimeLeft {
 export function useCountdown(targetDateStr?: string): UseCountdownReturn {
   const [offset, setOffset] = useState<number>(0);
   const [status, setStatus] = useState<CountdownStatus>("ended");
-
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
@@ -44,7 +43,13 @@ export function useCountdown(targetDateStr?: string): UseCountdownReturn {
     seconds: 0,
   });
 
+  const onTicketingEnd = useEffectEvent(() => {
+    refreshPerformance();
+  });
+
   useEffect(() => {
+    if (!targetDateStr) return;
+
     const syncTime = async () => {
       try {
         const startTime = Date.now();
@@ -55,21 +60,21 @@ export function useCountdown(targetDateStr?: string): UseCountdownReturn {
         setOffset(timeOffset);
       } catch (error) {
         console.error("Failed to sync time:", error);
+        setOffset(0);
       }
     };
 
-    if (targetDateStr) {
-      syncTime();
-    }
+    syncTime();
   }, [targetDateStr]);
 
+  // 타이머 동작
   useEffect(() => {
-    if (!targetDateStr) {
-      return;
-    }
+    if (!targetDateStr) return;
 
     const targetDate = new Date(targetDateStr);
     const targetTime = targetDate.getTime();
+    const endTime = targetTime + TICKETING_DURATION_MS;
+    let prevStatus: CountdownStatus | null = null;
 
     const updateTimer = () => {
       const serverNow = Date.now() + offset;
@@ -77,25 +82,25 @@ export function useCountdown(targetDateStr?: string): UseCountdownReturn {
       if (serverNow < targetTime) {
         setStatus("waiting");
         setTimeLeft(calculateTimeLeft(targetTime, serverNow));
-      } else if (serverNow < targetTime + TICKETING_DURATION_MS) {
+        prevStatus = "waiting";
+      } else if (serverNow < endTime) {
         setStatus("ticketing");
-        setTimeLeft(
-          calculateTimeLeft(targetTime + TICKETING_DURATION_MS, serverNow),
-        );
+        setTimeLeft(calculateTimeLeft(endTime, serverNow));
+        prevStatus = "ticketing";
       } else {
-        setStatus((prevStatus) => {
-          if (prevStatus === "ticketing") {
-            refreshPerformance();
-          }
-          return "ended";
-        });
+        setStatus("ended");
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+        if (prevStatus === "ticketing") {
+          onTicketingEnd();
+        }
+        prevStatus = "ended";
       }
     };
 
     updateTimer();
-
     const timer = setInterval(updateTimer, 1000);
+
     return () => clearInterval(timer);
   }, [targetDateStr, offset]);
 

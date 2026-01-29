@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "www.kopis.or.kr",
       },
+      {
+        protocol: "http",
+        hostname: "www.kopis.or.kr",
+      },
+      {
+        protocol: "http",
+        hostname: "kopis.or.kr",
+      },
     ],
   },
 

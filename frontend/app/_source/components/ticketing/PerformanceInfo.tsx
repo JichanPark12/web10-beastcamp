@@ -46,7 +46,7 @@ export default function PerformanceInfo({
           <span className="text-sm">다음 티켓팅</span>
         </div>
 
-        <h2 className="text-3xl md:text-4xl mb-4 w-full">
+        <h2 className="text-3xl md:text-4xl mb-4">
           {performance.performance_name}
         </h2>
 

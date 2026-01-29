@@ -1,7 +1,8 @@
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Calendar, Clock } from "lucide-react";
 import { TicketPlatform } from "@/types/performance";
 import { formatDateTime } from "@/lib/utils";
 import { PLATFORM_DISPLAY_NAME } from "@/constants/performance";
+import Image from "next/image";
 
 interface TicketingPreviewCardProps {
   platform: TicketPlatform;
@@ -18,9 +19,10 @@ export function TicketingPreviewCard(props: TicketingPreviewCardProps) {
       <div>
         <div className="aspect-[3/4] bg-gradient-to-br from-purple-200 via-pink-200 to-orange-200 relative overflow-hidden">
           {props.posterUrl ? (
-            <img
+            <Image
               src={props.posterUrl}
               alt={props.performanceName}
+              fill
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
