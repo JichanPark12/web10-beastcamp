@@ -30,5 +30,6 @@ export const useCurrentQueue = (hasToken: boolean = false) => {
     },
     enabled: hasToken,
     refetchInterval: 2000,
+    gcTime: 0,
   });
 };
