@@ -63,7 +63,11 @@ export class TicketSetupService {
       this.logger.error(`Failed to open ticketing: ${err.message}`);
       await this.redisService
         .set(REDIS_KEYS.TICKETING_OPEN, 'false')
-        .catch(() => {});
+        .catch((rollbackErr) => {
+          this.logger.warn(
+            `⚠️ 롤백 실패 - TICKETING_OPEN 상태 불일치 가능: ${(rollbackErr as Error).message}`,
+          );
+        });
     }
   }
 
