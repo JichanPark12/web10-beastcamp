@@ -33,6 +33,11 @@ export default function RootLayout({
     <html lang="ko">
       <head>
         {' '}
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-MJVW856FVF"
+          strategy="afterInteractive"
+        />
         <Script id="ga-init" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
