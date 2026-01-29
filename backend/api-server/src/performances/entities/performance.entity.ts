@@ -7,14 +7,26 @@ export class Performance {
     performanceName?: string,
     ticketingDate?: Date,
     platform?: 'nol-ticket' | 'yes24' | 'melon-ticket' | 'interpark',
+    posterUrl?: string,
   ) {
     if (performanceName) this.performanceName = performanceName;
     if (ticketingDate) this.ticketingDate = ticketingDate;
     if (platform) this.platform = platform;
+    if (posterUrl) this.posterUrl = posterUrl;
   }
 
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({
+    type: 'varchar',
+    length: 50,
+    name: 'kopis_id',
+    nullable: true,
+    unique: true,
+    comment: 'KOPIS API 공연 ID (mt20id)',
+  })
+  kopisId: string | null;
 
   @Column({
     type: 'varchar',
@@ -33,9 +45,18 @@ export class Performance {
 
   @Column({
     type: 'varchar',
+    length: 500,
+    name: 'poster_url',
+    nullable: true,
+    comment: '포스터 이미지 URL',
+  })
+  posterUrl: string | null;
+
+  @Column({
+    type: 'varchar',
     length: 20,
     name: 'platform',
-    comment: '티켓팅 플랫폼 (nol-ticket, yes24, melon-ticket)',
+    comment: '티켓팅 플랫폼 (nol-ticket, yes24, melon-ticket, interpark)',
     default: 'nol-ticket',
   })
   platform: 'nol-ticket' | 'yes24' | 'melon-ticket' | 'interpark';

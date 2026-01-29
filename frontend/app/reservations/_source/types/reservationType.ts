@@ -5,9 +5,9 @@ import { Grade } from "@/types/venue";
 export interface Seat {
   id: string;
   seatGrade: Grade;
-  rowNum: string;
-  colNum: string;
-  blockNum: string;
+  rowNum: number;
+  colNum: number;
+  blockNum: number;
   isReserved?: boolean;
 }
 

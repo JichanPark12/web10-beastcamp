@@ -9,6 +9,7 @@ export interface Performance {
   performance_name: string;
   ticketing_date: string;
   platform: TicketPlatform;
+  poster_url: string | null;
 }
 
 export interface Session {

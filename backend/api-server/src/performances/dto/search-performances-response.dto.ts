@@ -12,6 +12,13 @@ export class PerformanceDto {
   performance_name: string;
 
   @ApiProperty({
+    description: '포스터 이미지 url',
+    example: 'https://example.com/poster.jpg',
+    nullable: true,
+  })
+  poster_url: string | null;
+
+  @ApiProperty({
     description: '티켓팅 시작 일시 (ISO 8601)',
     example: '2026-01-01T10:00:00Z',
   })
@@ -28,6 +35,7 @@ export class PerformanceDto {
     const dto = new PerformanceDto();
     dto.performance_id = performance.id;
     dto.performance_name = performance.performanceName;
+    dto.poster_url = performance.posterUrl;
     dto.ticketing_date = performance.ticketingDate.toISOString();
     dto.platform = performance.platform;
     return dto;

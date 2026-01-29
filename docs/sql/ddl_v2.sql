@@ -22,10 +22,13 @@ CREATE TABLE `blocks` (
 -- 공연.
 CREATE TABLE `performances` (
   `id` int NOT NULL AUTO_INCREMENT,
+  `kopis_id` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'KOPIS API 공연 ID (mt20id)',
   `performance_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '공연 이름',
   `ticketing_date` datetime NOT NULL COMMENT '티켓팅 일시 (ISO 8601)',
-  `platform` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'nol-ticket' COMMENT '티켓팅 플랫폼 (interpark, yes24, melon-ticket)',
-  PRIMARY KEY (`id`)
+  `poster_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '포스터 이미지 URL',
+  `platform` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'nol-ticket' COMMENT '티켓팅 플랫폼 (nol-ticket, interpark, yes24, melon-ticket)',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_performances_kopis_id` (`kopis_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 회차.

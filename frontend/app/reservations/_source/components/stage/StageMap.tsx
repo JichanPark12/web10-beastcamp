@@ -23,9 +23,14 @@ export default function StageMap() {
 
   useEffect(() => {
     if (!blockMapUrl) return;
+
     const fetchSvg = async () => {
       try {
-        const response = await fetch(blockMapUrl); // 일단 public에 넣어둔 상태라 api mock하면 에러남 고로 api.get 대신 fetch사용
+        const response = await fetch(
+          process.env.NEXT_PUBLIC_API_MODE === "mock"
+            ? blockMapUrl
+            : "https://api.web10.site" + blockMapUrl,
+        ); // 일단 public에 넣어둔 상태라 api mock하면 에러남 고로 api.get 대신 fetch사용
         const text = await response.text();
         setSvgContent(text);
       } catch (err) {
@@ -54,10 +59,9 @@ export default function StageMap() {
     const map: Record<string, string> = {};
 
     venue.blocks.forEach((block) => {
-      const grade = blockGrades.find((bg) => bg.blockId === block.id);
-      if (grade) {
-        const gradeKey = String(grade.gradeId) as keyof typeof gradeInfoColor;
-        const color = gradeInfoColor[gradeKey]?.fillColor;
+      const blockGrade = blockGrades.find((bg) => bg.blockId === block.id);
+      if (blockGrade) {
+        const color = gradeInfoColor[blockGrade.grade.name]?.fillColor;
         if (color) {
           map[block.blockDataName] = color;
         }

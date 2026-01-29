@@ -11,6 +11,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'http://localhost:5173',
+      'https://www.web10.site',
       'https://web10-beastcamp.vercel.app',
     ], // 프론트엔드 URL
     credentials: true,

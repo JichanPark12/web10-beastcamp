@@ -16,22 +16,22 @@ export default function PerformanceInfo({
   let dateDisplay = "";
 
   if (sessions && sessions.length > 0) {
-    console.log("Sessions in PerformanceInfo:", sessions);
     const dates = sessions.map((s) => new Date(s.sessionDate).getTime());
     const minDate = new Date(Math.min(...dates));
     const maxDate = new Date(Math.max(...dates));
 
-    const formatDate = (d: Date) =>
-      d.toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
+    const formatDateTime = (d: Date) => {
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const day = d.getDate();
+
+      return `${year}년 ${month}월 ${day}일 `;
+    };
 
     if (minDate.getTime() === maxDate.getTime()) {
-      dateDisplay = formatDate(minDate);
+      dateDisplay = formatDateTime(minDate);
     } else {
-      dateDisplay = `${formatDate(minDate)} ~ ${formatDate(maxDate)}`;
+      dateDisplay = `${formatDateTime(minDate)} ~ ${formatDateTime(maxDate)}`;
     }
   }
 
@@ -40,13 +40,13 @@ export default function PerformanceInfo({
     : PLATFORM_DISPLAY_NAME["nol-ticket"];
 
   return (
-    <div className="grid md:grid-cols-2 gap-8 items-center">
+    <div className="gap-8 items-center w-full">
       <div>
         <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
           <span className="text-sm">다음 티켓팅</span>
         </div>
 
-        <h2 className="text-3xl md:text-4xl mb-4 text-nowrap">
+        <h2 className="text-3xl md:text-4xl mb-4 w-full">
           {performance.performance_name}
         </h2>
 

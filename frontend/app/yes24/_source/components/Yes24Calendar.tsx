@@ -15,7 +15,16 @@ export default function Yes24Calendar({
   onDateSelect,
   sessions,
 }: Yes24CalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 0, 1)); // 2026년 1월
+  // 첫 번째 세션의 날짜를 기준으로 초기 월 설정
+  const getInitialMonth = () => {
+    if (sessions.length > 0) {
+      const firstSessionDate = new Date(sessions[0].sessionDate);
+      return new Date(firstSessionDate.getFullYear(), firstSessionDate.getMonth(), 1);
+    }
+    return new Date(2026, 0, 1); // 기본값: 2026년 1월
+  };
+
+  const [currentMonth, setCurrentMonth] = useState(getInitialMonth());
 
   // 해당 월의 세션 날짜들을 Set으로 변환
   const sessionDates = new Set(

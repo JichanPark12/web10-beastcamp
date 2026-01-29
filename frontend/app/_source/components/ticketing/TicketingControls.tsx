@@ -1,14 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { useCountdown } from "../../hooks/useCountdown";
 import CountdownTimer from "./CountdownTimer";
-import DateSelector from "./DateSelector";
-import RoundSelector from "./RoundSelector";
 import type { Performance, Session } from "@/types/performance";
 import type { VenueDetail } from "@/types/venue";
 import { useRouter } from "next/navigation";
-import { useTicketContext } from "../../../../contexts/TicketContext";
 
 interface TicketingControlsProps {
   performance?: Performance;
@@ -18,19 +14,12 @@ interface TicketingControlsProps {
 
 export default function TicketingControls({
   performance,
-  sessions,
-  venue,
 }: TicketingControlsProps) {
   const router = useRouter();
-  const { setPerformance, setVenue, selectSession } = useTicketContext();
 
-  const { timeLeft, isActive } = useCountdown(performance?.ticketing_date);
+  const { timeLeft, status } = useCountdown(performance?.ticketing_date);
 
   const handleBooking = () => {
-    router.push("/nol-ticket");
-  };
-
-  const handleDemoStart = () => {
     if (!performance?.platform) {
       router.push("/nol-ticket");
       return;
@@ -39,7 +28,7 @@ export default function TicketingControls({
     const platformRoutes = {
       "nol-ticket": "/nol-ticket",
       yes24: "/yes24",
-      "melon-ticket": "/melon-ticket",
+      "melon-ticket": "/yes24",
     };
 
     const route =
@@ -47,33 +36,49 @@ export default function TicketingControls({
     router.push(route || "/nol-ticket");
   };
 
+  // 티켓팅 오픈 시각 포맷팅
+  const formatTicketingTime = () => {
+    if (!performance?.ticketing_date) return "";
+
+    const date = new Date(performance.ticketing_date);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    return `${year}년 ${month}월 ${day}일 ${hours}:${minutes}`;
+  };
+
+  const getStatusText = () => {
+    switch (status) {
+      case "ticketing":
+        return "티켓팅 진행중";
+      case "waiting":
+        return "티켓팅 오픈 대기중";
+      case "ended":
+        return "티켓팅 시간 계산중";
+    }
+  };
+
   return (
     <div className="bg-white/10 p-3 backdrop-blur-lg rounded-2xl border border-white/20">
-      <CountdownTimer timeLeft={timeLeft} />
+      {/* 티켓팅 오픈 시각 */}
+      {performance?.ticketing_date && (
+        <div className="text-center mb-3">
+          <p className="text-lg font-semibold text-white">{getStatusText()}</p>
+          <p className="text-sm text-white/80 mb-1">{formatTicketingTime()}</p>
+        </div>
+      )}
+
+      {/* 카운트다운 타이머 */}
+      <CountdownTimer timeLeft={timeLeft} status={status} />
 
       <button
         onClick={handleBooking}
-        disabled={!isActive}
-        className={`w-full py-4 rounded-xl transition-all ${
-          isActive
-            ? "bg-white text-purple-600 hover:bg-gray-100 shadow-lg hover:shadow-xl"
-            : "bg-white/30 text-white/50 cursor-not-allowed"
-        }`}
+        className={`w-full py-4 rounded-xl transition-all bg-white text-purple-600 hover:bg-gray-100 shadow-lg hover:shadow-xl`}
       >
-        {isActive ? "예매하기" : "대기 중..."}
-      </button>
-
-      {!isActive && (
-        <p className="text-center text-sm text-white/60 mt-3">
-          티켓팅 시작 시간에 활성화됩니다
-        </p>
-      )}
-
-      <button
-        onClick={handleDemoStart}
-        className="w-full mt-3 py-3 rounded-xl bg-white/20 hover:bg-white/30 transition-all text-sm border border-white/30"
-      >
-        데모 시작하기
+        연습하러 가기
       </button>
     </div>
   );

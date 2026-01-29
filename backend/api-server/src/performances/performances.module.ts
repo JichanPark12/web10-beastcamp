@@ -12,10 +12,12 @@ import { GradesRepository } from './grades.repository';
 import { BlockGradesRepository } from './block-grades.repository';
 import { Venue } from '../venues/entities/venue.entity';
 import { PerformancesRepository } from './performances.repository';
+import { KopisModule } from '../kopis/kopis.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Performance, Venue, Session, Grade, BlockGrade]),
+    KopisModule,
   ],
   controllers: [PerformancesController, SessionsController],
   providers: [

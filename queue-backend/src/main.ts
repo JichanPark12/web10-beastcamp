@@ -13,6 +13,7 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://localhost:5173',
       'https://web10-beastcamp.vercel.app',
+      'https://www.web10.site',
     ],
     credentials: true,
   });

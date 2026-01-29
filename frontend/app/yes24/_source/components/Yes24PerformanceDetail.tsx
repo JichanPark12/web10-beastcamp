@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { Heart, ChevronRight } from 'lucide-react';
-import { Performance, Session } from '@/types/performance';
-import Yes24Calendar from './Yes24Calendar';
-import { useRouter } from 'next/navigation';
-import { useTicketContext } from '@/contexts/TicketContext';
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { Heart, ChevronRight } from "lucide-react";
+import { Performance, Session } from "@/types/performance";
+import Yes24Calendar from "./Yes24Calendar";
+import { useRouter } from "next/navigation";
+import { useTicketContext } from "@/contexts/TicketContext";
 
 interface Yes24PerformanceDetailProps {
   performance: Performance;
@@ -34,7 +34,7 @@ export default function Yes24PerformanceDetail({
   };
 
   // 날짜 범위 계산
-  let dateRange = '';
+  let dateRange = "";
   if (sessions && sessions.length > 0) {
     const dates = sessions.map((s) => new Date(s.sessionDate).getTime());
     const minDate = new Date(Math.min(...dates));
@@ -42,8 +42,8 @@ export default function Yes24PerformanceDetail({
 
     const formatDate = (d: Date) => {
       const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
       return `${year}.${month}.${day}`;
     };
 
@@ -79,7 +79,7 @@ export default function Yes24PerformanceDetail({
     if (selectedDate && selectedSession && isTicketingOpen) {
       // Context에 공연 정보와 세션 정보 저장
       setPerformance(performance);
-      const session = sessions.find(s => s.id.toString() === selectedSession);
+      const session = sessions.find((s) => s.id.toString() === selectedSession);
       if (session) {
         selectSession(session);
       }
@@ -91,19 +91,21 @@ export default function Yes24PerformanceDetail({
 
   // 티켓 오픈 시각 포맷팅
   const formatTicketOpenTime = () => {
-    if (!performance.ticketing_date) return '';
+    if (!performance.ticketing_date) return "";
 
     const ticketDate = new Date(performance.ticketing_date);
     const month = ticketDate.getMonth() + 1;
     const day = ticketDate.getDate();
     const hours = ticketDate.getHours();
-    const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][
+    const minutes = ticketDate.getMinutes();
+    const dayOfWeek = ["일", "월", "화", "수", "목", "금", "토"][
       ticketDate.getDay()
     ];
-    const period = hours < 12 ? '오전' : '오후';
+    const period = hours < 12 ? "오전" : "오후";
     const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    const displayMinutes = minutes > 0 ? `${minutes}분` : "";
 
-    return `${month}월 ${day}일(${dayOfWeek}) ${period} ${displayHours}시 티켓 오픈`;
+    return `${month}월 ${day}일(${dayOfWeek}) ${period} ${displayHours}시${displayMinutes ? ` ${displayMinutes}` : ""} 티켓 오픈`;
   };
 
   return (
@@ -145,7 +147,7 @@ export default function Yes24PerformanceDetail({
             <div className="bg-white rounded-lg overflow-hidden shadow-sm">
               <div className="relative aspect-[3/4]">
                 <Image
-                  src="/images/poster.jpg"
+                  src={performance.poster_url || "/images/poster.jpg"}
                   alt={performance.performance_name}
                   fill
                   className="object-cover"
@@ -160,7 +162,7 @@ export default function Yes24PerformanceDetail({
                   className="flex items-center justify-center gap-2 w-full py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
                 >
                   <Heart
-                    className={`w-5 h-5 ${liked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
+                    className={`w-5 h-5 ${liked ? "fill-red-500 text-red-500" : "text-gray-600"}`}
                   />
                   <span className="text-sm text-gray-700">{likeCount}</span>
                   <span className="text-sm text-gray-600">Likes</span>
@@ -282,7 +284,7 @@ export default function Yes24PerformanceDetail({
                   <span className="text-white text-xs font-bold">!</span>
                 </div>
                 <div className="text-sm text-gray-700">
-                  <span className="font-bold">본 상품은</span>{' '}
+                  <span className="font-bold">본 상품은</span>{" "}
                   <span className="text-red-600 font-bold">
                     자동예매방지(CAPTCHA)
                   </span>
@@ -316,19 +318,48 @@ export default function Yes24PerformanceDetail({
                   />
                 </div>
                 <div className="w-56 space-y-2">
-                  <button
-                    onClick={() => setSelectedSession('1')}
-                    className={`w-full py-3 text-center text-sm font-bold rounded transition-colors ${
-                      selectedSession === '1'
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    1회 오후 2시 00분
-                  </button>
-                  <button className="w-full py-3 text-center bg-gray-100 text-sm font-bold text-gray-700 rounded hover:bg-gray-200 transition-colors">
-                    2회 오후 7시 30분
-                  </button>
+                  {selectedDate ? (
+                    sessions
+                      .filter((session) => {
+                        const sessionDate = new Date(session.sessionDate);
+                        return (
+                          sessionDate.getFullYear() ===
+                            selectedDate.getFullYear() &&
+                          sessionDate.getMonth() === selectedDate.getMonth() &&
+                          sessionDate.getDate() === selectedDate.getDate()
+                        );
+                      })
+                      .map((session, index) => {
+                        const date = new Date(session.sessionDate);
+                        const hours = date.getHours();
+                        const minutes = date.getMinutes();
+                        const period = hours < 12 ? "오전" : "오후";
+                        const displayHours =
+                          hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+                        const displayMinutes = String(minutes).padStart(2, "0");
+
+                        return (
+                          <button
+                            key={session.id}
+                            onClick={() =>
+                              setSelectedSession(session.id.toString())
+                            }
+                            className={`w-full py-3 text-center text-sm font-bold rounded transition-colors ${
+                              selectedSession === session.id.toString()
+                                ? "bg-orange-500 text-white"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
+                          >
+                            {index + 1}회 {period} {displayHours}시{" "}
+                            {displayMinutes}분
+                          </button>
+                        );
+                      })
+                  ) : (
+                    <div className="text-center text-sm text-gray-500 py-3">
+                      날짜를 먼저 선택해주세요
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -343,23 +374,33 @@ export default function Yes24PerformanceDetail({
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between py-3">
-                  <span className="text-gray-900 font-medium">OP석 190,000원</span>
+                  <span className="text-gray-900 font-medium">
+                    OP석 190,000원
+                  </span>
                   <span className="text-red-500 text-sm">(잔여:매진)</span>
                 </div>
                 <div className="flex items-center justify-between py-3">
-                  <span className="text-gray-900 font-medium">R석 190,000원</span>
+                  <span className="text-gray-900 font-medium">
+                    R석 190,000원
+                  </span>
                   <span className="text-red-500 text-sm">(잔여:매진)</span>
                 </div>
                 <div className="flex items-center justify-between py-3">
-                  <span className="text-gray-900 font-medium">S석 160,000원</span>
+                  <span className="text-gray-900 font-medium">
+                    S석 160,000원
+                  </span>
                   <span className="text-red-500 text-sm">(잔여:매진)</span>
                 </div>
                 <div className="flex items-center justify-between py-3">
-                  <span className="text-gray-900 font-medium">A석 130,000원</span>
+                  <span className="text-gray-900 font-medium">
+                    A석 130,000원
+                  </span>
                   <span className="text-red-500 text-sm">(잔여:1석)</span>
                 </div>
                 <div className="flex items-center justify-between py-3">
-                  <span className="text-gray-900 font-medium">B석 90,000원</span>
+                  <span className="text-gray-900 font-medium">
+                    B석 90,000원
+                  </span>
                   <span className="text-red-500 text-sm">(잔여:매진)</span>
                 </div>
               </div>
@@ -374,11 +415,11 @@ export default function Yes24PerformanceDetail({
             disabled={!isTicketingOpen || !selectedDate || !selectedSession}
             className={`px-32 py-4 rounded font-bold text-lg transition-colors ${
               isTicketingOpen && selectedDate && selectedSession
-                ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                ? "bg-red-500 text-white hover:bg-red-600"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
-            {isTicketingOpen ? '예매하기' : formatTicketOpenTime()}
+            {isTicketingOpen ? "예매하기" : formatTicketOpenTime()}
           </button>
           <button className="px-20 py-4 rounded border-2 border-gray-300 bg-white text-gray-700 font-bold text-lg hover:bg-gray-50 transition-colors">
             GLOBAL BOOKING

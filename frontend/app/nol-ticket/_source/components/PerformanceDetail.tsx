@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { Heart, ChevronRight } from 'lucide-react';
-import { Performance, Session } from '@/types/performance';
-import DetailDateSelector from './DetailDateSelector';
-import DetailRoundSelector from './DetailRoundSelector';
-import { useRouter } from 'next/navigation';
-import { useTicketContext } from '@/contexts/TicketContext';
-import { VenueDetail } from '@/types/venue';
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { Heart, ChevronRight } from "lucide-react";
+import { Performance, Session } from "@/types/performance";
+import DetailDateSelector from "./DetailDateSelector";
+import DetailRoundSelector from "./DetailRoundSelector";
+import { useRouter } from "next/navigation";
+import { useTicketContext } from "@/contexts/TicketContext";
+import { VenueDetail } from "@/types/venue";
 
 interface PerformanceDetailProps {
   performance: Performance;
@@ -33,11 +33,12 @@ export default function PerformanceDetail({
     seconds: number;
   } | null>(null);
   const [isActive, setIsActive] = useState(false);
+  /*
+   개발 모드에서 테스트 하려고 마감 시간을 항상 현재시간 + 10초로 잡음
   const [target, setTarget] = useState<number>(
     new Date(new Date().getTime() + 10000).getTime(),
   );
-
-  // 현재는 개발 모드에서 테스트 하려고 마감 시간을 항상 현재시간 + 10초로 잡음
+  */
 
   // 카운트다운 계산
   useEffect(() => {
@@ -45,9 +46,9 @@ export default function PerformanceDetail({
 
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
-      console.log('현재 시간:', new Date(now).toISOString());
+      console.log("현재 시간:", new Date(now).toISOString());
 
-      //const target = new Date(performance.ticketing_date).getTime();
+      const target = new Date(performance.ticketing_date).getTime();
       const difference = target - now;
 
       if (difference <= 0) {
@@ -90,7 +91,7 @@ export default function PerformanceDetail({
 
       // URL로도 세션 ID 전달
       router.push(`/waiting-queue?sId=${selectedRound}`);
-      console.log('예매 확정:', { selectedDate, selectedRound, session });
+      console.log("예매 확정:", { selectedDate, selectedRound, session });
     }
   };
 
@@ -102,7 +103,7 @@ export default function PerformanceDetail({
   };
 
   // 날짜 범위 계산
-  let dateRange = '';
+  let dateRange = "";
   if (sessions && sessions.length > 0) {
     const dates = sessions.map((s) => new Date(s.sessionDate).getTime());
     const minDate = new Date(Math.min(...dates));
@@ -110,13 +111,13 @@ export default function PerformanceDetail({
 
     const formatDate = (d: Date) =>
       d
-        .toLocaleDateString('ko-KR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
+        .toLocaleDateString("ko-KR", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
         })
-        .replace(/\. /g, '.')
-        .replace(/\.$/, '');
+        .replace(/\. /g, ".")
+        .replace(/\.$/, "");
 
     if (minDate.getTime() === maxDate.getTime()) {
       dateRange = formatDate(minDate);
@@ -160,7 +161,7 @@ export default function PerformanceDetail({
             <div className="sticky top-24">
               <div className="relative aspect-3/4 rounded-lg overflow-hidden shadow-lg">
                 <Image
-                  src="/images/poster.jpg"
+                  src={performance.poster_url || "/images/poster.jpg"}
                   alt={performance.performance_name}
                   fill
                   className="object-cover"
@@ -175,7 +176,7 @@ export default function PerformanceDetail({
                   className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors"
                 >
                   <Heart
-                    className={`w-5 h-5 ${liked ? 'fill-red-500 text-red-500' : ''}`}
+                    className={`w-5 h-5 ${liked ? "fill-red-500 text-red-500" : ""}`}
                   />
                   <span className="text-sm">티켓캐스트</span>
                   <span className="font-semibold">{likeCount}</span>
@@ -192,7 +193,7 @@ export default function PerformanceDetail({
                 <div className="w-24 text-gray-600 font-medium">장소</div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 text-gray-900">
-                    <span>{venue.venueName || '올림픽공원 올림픽홀'}</span>
+                    <span>{venue.venueName || "올림픽공원 올림픽홀"}</span>
                     <ChevronRight className="w-4 h-4 text-gray-400" />
                   </div>
                 </div>
@@ -310,13 +311,13 @@ export default function PerformanceDetail({
                     disabled
                     className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
                       selectedDate && selectedRound
-                        ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        ? "bg-purple-600 text-white hover:bg-purple-700 shadow-lg"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
                     }`}
                   >
-                    남은시간 {timeLeft?.hours.toString().padStart(2, '0')}:
-                    {timeLeft?.minutes.toString().padStart(2, '0')}:
-                    {timeLeft?.seconds.toString().padStart(2, '0')}
+                    남은시간 {timeLeft?.hours.toString().padStart(2, "0")}:
+                    {timeLeft?.minutes.toString().padStart(2, "0")}:
+                    {timeLeft?.seconds.toString().padStart(2, "0")}
                   </button>
                   <button className="w-full mt-3 py-3 rounded-xl bg-white border-2 border-purple-600 text-purple-600 font-bold hover:bg-purple-50 transition-all">
                     BOOKING / 外國語
@@ -361,8 +362,8 @@ export default function PerformanceDetail({
                       disabled={!selectedDate || !selectedRound}
                       className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
                         selectedDate && selectedRound
-                          ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'
-                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          ? "bg-purple-600 text-white hover:bg-purple-700 shadow-lg"
+                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
                       }`}
                     >
                       예매하기

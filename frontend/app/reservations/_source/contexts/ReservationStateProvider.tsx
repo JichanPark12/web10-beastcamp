@@ -3,7 +3,7 @@
 import { createContext, ReactNode, use, useState } from "react";
 import { useRouter } from "next/navigation";
 import useSelection from "@/hooks/useSelector";
-import { api } from "@/lib/api/api";
+import { api, ApiError } from "@/lib/api/api";
 import { useResult } from "@/contexts/ResultContext";
 import { RESERVATION_LIMIT } from "../constants/reservationConstants";
 import { Seat } from "../types/reservationType";
@@ -92,8 +92,8 @@ export function ReservationStateProvider({
 
       const seats = [...selectedSeats.values()].map((seat) => ({
         block_id: +seat.blockNum,
-        row: +seat.rowNum,
-        col: +seat.colNum,
+        row: +seat.rowNum - 1,
+        col: +seat.colNum - 1,
       }));
 
       const response = await api.post<ReservationResult>(
@@ -102,13 +102,25 @@ export function ReservationStateProvider({
           session_id: sessionId,
           seats,
         },
-        { headers: { Authorization: `Bearer ${token}` } },
+        { serverType: "ticket", headers: { Authorization: `Bearer ${token}` } },
       );
       endSeatSelection();
       setResult(response);
-      router.push("/result");
+      router.replace("/result");
     } catch (e) {
+      if (e instanceof ApiError) {
+        if (e.status === 403) {
+          alert("마감된 티케팅 입니다.메인으로 이동합니다.");
+          router.replace("/");
+          return;
+        }
+        if (e.status === 400) {
+          alert("이미 선점된 좌석입니다.");
+          return;
+        }
+      }
       console.error(e);
+
       alert("예매에 실패했습니다. 다시 시도해주세요.");
     }
   };

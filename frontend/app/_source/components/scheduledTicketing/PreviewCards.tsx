@@ -15,7 +15,7 @@ export default function PreviewCards() {
             platform={ticketing.platform}
             performanceName={ticketing.performance_name}
             ticketingDate={ticketing.ticketing_date}
-            // simulationDate={ticketing.simulation_date}
+            posterUrl={ticketing.poster_url}
           />
         </div>
       ))}

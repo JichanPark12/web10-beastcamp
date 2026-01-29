@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { ScheduleModule } from '@nestjs/schedule';
 import { join } from 'path';
 import { VenuesModule } from './venues/venues.module';
 import { PerformancesModule } from './performances/performances.module';
 import { SeedingModule } from './seeding/seeding.module';
+import { KopisModule } from './kopis/kopis.module';
 
 @Module({
   imports: [
@@ -15,7 +17,9 @@ import { SeedingModule } from './seeding/seeding.module';
     }),
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       useFactory: () => {
         if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'dev') {
@@ -44,6 +48,7 @@ import { SeedingModule } from './seeding/seeding.module';
     VenuesModule,
     PerformancesModule,
     SeedingModule,
+    KopisModule,
   ],
   controllers: [],
   providers: [],

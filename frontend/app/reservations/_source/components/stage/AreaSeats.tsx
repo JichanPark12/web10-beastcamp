@@ -30,8 +30,9 @@ export default function AreaSeats() {
 
   const rows = [];
   const { rowSize, colSize, blockDataName } = targetBlock;
-  const gradeKey = String(blockGrade?.gradeId || "1");
-  const gradeColor = gradeInfoColor[gradeKey]?.fillColor || "#374151";
+  const grade = blockGrade?.grade;
+
+  const gradeColor = gradeInfoColor[grade?.name || ""]?.fillColor || "#374151";
 
   for (let r = 1; r <= rowSize; r++) {
     const seats: Seat[] = [];
@@ -41,10 +42,10 @@ export default function AreaSeats() {
 
       seats.push({
         id: seatId,
-        seatGrade: grades.find((g) => g.id + "" === gradeKey) || grades[0],
-        rowNum: r + "",
-        colNum: c + "",
-        blockNum: targetBlock.blockDataName,
+        seatGrade: grade || grades[0],
+        rowNum: r,
+        colNum: c,
+        blockNum: targetBlock.id,
         isReserved,
       });
     }

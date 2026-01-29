@@ -41,6 +41,7 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://localhost:5173',
       'https://web10-beastcamp.vercel.app',
+      'https://www.web10.site',
     ], // 프론트엔드 URL
     credentials: true,
     exposedHeaders: ['X-Captcha-Id'], // 커스텀 헤더 노출

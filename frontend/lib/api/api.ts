@@ -1,6 +1,5 @@
 import { getServerUrl, type ServerType } from "@/constants/api";
 
-
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
 export interface ApiRequestOptions extends Omit<
@@ -47,12 +46,7 @@ async function request<T = unknown>(
   data?: unknown,
   options: ApiRequestOptions = {},
 ): Promise<T> {
-  const {
-    params,
-    headers = {},
-    serverType = "api",
-    ...restOptions
-  } = options;
+  const { params, headers = {}, serverType = "api", ...restOptions } = options;
 
   let baseUrl = getServerUrl(serverType);
 
@@ -110,6 +104,9 @@ async function request<T = unknown>(
 
     return (await response.text()) as T; // 응답이 json이 아닐 경우
   } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
     if (error instanceof Error) {
       throw new ApiError(error.message, 0, "네트워크 오류");
     }
