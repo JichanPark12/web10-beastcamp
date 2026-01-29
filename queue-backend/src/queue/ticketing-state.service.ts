@@ -21,6 +21,7 @@ export class TicketingStateService implements OnModuleInit, OnModuleDestroy {
 
   private lastSyncAt = 0;
   private readonly CACHE_TTL = 1000;
+  private refreshPromise: Promise<void> | null = null;
   private subscriber: Redis | null = null;
 
   constructor(
@@ -51,26 +52,34 @@ export class TicketingStateService implements OnModuleInit, OnModuleDestroy {
    */
   private async refreshIfNeeded(): Promise<void> {
     const now = Date.now();
+
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
     if (now - this.lastSyncAt < this.CACHE_TTL) {
       return;
     }
 
-    this.lastSyncAt = now;
+    this.refreshPromise = (async () => {
+      try {
+        const [isOpen, sessionId] = await this.ticketRedis.mget(
+          REDIS_KEYS.TICKETING_OPEN,
+          REDIS_KEYS.CURRENT_TICKETING_SESSION,
+        );
 
-    try {
-      const [isOpen, sessionId] = await this.ticketRedis.mget(
-        REDIS_KEYS.TICKETING_OPEN,
-        REDIS_KEYS.CURRENT_TICKETING_SESSION,
-      );
+        this.cachedIsOpen = isOpen === 'true';
+        this.cachedSessionId = sessionId;
+        this.lastSyncAt = Date.now();
+      } catch (error) {
+        this.logger.error('동기화 실패', (error as Error).stack);
+        this.lastSyncAt = 0;
+      } finally {
+        this.refreshPromise = null;
+      }
+    })();
 
-      this.cachedIsOpen = isOpen === 'true';
-      this.cachedSessionId = sessionId;
-    } catch (error) {
-      this.logger.error(
-        '티켓팅 상태 동기화 실패 (기존 상태 유지):',
-        (error as Error).message,
-      );
-    }
+    return this.refreshPromise;
   }
 
   /**
