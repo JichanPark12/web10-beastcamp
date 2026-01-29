@@ -1,6 +1,6 @@
-import { getLatestPerformance, getSessions } from '@/services/performance';
-import { getVenue } from '@/services/venue';
-import Yes24PerformanceDetail from './Yes24PerformanceDetail';
+import { getLatestPerformance, getSessions } from "@/services/performance";
+import { getVenue } from "@/services/venue";
+import Yes24PerformanceDetail from "./Yes24PerformanceDetail";
 
 export default async function Yes24PerformanceDetailData() {
   const performance = await getLatestPerformance();
@@ -22,7 +22,7 @@ export default async function Yes24PerformanceDetailData() {
     <Yes24PerformanceDetail
       performance={performance}
       sessions={sessions}
-      venueName={venue?.venueName || '수원월드컵경기장 전시홀'}
+      venue={venue}
     />
   );
 }

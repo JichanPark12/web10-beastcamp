@@ -12,7 +12,7 @@ import { VenueDetail } from "@/types/venue";
 interface Yes24PerformanceDetailProps {
   performance: Performance;
   sessions: Session[];
-  venue: VenueDetail;
+  venue: VenueDetail | null;
 }
 
 export default function Yes24PerformanceDetail({
