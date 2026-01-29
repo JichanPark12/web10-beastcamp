@@ -2,13 +2,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TicketSchedulerService } from './ticket-scheduler.service';
 import { TicketSetupService } from '../ticket-setup/ticket-setup.service';
-import { RedisService } from '../redis/redis.service';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import { ConfigService } from '@nestjs/config';
 
 describe('TicketSchedulerService', () => {
   let service: TicketSchedulerService;
   let setupService: jest.Mocked<TicketSetupService>;
-  let redisService: jest.Mocked<RedisService>;
-  let module: TestingModule;
+  let module: TestingModule | undefined;
+  const schedulerRegistryMock = {
+    addCronJob: jest.fn(),
+  };
+  const configServiceMock = {
+    get: jest.fn((key: string, defaultValue?: string) => defaultValue),
+  };
 
   beforeEach(async () => {
     module = await Test.createTestingModule({
@@ -23,32 +29,31 @@ describe('TicketSchedulerService', () => {
           },
         },
         {
-          provide: RedisService,
-          useValue: {
-            hget: jest.fn().mockResolvedValue(null),
-            hset: jest.fn().mockResolvedValue(1),
-            hsetnx: jest.fn().mockResolvedValue(1),
-          },
+          provide: SchedulerRegistry,
+          useValue: schedulerRegistryMock,
+        },
+        {
+          provide: ConfigService,
+          useValue: configServiceMock,
         },
       ],
     }).compile();
 
     service = module.get<TicketSchedulerService>(TicketSchedulerService);
     setupService = module.get(TicketSetupService);
-    redisService = module.get(RedisService);
   });
 
   afterEach(async () => {
-    await module.close();
+    if (module) {
+      await module.close();
+    }
   });
 
   describe('onModuleInit', () => {
-    it('기본 설정을 Redis에 시드해야 한다', async () => {
-      jest.useFakeTimers();
-      await service.onModuleInit();
-      expect(jest.mocked(redisService.hsetnx)).toHaveBeenCalled();
+    it('크론 잡을 시작해야 한다', () => {
+      service.onModuleInit();
+      expect((service as unknown as { job: unknown }).job).not.toBeNull();
       service.onModuleDestroy();
-      jest.useRealTimers();
     });
   });
 

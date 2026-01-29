@@ -4,87 +4,67 @@ import {
   OnModuleInit,
   OnModuleDestroy,
 } from '@nestjs/common';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import { ConfigService } from '@nestjs/config';
+import { CronJob } from 'cron';
 import { TicketSetupService } from '../ticket-setup/ticket-setup.service';
-import { RedisService } from '../redis/redis.service';
-import {
-  getNumberFromEnv,
-  getTicketNumberField,
-  seedTicketNumberField,
-} from '../config/ticket-config.util';
 
 @Injectable()
 export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TicketSchedulerService.name);
-  private isRunning = false;
-  private readonly stopController = new AbortController();
-  private runLoopPromise?: Promise<void>;
+  private readonly duration: number;
+  private readonly openDelay: number;
+  private readonly interval: string;
+  private job: CronJob | null = null;
 
   constructor(
     private readonly setupService: TicketSetupService,
-    private readonly redisService: RedisService,
-  ) {}
-
-  async onModuleInit() {
-    await seedTicketNumberField(
-      this.redisService,
-      'schedule.setup_interval_sec',
-      getNumberFromEnv('SETUP_INTERVAL'),
-      300,
+    private readonly schedulerRegistry: SchedulerRegistry,
+    private readonly config: ConfigService,
+  ) {
+    this.duration = parseInt(
+      this.config.get('TICKETING_DURATION', '180000'),
+      10,
     );
-    await seedTicketNumberField(
-      this.redisService,
-      'schedule.open_delay_ms',
-      getNumberFromEnv('TICKETING_OPEN_DELAY'),
-      60000,
+    this.openDelay = parseInt(
+      this.config.get('TICKETING_OPEN_DELAY', '60000'),
+      10,
     );
-    await seedTicketNumberField(
-      this.redisService,
-      'schedule.duration_ms',
-      getNumberFromEnv('TICKETING_DURATION'),
-      180000,
-    );
-
-    this.isRunning = true;
-    this.runLoopPromise = this.runLoop(this.stopController.signal);
+    this.interval = this.config.get('SETUP_INTERVAL', '0 4/5 * * * *');
   }
 
-  async onModuleDestroy() {
-    this.isRunning = false;
-    this.stopController.abort();
-    if (this.runLoopPromise) {
-      await this.runLoopPromise;
+  onModuleInit() {
+    this.job = new CronJob(this.interval, () => {
+      void this.handleCycle();
+    });
+
+    // cron 패키지 버전 불일치로 인한 타입 오류를 방지하기 위해 any 캐스팅 사용
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    this.schedulerRegistry.addCronJob('setupJob', this.job as any);
+    this.job.start();
+    this.logger.log(`Scheduled setup job: ${this.interval}`);
+  }
+
+  onModuleDestroy() {
+    if (this.job) {
+      void this.job.stop();
+      this.logger.log('Stopped setup job');
     }
   }
 
-  async handleCycle(signal?: AbortSignal) {
+  async handleCycle() {
     try {
       this.logger.log('Starting ticketing cycle...');
 
       await this.setupService.setup();
 
-      const openDelay = await getTicketNumberField(
-        this.redisService,
-        'schedule.open_delay_ms',
-        60000,
-        { min: 0 },
-      );
-      const duration = await getTicketNumberField(
-        this.redisService,
-        'schedule.duration_ms',
-        180000,
-        { min: 0 },
-      );
-
-      await this.delay(openDelay, signal);
+      await this.delay(this.openDelay);
       await this.setupService.openTicketing();
 
-      await this.delay(duration, signal);
+      await this.delay(this.duration);
 
       this.logger.log('Ticketing cycle completed successfully.');
     } catch (e) {
-      if (signal?.aborted) {
-        return;
-      }
       const err = e as Error;
       this.logger.error(`Ticketing cycle failed: ${err.message}`, err.stack);
     } finally {
@@ -92,51 +72,7 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async runLoop(signal: AbortSignal): Promise<void> {
-    while (this.isRunning) {
-      if (signal.aborted) {
-        break;
-      }
-      try {
-        const intervalSec = await getTicketNumberField(
-          this.redisService,
-          'schedule.setup_interval_sec',
-          300,
-          { min: 1 },
-        );
-        await this.delay(intervalSec * 1000, signal);
-        if (!this.isRunning) {
-          break;
-        }
-        await this.handleCycle(signal);
-      } catch (e) {
-        if (signal.aborted) {
-          break;
-        }
-        const err = e as Error;
-        this.logger.error(`Scheduler loop failed: ${err.message}`, err.stack);
-        await this.delay(1000, signal);
-      }
-    }
-  }
-
-  private delay(ms: number, signal?: AbortSignal): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (signal?.aborted) {
-        reject(new Error('Delay cancelled'));
-        return;
-      }
-
-      const onAbort = () => {
-        clearTimeout(timeoutId);
-        reject(new Error('Delay cancelled'));
-      };
-      const timeoutId = setTimeout(() => {
-        signal?.removeEventListener('abort', onAbort);
-        resolve();
-      }, ms);
-      if (!signal) return;
-      signal.addEventListener('abort', onAbort, { once: true });
-    });
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
