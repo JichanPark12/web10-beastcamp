@@ -143,6 +143,9 @@ export class VirtualUserInjector {
       .exec();
     const [err, value] = results?.[0] ?? [];
     if (err || typeof value !== 'number') {
+      this.logger.warn(
+        `⚠️ 가상 유저 주입 인원 수 증가 실패: ${err?.message ?? 'invalid value'}`,
+      );
       return 0;
     }
     return value;
