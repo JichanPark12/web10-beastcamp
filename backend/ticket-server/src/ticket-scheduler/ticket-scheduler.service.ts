@@ -127,13 +127,15 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      const timeoutId = setTimeout(resolve, ms);
-      if (!signal) return;
-
       const onAbort = () => {
         clearTimeout(timeoutId);
         reject(new Error('Delay cancelled'));
       };
+      const timeoutId = setTimeout(() => {
+        signal?.removeEventListener('abort', onAbort);
+        resolve();
+      }, ms);
+      if (!signal) return;
       signal.addEventListener('abort', onAbort, { once: true });
     });
   }

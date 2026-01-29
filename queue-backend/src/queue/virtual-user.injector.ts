@@ -33,50 +33,58 @@ export class VirtualUserInjector implements OnModuleInit {
     }
     this.isRunning = true;
 
-    await this.seedVirtualConfig();
-
-    const isEnabled = await this.isVirtualUserEnabled();
-    if (!isEnabled) {
-      this.logger.warn('가상 유저 주입이 비활성화되어 있습니다.');
-      this.isRunning = false;
-      return;
-    }
-
-    let config: {
-      targetTotal: number;
-      initialJumpRatio: number;
-      burstDurationSec: number;
-    };
     try {
-      config = await this.loadConfig();
+      await this.seedVirtualConfig();
+
+      const isEnabled = await this.isVirtualUserEnabled();
+      if (!isEnabled) {
+        this.logger.warn('가상 유저 주입이 비활성화되어 있습니다.');
+        this.isRunning = false;
+        return;
+      }
+
+      let config: {
+        targetTotal: number;
+        initialJumpRatio: number;
+        burstDurationSec: number;
+      };
+      try {
+        config = await this.loadConfig();
+      } catch (error: unknown) {
+        this.isRunning = false;
+        const err = error instanceof Error ? error : new Error('Unknown error');
+        this.logger.error(
+          `가상 유저 설정 로드 실패: ${err.message}`,
+          err.stack,
+        );
+        throw err;
+      }
+      this.targetTotal = Math.max(0, config.targetTotal);
+
+      if (this.targetTotal === 0) {
+        this.logger.warn('가상 유저 목표 인원이 0입니다. 주입을 중단합니다.');
+        this.isRunning = false;
+        return;
+      }
+
+      this.initialCount = Math.min(
+        this.targetTotal,
+        Math.floor(this.targetTotal * config.initialJumpRatio),
+      );
+      this.burstMs = Math.max(1000, config.burstDurationSec * 1000);
+      this.startAt = Date.now();
+      this.injectedCount = 0;
+
+      if (this.initialCount > 0) {
+        await this.injectBatch(this.initialCount, this.startAt);
+        this.injectedCount += this.initialCount;
+      }
+
+      await this.scheduleNextTick();
     } catch (error: unknown) {
-      this.isRunning = false;
-      const err = error instanceof Error ? error : new Error('Unknown error');
-      this.logger.error(`가상 유저 설정 로드 실패: ${err.message}`, err.stack);
-      throw err;
+      this.stopScheduler();
+      throw error;
     }
-    this.targetTotal = Math.max(0, config.targetTotal);
-
-    if (this.targetTotal === 0) {
-      this.logger.warn('가상 유저 목표 인원이 0입니다. 주입을 중단합니다.');
-      this.isRunning = false;
-      return;
-    }
-
-    this.initialCount = Math.min(
-      this.targetTotal,
-      Math.floor(this.targetTotal * config.initialJumpRatio),
-    );
-    this.burstMs = Math.max(1000, config.burstDurationSec * 1000);
-    this.startAt = Date.now();
-    this.injectedCount = 0;
-
-    if (this.initialCount > 0) {
-      await this.injectBatch(this.initialCount, this.startAt);
-      this.injectedCount += this.initialCount;
-    }
-
-    await this.scheduleNextTick();
   }
 
   private stopScheduler() {
