@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { TicketSchedulerService } from './ticket-scheduler.service';
@@ -5,13 +7,26 @@ import { TicketSetupService } from '../ticket-setup/ticket-setup.service';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 
+// CronJob 모킹: 실제 타이머가 돌지 않게 함
+jest.mock('cron', () => {
+  return {
+    CronJob: jest.fn().mockImplementation(() => ({
+      start: jest.fn(),
+      stop: jest.fn(),
+    })),
+  };
+});
+
 describe('TicketSchedulerService', () => {
   let service: TicketSchedulerService;
   let setupService: jest.Mocked<TicketSetupService>;
   let module: TestingModule | undefined;
+
   const schedulerRegistryMock = {
     addCronJob: jest.fn(),
+    getCronJob: jest.fn().mockReturnValue({ stop: jest.fn() }),
   };
+
   const configServiceMock = {
     get: jest.fn((key: string, defaultValue?: string) => defaultValue),
   };
@@ -41,6 +56,7 @@ describe('TicketSchedulerService', () => {
 
     service = module.get<TicketSchedulerService>(TicketSchedulerService);
     setupService = module.get(TicketSetupService);
+    jest.clearAllMocks();
   });
 
   afterEach(async () => {
@@ -50,52 +66,64 @@ describe('TicketSchedulerService', () => {
   });
 
   describe('onModuleInit', () => {
-    it('크론 잡을 시작해야 한다', () => {
+    it('3개의 크론 잡(setup, open, close)을 등록해야 한다', () => {
       service.onModuleInit();
-      expect((service as unknown as { job: unknown }).job).not.toBeNull();
-      service.onModuleDestroy();
+      expect(schedulerRegistryMock.addCronJob).toHaveBeenCalledTimes(3);
     });
   });
 
-  describe('handleCycle', () => {
-    it('전체 사이클(setup -> open -> close)이 순차적으로 실행되어야 한다', async () => {
-      jest.useFakeTimers();
+  describe('상태 머신 흐름 제어', () => {
+    it('정상적인 순서(setup -> open -> close)로 상태가 전이되어야 한다', async () => {
+      // 1. Setup 실행
+      await (service as any).runSetup();
+      expect(setupService.setup).toHaveBeenCalled();
+      expect((service as any).status).toBe('SETUP');
 
-      const cyclePromise = service.handleCycle();
+      // 2. Open 실행
+      await (service as any).runOpen();
+      expect(setupService.openTicketing).toHaveBeenCalled();
+      expect((service as any).status).toBe('OPEN');
 
-      expect(jest.mocked(setupService.setup)).toHaveBeenCalled();
-
-      await Promise.resolve();
-
-      await jest.advanceTimersByTimeAsync(60000);
-      expect(jest.mocked(setupService.openTicketing)).toHaveBeenCalled();
-
-      await jest.advanceTimersByTimeAsync(180000);
-      expect(jest.mocked(setupService.tearDown)).toHaveBeenCalled();
-
-      await cyclePromise;
-
-      jest.useRealTimers();
+      // 3. Close 실행
+      await (service as any).runClose();
+      expect(setupService.tearDown).toHaveBeenCalled();
+      expect((service as any).status).toBe('CLOSE');
     });
 
-    it('중간에 에러 발생 시 tearDown을 호출해야 한다', async () => {
-      jest.useFakeTimers();
+    it('SETUP 상태가 아니면 Open 단계를 건너뛰어야 한다', async () => {
+      // 초기 상태(CLOSE)에서 Open 시도
+      await (service as any).runOpen();
+      expect(setupService.openTicketing).not.toHaveBeenCalled();
+      expect((service as any).status).toBe('CLOSE');
+    });
 
+    it('OPEN 상태가 아니면 Close 단계를 건너뛰어야 한다', async () => {
+      // 초기 상태(CLOSE)에서 Close 시도
+      await (service as any).runClose();
+      expect(setupService.tearDown).not.toHaveBeenCalled();
+    });
+
+    it('단계 도중 에러가 발생하면 ERROR 상태가 되고 다음 단계가 차단되어야 한다', async () => {
+      // Setup에서 에러 발생
       jest
         .mocked(setupService.setup)
-        .mockRejectedValue(new Error('Setup Error'));
+        .mockRejectedValue(new Error('Setup Fail'));
 
-      const cyclePromise = service.handleCycle();
+      await (service as any).runSetup();
+      expect((service as any).status).toBe('ERROR');
 
-      await Promise.resolve();
-      await Promise.resolve();
+      // ERROR 상태에서 Open 시도 -> 실행되지 않아야 함
+      await (service as any).runOpen();
+      expect(setupService.openTicketing).not.toHaveBeenCalled();
+      expect((service as any).status).toBe('ERROR');
+    });
 
-      expect(jest.mocked(setupService.tearDown)).toHaveBeenCalled();
-      expect(jest.mocked(setupService.openTicketing)).not.toHaveBeenCalled();
+    it('ERROR 상태에서 Setup은 다시 실행 가능해야 한다', async () => {
+      (service as any).status = 'ERROR';
 
-      await cyclePromise;
-
-      jest.useRealTimers();
+      await (service as any).runSetup();
+      expect(setupService.setup).toHaveBeenCalled();
+      expect((service as any).status).toBe('SETUP');
     });
   });
 });

@@ -9,70 +9,124 @@ import { ConfigService } from '@nestjs/config';
 import { CronJob } from 'cron';
 import { TicketSetupService } from '../ticket-setup/ticket-setup.service';
 
+enum CycleStatus {
+  SETUP = 'SETUP',
+  OPEN = 'OPEN',
+  CLOSE = 'CLOSE',
+  ERROR = 'ERROR',
+}
+
 @Injectable()
 export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TicketSchedulerService.name);
-  private readonly duration: number;
-  private readonly openDelay: number;
-  private readonly interval: string;
-  private job: CronJob | null = null;
+  private status: CycleStatus = CycleStatus.CLOSE;
 
   constructor(
     private readonly setupService: TicketSetupService,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly config: ConfigService,
-  ) {
-    this.duration = parseInt(
-      this.config.get('TICKETING_DURATION', '180000'),
-      10,
-    );
-    this.openDelay = parseInt(
-      this.config.get('TICKETING_OPEN_DELAY', '60000'),
-      10,
-    );
-    this.interval = this.config.get('SETUP_INTERVAL', '0 4/5 * * * *');
-  }
+  ) {}
 
   onModuleInit() {
-    this.job = new CronJob(this.interval, () => {
-      void this.handleCycle();
-    });
-
-    // cron 패키지 버전 불일치로 인한 타입 오류를 방지하기 위해 any 캐스팅 사용
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    this.schedulerRegistry.addCronJob('setupJob', this.job as any);
-    this.job.start();
-    this.logger.log(`Scheduled setup job: ${this.interval}`);
+    this.scheduleSetup();
+    this.scheduleOpen();
+    this.scheduleClose();
   }
 
   onModuleDestroy() {
-    if (this.job) {
-      void this.job.stop();
-      this.logger.log('Stopped setup job');
-    }
+    ['setupJob', 'openJob', 'closeJob'].forEach((name) => {
+      try {
+        const job = this.schedulerRegistry.getCronJob(name);
+
+        void job.stop();
+      } catch (e) {
+        this.logger.error(`Stop failed (${name}): ${(e as Error).message}`);
+      }
+    });
   }
 
-  async handleCycle() {
+  private scheduleSetup() {
+    const cron = this.config.get<string>('SETUP_INTERVAL', '0 4/5 * * * *');
+    this.addJob('setupJob', cron, () => this.runSetup());
+  }
+
+  private scheduleOpen() {
+    const cron = this.config.get<string>(
+      'TICKETING_OPEN_INTERVAL',
+      '0 5/5 * * * *',
+    );
+    this.addJob('openJob', cron, () => this.runOpen());
+  }
+
+  private scheduleClose() {
+    const cron = this.config.get<string>(
+      'TICKETING_CLOSE_INTERVAL',
+      '0 8/5 * * * *',
+    );
+    this.addJob('closeJob', cron, () => this.runClose());
+  }
+
+  private addJob(name: string, cron: string, cb: () => Promise<void>) {
+    const job = new CronJob(cron, () => {
+      void cb();
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    this.schedulerRegistry.addCronJob(name, job as any);
+    job.start();
+    this.logger.log(`Scheduled ${name}: ${cron}`);
+  }
+
+  private async runSetup() {
+    if (
+      this.status !== CycleStatus.CLOSE &&
+      this.status !== CycleStatus.ERROR
+    ) {
+      this.logger.warn(`Skip Setup: Status is ${this.status}`);
+      return;
+    }
+
     try {
-      this.logger.log('Starting ticketing cycle...');
-
+      this.logger.log('Starting Setup...');
       await this.setupService.setup();
-
-      await this.delay(this.openDelay);
-      await this.setupService.openTicketing();
-
-      await this.delay(this.duration);
-
-      this.logger.log('Ticketing cycle completed successfully.');
+      this.status = CycleStatus.SETUP;
     } catch (e) {
-      const err = e as Error;
-      this.logger.error(`Ticketing cycle failed: ${err.message}`, err.stack);
-    } finally {
-      await this.setupService.tearDown();
+      this.handleErr('Setup', e);
     }
   }
 
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  private async runOpen() {
+    if (this.status !== CycleStatus.SETUP) {
+      this.logger.warn(`Skip Open: Status is ${this.status}`);
+      return;
+    }
+
+    try {
+      this.logger.log('Starting Open...');
+      await this.setupService.openTicketing();
+      this.status = CycleStatus.OPEN;
+    } catch (e) {
+      this.handleErr('Open', e);
+    }
+  }
+
+  private async runClose() {
+    if (this.status !== CycleStatus.OPEN) {
+      this.logger.warn(`Skip Close: Status is ${this.status}`);
+      return;
+    }
+
+    try {
+      this.logger.log('Starting Close...');
+      await this.setupService.tearDown();
+      this.status = CycleStatus.CLOSE;
+    } catch (e) {
+      this.handleErr('Close', e);
+    }
+  }
+
+  private handleErr(stage: string, e: unknown) {
+    const err = e as Error;
+    this.status = CycleStatus.ERROR;
+    this.logger.error(`${stage} failed: ${err.message}`, err.stack);
   }
 }
