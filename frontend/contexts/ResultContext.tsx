@@ -2,7 +2,7 @@
 
 import { createContext, ReactNode, useContext, useState } from "react";
 interface ReservedSeat {
-  block_id: number;
+  blockName: string;
   row: number;
   col: number;
 }

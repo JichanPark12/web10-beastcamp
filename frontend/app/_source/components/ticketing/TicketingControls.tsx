@@ -76,7 +76,7 @@ export default function TicketingControls({
 
       <button
         onClick={handleBooking}
-        className={`w-full py-4 rounded-xl transition-all bg-white text-purple-600 hover:bg-gray-100 shadow-lg hover:shadow-xl`}
+        className={`w-full py-4 rounded-xl transition-all bg-white text-purple-600 hover:bg-gray-100 shadow-lg hover:shadow-xl cursor-pointer`}
       >
         연습하러 가기
       </button>

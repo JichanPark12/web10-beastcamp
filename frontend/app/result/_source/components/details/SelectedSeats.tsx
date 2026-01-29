@@ -14,11 +14,11 @@ export default function SelectedSeats() {
 
       {seats.map((seat) => (
         <div
-          key={`${seat.block_id}-${seat.row}-${seat.col}`}
+          key={`${seat.blockName}-${seat.row}-${seat.col}`}
           className="flex justify-center items-center text-sm"
         >
           <span className="text-gray-600">
-            {seat.block_id}구역 {seat.row}열 {seat.col}번
+            {seat.blockName}구역 {seat.row}열 {seat.col}번
           </span>
         </div>
       ))}
