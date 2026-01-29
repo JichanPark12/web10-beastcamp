@@ -85,7 +85,7 @@ export class TicketConfigService implements OnModuleInit {
     config: Record<string, [string | undefined, string]>,
   ) {
     for (const [field, [envValue, defaultValue]] of Object.entries(config)) {
-      if (envValue !== undefined) {
+      if (envValue !== undefined && envValue !== '') {
         pipeline.hset(key, field, envValue);
       } else {
         pipeline.hsetnx(key, field, defaultValue);
