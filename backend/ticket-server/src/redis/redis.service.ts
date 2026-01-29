@@ -109,6 +109,10 @@ export class RedisService implements OnModuleDestroy {
     return this.queueClient.publish(channel, message);
   }
 
+  async publishToTicket(channel: string, message: string): Promise<number> {
+    return this.ticketClient.publish(channel, message);
+  }
+
   async brpopQueueList(
     key: string,
     timeoutSeconds: number,

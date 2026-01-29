@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { REDIS_KEYS } from '@beastcamp/shared-constants';
+import { REDIS_CHANNELS, REDIS_KEYS } from '@beastcamp/shared-constants';
 import {
   PerformanceApiService,
   SessionResponse,
@@ -36,6 +36,11 @@ export class TicketSetupService {
       sessions[0].id.toString(),
     );
 
+    await this.redisService.publishToTicket(
+      REDIS_CHANNELS.TICKETING_STATE_CHANGED,
+      'setup',
+    );
+
     const registTasks = sessions.map((session) => this.registToRedis(session));
 
     await Promise.all(registTasks);
@@ -45,6 +50,10 @@ export class TicketSetupService {
   async openTicketing(): Promise<void> {
     try {
       await this.redisService.set(REDIS_KEYS.TICKETING_OPEN, 'true');
+      await this.redisService.publishToTicket(
+        REDIS_CHANNELS.TICKETING_STATE_CHANGED,
+        'open',
+      );
       this.logger.log('Ticketing opened');
     } catch (e) {
       const err = e as Error;
@@ -57,6 +66,10 @@ export class TicketSetupService {
     try {
       await this.redisService.set(REDIS_KEYS.TICKETING_OPEN, 'false');
       await this.redisService.del(REDIS_KEYS.CURRENT_TICKETING_SESSION);
+      await this.redisService.publishToTicket(
+        REDIS_CHANNELS.TICKETING_STATE_CHANGED,
+        'close',
+      );
       this.logger.log('Ticketing closed (tear-down)');
     } catch (e) {
       const err = e as Error;

@@ -35,6 +35,7 @@ describe('TicketSetupService', () => {
             del: jest.fn(),
             deleteAllExceptPrefix: jest.fn(),
             deleteAllExceptPrefixQueue: jest.fn(),
+            publishToTicket: jest.fn(),
           },
         },
       ],
