@@ -20,6 +20,7 @@ export class KopisScheduler {
     private readonly dataSource: DataSource,
   ) {}
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   @Cron('0 0 0 * * *', { name: 'kopis-sync', timeZone: 'Asia/Seoul' })
   async handleCron() {
     this.logger.log('Starting KOPIS data sync...');

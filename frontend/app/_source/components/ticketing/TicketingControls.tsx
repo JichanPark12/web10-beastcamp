@@ -28,7 +28,7 @@ export default function TicketingControls({
     const platformRoutes = {
       "nol-ticket": "/nol-ticket",
       yes24: "/yes24",
-      "melon-ticket": "/melon-ticket",
+      "melon-ticket": "/yes24",
     };
 
     const route =

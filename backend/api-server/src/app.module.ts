@@ -19,6 +19,7 @@ import { KopisModule } from './kopis/kopis.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       useFactory: () => {

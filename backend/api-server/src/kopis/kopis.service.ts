@@ -21,6 +21,7 @@ export class KopisService {
     process.env.KOPIS_SERVICE_KEY || 'test-key';
   private readonly KOPIS_URL: string =
     'https://www.kopis.or.kr/openApi/restful';
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
   private readonly xmlParser = new XMLParser();
 
   private readonly venueCodes = [
@@ -74,6 +75,7 @@ export class KopisService {
    * XML 파싱 및 데이터 추출
    */
   private parseKopisXml<T>(xmlData: string): T[] {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const parsedJson: unknown = this.xmlParser.parse(xmlData);
 
     if (!this.isKopisApiResponse(parsedJson)) {
@@ -117,6 +119,7 @@ export class KopisService {
     try {
       const url = `${this.KOPIS_URL}/pblprfr`;
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       const response$ = this.httpService.get<string>(url, {
         params: {
           service: this.SERVICE_KEY,
@@ -129,8 +132,10 @@ export class KopisService {
         responseType: 'text',
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const response = await lastValueFrom(response$);
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const items = this.parseKopisXml<KopisPerformance>(response.data);
 
       return items.filter((item) => item?.prfstate?.trim() !== '공연완료');
@@ -151,13 +156,16 @@ export class KopisService {
     try {
       const url = `${this.KOPIS_URL}/pblprfr/${performanceId}`;
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       const response$ = this.httpService.get<string>(url, {
         params: { service: this.SERVICE_KEY },
         responseType: 'text',
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const response = await lastValueFrom(response$);
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const items = this.parseKopisXml<KopisPerformanceDetail>(response.data);
       const detail = items[0]; // 상세 조회는 항상 1개라고 가정
 

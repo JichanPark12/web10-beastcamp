@@ -7,6 +7,19 @@ const nextConfig: NextConfig = {
     root: "..",
   },
 
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "kopis.or.kr",
+      },
+      {
+        protocol: "https",
+        hostname: "www.kopis.or.kr",
+      },
+    ],
+  },
+
   reactCompiler: true,
   output: "standalone",
 };

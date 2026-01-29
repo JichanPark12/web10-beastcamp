@@ -50,7 +50,7 @@ export default function NetworkStatusHeader({
       </div>
       <button
         onClick={() => checkNetwork()}
-        className="p-2 rounded-full hover:bg-white/10 transition-colors"
+        className="p-2 rounded-full  transition-colors hover:bg-white/50 active:bg-white/70  cursor-pointer"
         aria-label="네트워크 재측정"
       >
         <RefreshCcw className="w-4 h-4" />

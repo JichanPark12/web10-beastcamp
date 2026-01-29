@@ -7,10 +7,12 @@ export class Performance {
     performanceName?: string,
     ticketingDate?: Date,
     platform?: 'nol-ticket' | 'yes24' | 'melon-ticket' | 'interpark',
+    posterUrl?: string,
   ) {
     if (performanceName) this.performanceName = performanceName;
     if (ticketingDate) this.ticketingDate = ticketingDate;
     if (platform) this.platform = platform;
+    if (posterUrl) this.posterUrl = posterUrl;
   }
 
   @PrimaryGeneratedColumn()

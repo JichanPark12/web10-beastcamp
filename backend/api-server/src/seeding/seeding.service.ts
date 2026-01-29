@@ -80,6 +80,7 @@ export class SeedingService implements OnApplicationBootstrap {
         perfName,
         new Date(currentTime),
         platform,
+        `https://kopis.or.kr/upload/pfmPoster/PF_PF282670_260106_112803.jpg`,
       );
       const savedPerformance =
         await this.performancesRepository.save(performance);

@@ -8,16 +8,26 @@ interface TicketingPreviewCardProps {
   performanceName: string;
   ticketingDate: string;
   simulationDate?: string;
+  posterUrl: string | null;
 }
 
 export function TicketingPreviewCard(props: TicketingPreviewCardProps) {
   return (
     <div className="group">
+      {/* 포스터 */}
       <div>
         <div className="aspect-[3/4] bg-gradient-to-br from-purple-200 via-pink-200 to-orange-200 relative overflow-hidden">
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-            <Calendar className="w-12 h-12" />
-          </div>
+          {props.posterUrl ? (
+            <img
+              src={props.posterUrl}
+              alt={props.performanceName}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+              <Calendar className="w-12 h-12" />
+            </div>
+          )}
           <div className="absolute top-3 right-3">
             <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs">
               {PLATFORM_DISPLAY_NAME[props.platform]}
@@ -27,7 +37,7 @@ export function TicketingPreviewCard(props: TicketingPreviewCardProps) {
       </div>
 
       <div className="p-4">
-        <h4 className=" line-clamp-2 min-h-[3rem] group-hover:text-purple-600 transition-colors">
+        <h4 className="mb-2 line-clamp-2 min-h-[3rem] group-hover:text-purple-600 transition-colors">
           {props.performanceName}
         </h4>
 
