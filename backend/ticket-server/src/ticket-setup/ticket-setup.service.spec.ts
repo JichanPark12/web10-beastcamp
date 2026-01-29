@@ -33,7 +33,8 @@ describe('TicketSetupService', () => {
             set: jest.fn(),
             sadd: jest.fn(),
             del: jest.fn(),
-            flushAll: jest.fn(),
+            deleteAllExceptPrefix: jest.fn(),
+            deleteAllExceptPrefixQueue: jest.fn(),
           },
         },
       ],
@@ -49,7 +50,12 @@ describe('TicketSetupService', () => {
       performanceApi.getPerformances.mockResolvedValue([]);
 
       await expect(service.setup()).rejects.toThrow('No performances found');
-      expect(jest.mocked(redisService.flushAll)).toHaveBeenCalled();
+      expect(
+        jest.mocked(redisService.deleteAllExceptPrefix),
+      ).toHaveBeenCalledWith('config:');
+      expect(
+        jest.mocked(redisService.deleteAllExceptPrefixQueue),
+      ).toHaveBeenCalledWith('config:');
     });
 
     it('정상적으로 공연 및 좌석 정보를 조회하여 Redis에 저장해야 한다', async () => {
@@ -73,7 +79,12 @@ describe('TicketSetupService', () => {
 
       await service.setup();
 
-      expect(jest.mocked(redisService.flushAll)).toHaveBeenCalled();
+      expect(
+        jest.mocked(redisService.deleteAllExceptPrefix),
+      ).toHaveBeenCalledWith('config:');
+      expect(
+        jest.mocked(redisService.deleteAllExceptPrefixQueue),
+      ).toHaveBeenCalledWith('config:');
       expect(jest.mocked(performanceApi.getPerformances)).toHaveBeenCalledWith(
         1,
       );
