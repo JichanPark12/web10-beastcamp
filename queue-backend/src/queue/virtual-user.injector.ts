@@ -127,7 +127,13 @@ export class VirtualUserInjector {
           this.generateUserId(),
         );
       }
-      await pipeline.exec();
+
+      const results = await pipeline.exec();
+      const hasError = results?.some(([err]) => err);
+      if (hasError) {
+        this.logger.error('대기열 주입 실패', { results });
+        throw new Error('waiting queue injection failed');
+      }
 
       if (virtual.injectBatchDelayMs > 0 && offset + currentBatchSize < count) {
         await this.delay(virtual.injectBatchDelayMs);
