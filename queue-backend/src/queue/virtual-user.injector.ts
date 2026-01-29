@@ -16,10 +16,6 @@ export class VirtualUserInjector {
     private readonly configService: QueueConfigService,
   ) {}
 
-  private get stateKey() {
-    return 'queue:injector:total_injected_count';
-  }
-
   async start(): Promise<void> {
     if (this.isRunning) {
       this.logger.debug('가상 유저 주입이 이미 실행 중입니다.');
@@ -37,7 +33,7 @@ export class VirtualUserInjector {
     this.isRunning = true;
     this.startAt = Date.now();
 
-    const rawCount = await this.redis.get(this.stateKey);
+    const rawCount = await this.redis.get(REDIS_KEYS.INJECTOR_STATE);
     const alreadyInjected = this.safeParseNumber(rawCount);
 
     if (alreadyInjected === 0) {
@@ -77,7 +73,7 @@ export class VirtualUserInjector {
       const targetAtMoment = Math.floor(virtual.targetTotal * progress);
 
       const currentInjected = this.safeParseNumber(
-        await this.redis.get(this.stateKey),
+        await this.redis.get(REDIS_KEYS.INJECTOR_STATE),
       );
       const currentWaiting = await this.redis.zcard(REDIS_KEYS.WAITING_QUEUE);
 
@@ -142,8 +138,8 @@ export class VirtualUserInjector {
   private async incrementState(amount: number): Promise<number> {
     const results = await this.redis
       .pipeline()
-      .incrby(this.stateKey, amount)
-      .expire(this.stateKey, 86400)
+      .incrby(REDIS_KEYS.INJECTOR_STATE, amount)
+      .expire(REDIS_KEYS.INJECTOR_STATE, 86400)
       .exec();
     const [err, value] = results?.[0] ?? [];
     if (err || typeof value !== 'number') {

@@ -23,6 +23,8 @@ export const REDIS_KEYS = {
   // 설정 해시
   CONFIG_QUEUE: "config:queue",
   CONFIG_TICKET: "config:ticket",
+
+  INJECTOR_STATE: "queue:injector:total_injected_count",
 };
 
 export const REDIS_KEY_PREFIXES = {
