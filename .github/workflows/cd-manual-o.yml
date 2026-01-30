@@ -41,7 +41,7 @@ jobs:
           else
             JSON="[\"$SERVICES\"]"
           fi
-          
+
           echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
           echo "has_targets=true" >> "$GITHUB_OUTPUT"
 
@@ -111,23 +111,27 @@ jobs:
           envs: NCP_REGISTRY_URL,NCP_REGISTRY_USERNAME,NCP_REGISTRY_PASSWORD,IMAGE_TAG,SERVICE_NAME,TARGET_BRANCH
           script: |
             cd /app/web10-beastcamp
-            
+
             # 1. 최신 코드로 동기화 (설정파일 업데이트용)
             git fetch origin $TARGET_BRANCH
             git reset --hard origin/$TARGET_BRANCH
-            
+
             # 2. 서비스 위치로 이동
             [ "$SERVICE_NAME" == "queue-backend" ] && cd queue-backend || cd backend
-            
+
             # 3. NCP 레지스트리 로그인
             echo "$NCP_REGISTRY_PASSWORD" | docker login "$NCP_REGISTRY_URL" -u "$NCP_REGISTRY_USERNAME" --password-stdin
-            
+
             # 4. 배포 (Override 파일 생성 없이 환경변수로 이미지 주입)
             # 서버의 docker-compose.yml에 image: ...:${IMAGE_TAG} 설정이 되어있어야 함
+
             export IMAGE_TAG=$IMAGE_TAG
+            export NCP_REGISTRY_URL=$NCP_REGISTRY_URL
+            export SERVICE_NAME=$SERVICE_NAME
+
             docker compose pull $SERVICE_NAME
             docker compose up -d --no-build $SERVICE_NAME
-            
+
             # 5. 디스크 청소
             docker image prune -af --filter "until=24h"
             echo "✅ $SERVICE_NAME 배포 완료"
