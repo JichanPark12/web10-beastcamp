@@ -19,6 +19,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "cross-env NODE_ENV=test jest --config ./test/jest-e2e.json",
+    "test:kopis": "cross-env NODE_ENV=test ts-node -r tsconfig-paths/register src/scripts/kopis.ts",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
     "kopis": "ts-node -r tsconfig-paths/register src/scripts/kopis.ts"
   },

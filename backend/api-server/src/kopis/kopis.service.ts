@@ -21,7 +21,6 @@ export class KopisService {
     process.env.KOPIS_SERVICE_KEY || 'test-key';
   private readonly KOPIS_URL: string =
     'https://www.kopis.or.kr/openApi/restful';
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
   private readonly xmlParser = new XMLParser();
 
   private readonly venueCodes = [
@@ -75,7 +74,6 @@ export class KopisService {
    * XML 파싱 및 데이터 추출
    */
   private parseKopisXml<T>(xmlData: string): T[] {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const parsedJson: unknown = this.xmlParser.parse(xmlData);
 
     if (!this.isKopisApiResponse(parsedJson)) {
@@ -119,7 +117,6 @@ export class KopisService {
     try {
       const url = `${this.KOPIS_URL}/pblprfr`;
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       const response$ = this.httpService.get<string>(url, {
         params: {
           service: this.SERVICE_KEY,
@@ -132,10 +129,7 @@ export class KopisService {
         responseType: 'text',
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const response = await lastValueFrom(response$);
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const items = this.parseKopisXml<KopisPerformance>(response.data);
 
       return items.filter((item) => item?.prfstate?.trim() !== '공연완료');
@@ -156,16 +150,12 @@ export class KopisService {
     try {
       const url = `${this.KOPIS_URL}/pblprfr/${performanceId}`;
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       const response$ = this.httpService.get<string>(url, {
         params: { service: this.SERVICE_KEY },
         responseType: 'text',
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const response = await lastValueFrom(response$);
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const items = this.parseKopisXml<KopisPerformanceDetail>(response.data);
       const detail = items[0]; // 상세 조회는 항상 1개라고 가정
 
@@ -311,6 +301,17 @@ export class KopisService {
     const platform = this.getSupportedPlatform(detail);
     performance.platform = platform ?? 'nol-ticket';
 
+    if (
+      platform &&
+      detail.relates?.relate &&
+      !Array.isArray(detail.relates.relate)
+    ) {
+      performance.platformTicketingUrl = detail.relates.relate.relateurl;
+    }
+    performance.castInfo = detail.prfcast || null;
+    performance.runtime = detail.prfruntime || null;
+    performance.ageLimit = detail.prfage || null;
+
     return performance;
   }
 
@@ -350,21 +351,6 @@ export class KopisService {
       return sessions;
     }
 
-    // dtguidance 파싱: "토요일(18:00), 일요일(15:00)" 형식
-    const dtguidance = detail.dtguidance || '';
-
-    // 요일과 시간 추출: 정규식으로 "요일(시간)" 패턴 찾기
-    const pattern = /(월|화|수|목|금|토|일)요일\((\d{1,2}):(\d{2})\)/g;
-    const matches = [...dtguidance.matchAll(pattern)];
-
-    if (matches.length === 0) {
-      // 파싱 실패 시 시작일 19:00로 기본 세션 하나 생성
-      const defaultSession = new Date(startDate);
-      defaultSession.setHours(19, 0, 0, 0);
-      sessions.push(defaultSession);
-      return sessions;
-    }
-
     const dayMap: Record<string, number> = {
       일: 0,
       월: 1,
@@ -374,6 +360,23 @@ export class KopisService {
       금: 5,
       토: 6,
     };
+    // dtguidance 정규화: "토요일 ~ 일요일(19:00)" -> "토요일(19:00), 일요일(19:00)"
+    const normalizedGuidance = this.normalizeDateRange(
+      detail.dtguidance || '',
+      dayMap,
+    );
+
+    // 요일과 시간 추출: 정규식으로 "요일(시간)" 패턴 찾기
+    const pattern = /(월|화|수|목|금|토|일)요일\((\d{1,2}):(\d{2})\)/g;
+    const matches = [...normalizedGuidance.matchAll(pattern)];
+
+    if (matches.length === 0) {
+      // 파싱 실패 시 시작일 19:00로 기본 세션 하나 생성
+      const defaultSession = new Date(startDate);
+      defaultSession.setHours(19, 0, 0, 0);
+      sessions.push(defaultSession);
+      return sessions;
+    }
 
     const currentDate = new Date(startDate);
 
@@ -394,6 +397,38 @@ export class KopisService {
     }
 
     return sessions;
+  }
+
+  /**
+   * "요일 ~ 요일(시간)" 형식을 "요일(시간), 요일(시간)..." 형식으로 변환
+   */
+  private normalizeDateRange(
+    dtguidance: string,
+    dayMap: Record<string, number>,
+  ): string {
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    const rangePattern =
+      /(월|화|수|목|금|토|일)요일\s*~\s*(월|화|수|목|금|토|일)요일\s*\((\d{1,2}):(\d{2})\)/g;
+
+    return dtguidance.replace(
+      rangePattern,
+      (match, startDay, endDay, hour, minute) => {
+        const startIdx = dayMap[startDay as string];
+        const endIdx = dayMap[endDay as string];
+        const resultParts: string[] = [];
+
+        let currentIdx = startIdx;
+        while (true) {
+          resultParts.push(`${days[currentIdx]}요일(${hour}:${minute})`);
+          if (currentIdx === endIdx) break;
+          currentIdx = (currentIdx + 1) % 7;
+          // 안전장치
+          if (resultParts.length > 8) break;
+        }
+
+        return resultParts.join(', ');
+      },
+    );
   }
 
   private isKopisApiResponse(obj: unknown): obj is KopisApiResponse {

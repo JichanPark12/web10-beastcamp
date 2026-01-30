@@ -62,6 +62,10 @@ export interface KopisPerformanceDetail {
   dtguidance: string; // 공연 시간 (예: 토요일(18:00))
   updatedate: string; // 최종 수정일시
 
+  prfcast: string; // 공연 출연진
+  prfruntime: string; // 공연 런타임 (예: 120분)
+  prfage: string; // 관람 연령 제한 (예: 만 7세 이상)
+
   // Y/N 플래그 (문자열)
   openrun: 'Y' | 'N'; // 오픈런 여부
   visit: 'Y' | 'N'; // 내한 여부
