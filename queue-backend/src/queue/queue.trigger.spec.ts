@@ -2,12 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { QueueTrigger } from './queue.trigger';
 import { QueueWorker } from './queue.worker';
 import { PROVIDERS, REDIS_CHANNELS } from '@beastcamp/shared-constants';
+import { QueueConfigService } from './queue-config.service';
 
 describe('QueueTrigger', () => {
   let trigger: QueueTrigger;
   let workerMock: Partial<QueueWorker>;
   let redisMock: Record<string, jest.Mock>;
   let subClientMock: Record<string, jest.Mock>;
+  let configServiceMock: {
+    worker: { transferIntervalSec: number };
+    sync: jest.Mock;
+  };
 
   beforeEach(async () => {
     workerMock = {
@@ -25,12 +30,17 @@ describe('QueueTrigger', () => {
       hsetnx: jest.fn().mockResolvedValue(1),
       hget: jest.fn().mockResolvedValue(null),
     };
+    configServiceMock = {
+      worker: { transferIntervalSec: 60 },
+      sync: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         QueueTrigger,
         { provide: QueueWorker, useValue: workerMock },
         { provide: PROVIDERS.REDIS_QUEUE, useValue: redisMock },
+        { provide: QueueConfigService, useValue: configServiceMock },
       ],
     }).compile();
 

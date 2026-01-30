@@ -1,97 +1,45 @@
 import { PROVIDERS, REDIS_KEYS } from '@beastcamp/shared-constants';
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
-import {
-  getBooleanFromEnv,
-  getNumberFromEnv,
-  getQueueBooleanField,
-  getQueueNumberField,
-  seedQueueBooleanField,
-  seedQueueNumberField,
-} from './queue-config.util';
+import { QueueConfigService } from './queue-config.service';
 
 @Injectable()
-export class HeartbeatService implements OnModuleInit {
+export class HeartbeatService {
+  private readonly logger = new Logger(HeartbeatService.name);
   private readonly heartbeatCache = new Map<string, number>();
-  private configCache: {
-    isEnabled: boolean;
-    throttleMs: number;
-    cacheMaxSize: number;
-  } | null = null;
-  private lastConfigLoadAt = 0;
-  private readonly configCacheTtlMs = 1000;
 
-  constructor(@Inject(PROVIDERS.REDIS_QUEUE) private readonly redis: Redis) {}
-
-  async onModuleInit(): Promise<void> {
-    await seedQueueBooleanField(
-      this.redis,
-      'heartbeat.enabled',
-      getBooleanFromEnv('QUEUE_HEARTBEAT_ENABLED'),
-      true,
-    );
-    await seedQueueNumberField(
-      this.redis,
-      'heartbeat.throttle_ms',
-      getNumberFromEnv('QUEUE_HEARTBEAT_THROTTLE_MS'),
-      1000,
-    );
-    await seedQueueNumberField(
-      this.redis,
-      'heartbeat.cache_max_size',
-      getNumberFromEnv('QUEUE_HEARTBEAT_CACHE_MAX_SIZE'),
-      150000,
-    );
-  }
+  constructor(
+    @Inject(PROVIDERS.REDIS_QUEUE) private readonly redis: Redis,
+    private readonly configService: QueueConfigService,
+  ) {}
 
   async update(userId: string): Promise<void> {
-    const config = await this.getConfig();
-    if (!config.isEnabled) return;
+    const { heartbeat } = this.configService;
+
+    if (!heartbeat.enabled) {
+      return;
+    }
 
     const now = Date.now();
     const lastUpdate = this.heartbeatCache.get(userId);
 
-    if (lastUpdate && now - lastUpdate < config.throttleMs) {
+    if (lastUpdate && now - lastUpdate < heartbeat.throttleMs) {
       return;
     }
 
-    await this.redis.zadd(REDIS_KEYS.HEARTBEAT_QUEUE, now, userId);
-    this.heartbeatCache.set(userId, now);
+    try {
+      await this.redis.zadd(REDIS_KEYS.HEARTBEAT_QUEUE, now, userId);
 
-    if (this.heartbeatCache.size > config.cacheMaxSize) {
-      this.heartbeatCache.clear();
+      this.heartbeatCache.set(userId, now);
+
+      if (this.heartbeatCache.size > heartbeat.cacheMaxSize) {
+        this.heartbeatCache.clear();
+        this.logger.debug(
+          '하트비트 로컬 캐시가 최대치에 도달하여 초기화되었습니다.',
+        );
+      }
+    } catch (error) {
+      this.logger.error(`하트비트 업데이트 실패 (userId: ${userId}):`, error);
     }
-  }
-
-  private async getConfig() {
-    const now = Date.now();
-    if (
-      this.configCache &&
-      now - this.lastConfigLoadAt < this.configCacheTtlMs
-    ) {
-      return this.configCache;
-    }
-
-    const isEnabled = await getQueueBooleanField(
-      this.redis,
-      'heartbeat.enabled',
-      true,
-    );
-    const throttleMs = await getQueueNumberField(
-      this.redis,
-      'heartbeat.throttle_ms',
-      1000,
-      { min: 0 },
-    );
-    const cacheMaxSize = await getQueueNumberField(
-      this.redis,
-      'heartbeat.cache_max_size',
-      150000,
-      { min: 1 },
-    );
-
-    this.configCache = { isEnabled, throttleMs, cacheMaxSize };
-    this.lastConfigLoadAt = now;
-    return this.configCache;
   }
 }

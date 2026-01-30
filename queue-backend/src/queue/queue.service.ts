@@ -13,18 +13,22 @@ import {
 } from '@beastcamp/shared-types';
 import { HeartbeatService } from './heartbeat.service';
 import { VirtualUserInjector } from './virtual-user.injector';
+import { QueueConfigService } from './queue-config.service';
+import { TicketingStateService } from './ticketing-state.service';
 
 @Injectable()
 export class QueueService {
   private readonly logger = new Logger(QueueService.name);
-  private localStartedFlag = false;
+
+  private lastTriggeredSessionId: string | null = null;
 
   constructor(
     @Inject(PROVIDERS.REDIS_QUEUE) private readonly redis: Redis,
-    @Inject(PROVIDERS.REDIS_TICKET) private readonly ticketRedis: Redis,
     private readonly jwtService: JwtService,
     private readonly heartbeatService: HeartbeatService,
     private readonly virtualUserInjector: VirtualUserInjector,
+    private readonly configService: QueueConfigService,
+    private readonly ticketingStateService: TicketingStateService,
   ) {}
 
   /**
@@ -40,14 +44,12 @@ export class QueueService {
       }
     }
 
-    await this.validateTicketingOpen();
+    const sessionId = await this.validateTicketingOpen();
 
-    // 2. 신규 유저 생성
     const newUserId = this.generateUserId();
-
-    // 3. 유저 진입 (진입 시 하트비트도 동시에 등록)
     await this.registerUser(newUserId);
-    await this.ensureVirtualInjectionStarted();
+
+    void this.ensureVirtualInjectionStarted(sessionId);
 
     return {
       userId: newUserId,
@@ -65,7 +67,6 @@ export class QueueService {
 
     // 1. 활성 상태 확인
     const isActive = await this.checkActiveStatus(userId);
-
     if (isActive) {
       const token = await this.generateAccessToken(userId);
       return { token, position: 0 };
@@ -84,9 +85,7 @@ export class QueueService {
 
   // [Private] 세부 구현
 
-  private generateUserId() {
-    return randomBytes(12).toString('base64url');
-  }
+  private generateUserId = () => randomBytes(12).toString('base64url');
 
   private async getPosition(userId: string) {
     const rank = await this.redis.zrank(REDIS_KEYS.WAITING_QUEUE, userId);
@@ -105,58 +104,64 @@ export class QueueService {
       .exec();
   }
 
-  private async ensureVirtualInjectionStarted() {
-    if (this.localStartedFlag) {
+  private async ensureVirtualInjectionStarted(sessionId: string) {
+    if (this.lastTriggeredSessionId === sessionId) {
       return;
     }
 
-    this.localStartedFlag = true;
-
     try {
-      const started = await this.redis.setnx('queue:started', Date.now());
-      if (started === 1) {
-        await this.virtualUserInjector.start();
+      await this.configService.sync();
+      if (!this.configService.virtual.enabled) {
+        return;
       }
-    } catch (error: unknown) {
-      const err = error instanceof Error ? error : new Error('Unknown error');
-      this.logger.error(`가상 유저 시작 체크 실패: ${err.message}`, err.stack);
+
+      const lockKey = `queue:started:${sessionId}`;
+      const acquired = await this.redis.set(lockKey, 'OK', 'EX', 86400, 'NX');
+
+      if (acquired === 'OK') {
+        this.logger.log(`🚀 [세션 ${sessionId}] 가상 유저 주입 프로세스 시작`);
+        try {
+          await this.virtualUserInjector.start();
+        } catch (error) {
+          await this.redis.del(lockKey);
+          this.logger.error(
+            '가상 유저 시작 체크 중 오류:',
+            (error as Error).stack,
+          );
+          return;
+        }
+      }
+
+      this.lastTriggeredSessionId = sessionId;
+    } catch (error) {
+      this.logger.error('가상 유저 시작 체크 중 오류:', (error as Error).stack);
     }
   }
 
   private async checkActiveStatus(userId: string) {
-    const activeUserKey = `${REDIS_KEY_PREFIXES.ACTIVE_USER}${userId}`;
-    if (!activeUserKey) {
-      return false;
-    }
-    const exists = await this.redis.exists(activeUserKey);
+    const exists = await this.redis.exists(
+      `${REDIS_KEY_PREFIXES.ACTIVE_USER}${userId}`,
+    );
     return exists > 0;
   }
 
-  private async generateAccessToken(userId: string) {
-    const payload = {
-      sub: userId,
-      type: 'TICKETING',
-    };
+  private generateAccessToken = async (userId: string) => {
+    return this.jwtService.signAsync({ sub: userId, type: 'TICKETING' });
+  };
 
-    return this.jwtService.signAsync(payload);
-  }
-
-  private async updateHeartbeat(userId: string) {
+  private updateHeartbeat = async (userId: string) =>
     await this.heartbeatService.update(userId);
-  }
 
-  private async validateTicketingOpen() {
-    const isOpen = await this.ticketRedis.get(REDIS_KEYS.TICKETING_OPEN);
-    if (isOpen !== 'true') {
-      if (this.localStartedFlag) {
-        this.localStartedFlag = false;
-        await this.redis.del('queue:started').catch((error: unknown) => {
-          const err =
-            error instanceof Error ? error : new Error('Unknown error');
-          this.logger.warn(`queue:started 키 삭제 실패: ${err.message}`);
-        });
-      }
-      throw new ForbiddenException('Ticketing not open');
+  private async validateTicketingOpen(): Promise<string> {
+    const [isOpen, sessionId] = await Promise.all([
+      this.ticketingStateService.isOpen(),
+      this.ticketingStateService.currentSessionId(),
+    ]);
+
+    if (!isOpen || !sessionId) {
+      throw new ForbiddenException('티켓팅이 진행 중이 아닙니다.');
     }
+
+    return sessionId;
   }
 }

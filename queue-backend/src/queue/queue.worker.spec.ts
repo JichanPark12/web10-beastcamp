@@ -2,19 +2,35 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { QueueWorker } from './queue.worker';
 import { PROVIDERS, REDIS_KEYS } from '@beastcamp/shared-constants';
 import { Logger } from '@nestjs/common';
+import { QueueConfigService } from './queue-config.service';
 
 describe('QueueWorker', () => {
   let worker: QueueWorker;
   let redisMock: Record<string, jest.Mock>;
+  let configServiceMock: Record<string, unknown>;
   beforeEach(async () => {
     redisMock = {
       syncAndPromoteWaiters: jest.fn(),
-      hget: jest.fn().mockResolvedValue(null),
+    };
+    configServiceMock = {
+      sync: jest.fn().mockResolvedValue(undefined),
+      worker: {
+        maxCapacity: 10,
+        heartbeatTimeoutMs: 60000,
+        activeTTLMs: 300000,
+      },
+      heartbeat: {
+        enabled: true,
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         QueueWorker,
+        {
+          provide: QueueConfigService,
+          useValue: configServiceMock,
+        },
         {
           provide: PROVIDERS.REDIS_QUEUE,
           useValue: redisMock,

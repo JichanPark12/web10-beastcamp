@@ -5,6 +5,8 @@ import crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { HeartbeatService } from './heartbeat.service';
 import { VirtualUserInjector } from './virtual-user.injector';
+import { QueueConfigService } from './queue-config.service';
+import { TicketingStateService } from './ticketing-state.service';
 
 describe('QueueService', () => {
   let service: QueueService;
@@ -15,9 +17,6 @@ describe('QueueService', () => {
     multi: jest.fn(),
     set: jest.fn(),
   };
-  const ticketRedisMock = {
-    get: jest.fn(),
-  };
   const jwtServiceMock = {
     signAsync: jest.fn(),
   };
@@ -26,6 +25,16 @@ describe('QueueService', () => {
   };
   const virtualUserInjectorMock = {
     start: jest.fn(),
+  };
+  const configServiceMock = {
+    sync: jest.fn(),
+    virtual: {
+      enabled: false,
+    },
+  };
+  const ticketingStateServiceMock = {
+    isOpen: jest.fn(),
+    currentSessionId: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -43,10 +52,6 @@ describe('QueueService', () => {
           useValue: redisMock,
         },
         {
-          provide: PROVIDERS.REDIS_TICKET,
-          useValue: ticketRedisMock,
-        },
-        {
           provide: JwtService,
           useValue: jwtServiceMock,
         },
@@ -57,6 +62,14 @@ describe('QueueService', () => {
         {
           provide: VirtualUserInjector,
           useValue: virtualUserInjectorMock,
+        },
+        {
+          provide: QueueConfigService,
+          useValue: configServiceMock,
+        },
+        {
+          provide: TicketingStateService,
+          useValue: ticketingStateServiceMock,
         },
       ],
     }).compile();
@@ -90,14 +103,16 @@ describe('QueueService', () => {
       ) as unknown as jest.SpyInstance<Buffer, [number]>;
       randomBytesSpy.mockImplementation(() => randomBuffer);
       redisMock.zrank.mockResolvedValueOnce(5);
-      ticketRedisMock.get.mockResolvedValueOnce('true');
+      ticketingStateServiceMock.isOpen.mockResolvedValueOnce(true);
+      ticketingStateServiceMock.currentSessionId.mockResolvedValueOnce(
+        'session-123',
+      );
 
       const result = await service.createEntry();
 
       const expectedUserId = randomBuffer.toString('base64url');
-      expect(ticketRedisMock.get).toHaveBeenCalledWith(
-        REDIS_KEYS.TICKETING_OPEN,
-      );
+      expect(ticketingStateServiceMock.isOpen).toHaveBeenCalled();
+      expect(ticketingStateServiceMock.currentSessionId).toHaveBeenCalled();
       expect(redisMock.multi).toHaveBeenCalled();
       expect(redisMock.zrank).toHaveBeenCalledWith(
         REDIS_KEYS.WAITING_QUEUE,

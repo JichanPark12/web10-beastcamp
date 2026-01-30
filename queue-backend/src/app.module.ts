@@ -2,14 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { RedisModule } from './redis/redis.module';
 import { QueueModule } from './queue/queue.module';
-import { jwtConfig, redisConfig, queueConfig } from '@beastcamp/backend-config';
+import { jwtConfig, redisConfig } from '@beastcamp/backend-config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-      load: [redisConfig, jwtConfig, queueConfig],
+      load: [redisConfig, jwtConfig],
     }),
     RedisModule,
     QueueModule,

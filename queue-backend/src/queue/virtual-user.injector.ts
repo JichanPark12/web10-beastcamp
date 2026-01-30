@@ -1,289 +1,177 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PROVIDERS, REDIS_KEYS } from '@beastcamp/shared-constants';
 import { randomBytes } from 'crypto';
 import Redis from 'ioredis';
-import {
-  getQueueBooleanField,
-  getQueueNumberField,
-  seedQueueBooleanField,
-  seedQueueNumberField,
-} from './queue-config.util';
+import { QueueConfigService } from './queue-config.service';
 
 @Injectable()
-export class VirtualUserInjector implements OnModuleInit {
+export class VirtualUserInjector {
   private readonly logger = new Logger(VirtualUserInjector.name);
   private isRunning = false;
-  private intervalId: NodeJS.Timeout | null = null;
+  private timerId: NodeJS.Timeout | null = null;
   private startAt = 0;
-  private targetTotal = 0;
-  private initialCount = 0;
-  private burstMs = 0;
-  private injectedCount = 0;
 
-  constructor(@Inject(PROVIDERS.REDIS_QUEUE) private readonly redis: Redis) {}
-
-  async onModuleInit(): Promise<void> {
-    await this.seedVirtualConfig();
-  }
+  constructor(
+    @Inject(PROVIDERS.REDIS_QUEUE) private readonly redis: Redis,
+    private readonly configService: QueueConfigService,
+  ) {}
 
   async start(): Promise<void> {
     if (this.isRunning) {
       this.logger.debug('가상 유저 주입이 이미 실행 중입니다.');
       return;
     }
+
+    await this.configService.sync();
+    const { virtual } = this.configService;
+
+    if (!virtual.enabled) {
+      this.logger.warn('가상 유저 주입이 비활성화되어 있습니다.');
+      return;
+    }
+
     this.isRunning = true;
+    this.startAt = Date.now();
 
-    try {
-      await this.seedVirtualConfig();
+    const rawCount = await this.redis.get(REDIS_KEYS.INJECTOR_STATE);
+    const alreadyInjected = this.safeParseNumber(rawCount);
 
-      const isEnabled = await this.isVirtualUserEnabled();
-      if (!isEnabled) {
-        this.logger.warn('가상 유저 주입이 비활성화되어 있습니다.');
-        this.isRunning = false;
-        return;
+    if (alreadyInjected === 0) {
+      const initialCount = Math.floor(
+        virtual.targetTotal * virtual.initialJumpRatio,
+      );
+      if (initialCount > 0) {
+        await this.injectBatch(initialCount);
+        await this.incrementState(initialCount);
       }
-
-      try {
-        const config = await this.loadConfig();
-        this.applyConfig(config);
-      } catch (error: unknown) {
-        this.isRunning = false;
-        const err = error instanceof Error ? error : new Error('Unknown error');
-        this.logger.error(
-          `가상 유저 설정 로드 실패: ${err.message}`,
-          err.stack,
-        );
-        throw err;
-      }
-
-      if (this.targetTotal === 0) {
-        this.logger.warn('가상 유저 목표 인원이 0입니다. 주입을 중단합니다.');
-        this.isRunning = false;
-        return;
-      }
-
-      this.startAt = Date.now();
-      this.injectedCount = 0;
-
-      if (this.initialCount > 0) {
-        await this.injectBatch(this.initialCount, this.startAt);
-        this.injectedCount += this.initialCount;
-      }
-
-      await this.scheduleNextTick();
-    } catch (error: unknown) {
-      this.stopScheduler();
-      throw error;
     }
+
+    this.scheduleNextTick();
   }
 
-  private stopScheduler() {
-    if (this.intervalId) {
-      clearTimeout(this.intervalId);
-      this.intervalId = null;
-    }
-    this.isRunning = false;
-  }
-
-  private async scheduleNextTick(): Promise<void> {
+  private scheduleNextTick(): void {
     if (!this.isRunning) return;
-    const intervalMs = await getQueueNumberField(
-      this.redis,
-      'virtual.tick_interval_ms',
-      1000,
-      { min: 100 },
+    this.timerId = setTimeout(
+      () => void this.runTick(),
+      this.configService.virtual.tickIntervalMs,
     );
-
-    this.intervalId = setTimeout(() => {
-      void this.runTick();
-    }, intervalMs);
   }
 
   private async runTick(): Promise<void> {
     if (!this.isRunning) return;
 
     try {
-      try {
-        const config = await this.loadConfig();
-        this.applyConfig(config);
-      } catch (error: unknown) {
-        const err = error instanceof Error ? error : new Error('Unknown error');
-        this.logger.warn(`가상 유저 설정 갱신 실패: ${err.message}`);
-      }
+      await this.configService.sync();
+      const { virtual } = this.configService;
+      if (!virtual.enabled) return this.stop();
 
       const now = Date.now();
       const elapsed = now - this.startAt;
-      const progress = Math.min(1, elapsed / this.burstMs);
-      const targetAtMoment = Math.max(
-        this.initialCount,
-        Math.floor(this.targetTotal * progress),
+      const burstMs = Math.max(1000, virtual.burstDurationSec * 1000);
+
+      const progress = Math.min(1, elapsed / burstMs);
+      const targetAtMoment = Math.floor(virtual.targetTotal * progress);
+
+      const currentInjected = this.safeParseNumber(
+        await this.redis.get(REDIS_KEYS.INJECTOR_STATE),
+      );
+      const currentWaiting = await this.redis.zcard(REDIS_KEYS.WAITING_QUEUE);
+
+      const missingByPlan = targetAtMoment - currentInjected;
+      const missingByCapacity = virtual.targetTotal - currentWaiting;
+      const injectCount = Math.max(
+        0,
+        Math.min(missingByPlan, missingByCapacity),
       );
 
-      const enabledNow = await this.isVirtualUserEnabled();
-      if (!enabledNow) {
-        this.logger.warn('가상 유저 주입이 비활성화되어 중단합니다.');
-        this.stopScheduler();
-        return;
-      }
-
-      const waitingCount = await this.redis.zcard(REDIS_KEYS.WAITING_QUEUE);
-      const missing = targetAtMoment - waitingCount;
-      const remainingQuota = Math.max(0, this.targetTotal - this.injectedCount);
-      const injectCount = Math.min(missing, remainingQuota);
-
       if (injectCount > 0) {
-        await this.injectBatch(injectCount, now);
-        this.injectedCount += injectCount;
+        await this.injectBatch(injectCount);
+        const totalAfterUpdate = await this.incrementState(injectCount);
+        if (totalAfterUpdate >= virtual.targetTotal) {
+          this.logger.log(
+            `✅ 목표 도달로 인한 종료 (Total: ${totalAfterUpdate})`,
+          );
+          return this.stop();
+        }
       }
 
-      if (
-        elapsed >= this.burstMs ||
-        waitingCount >= this.targetTotal ||
-        this.injectedCount >= this.targetTotal
-      ) {
-        this.stopScheduler();
-        return;
+      if (currentWaiting >= virtual.targetTotal) {
+        this.logger.log(
+          `⚠️ 대기열 포화로 인한 주입 중단 (Current: ${currentWaiting})`,
+        );
+        return this.stop();
       }
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Unknown error');
       this.logger.error(`가상 유저 주입 오류: ${err.message}`, err.stack);
     }
 
-    await this.scheduleNextTick();
+    this.scheduleNextTick();
   }
 
-  private async loadConfig() {
-    const targetTotal = await getQueueNumberField(
-      this.redis,
-      'virtual.target_total',
-      1000,
-      { min: 0 },
-    );
-    const initialJumpRatio = await getQueueNumberField(
-      this.redis,
-      'virtual.initial_jump_ratio',
-      0.3,
-      { min: 0, max: 1 },
-    );
-    const burstDurationSec = await getQueueNumberField(
-      this.redis,
-      'virtual.burst_duration_sec',
-      30,
-      { min: 1 },
-    );
+  private async injectBatch(count: number): Promise<void> {
+    const { virtual } = this.configService;
+    const now = Date.now();
 
-    return {
-      targetTotal,
-      initialJumpRatio,
-      burstDurationSec,
-    };
-  }
-
-  private applyConfig(config: {
-    targetTotal: number;
-    initialJumpRatio: number;
-    burstDurationSec: number;
-  }) {
-    this.targetTotal = Math.max(0, config.targetTotal);
-    this.initialCount = Math.min(
-      this.targetTotal,
-      Math.floor(this.targetTotal * config.initialJumpRatio),
-    );
-    this.burstMs = Math.max(1000, config.burstDurationSec * 1000);
-  }
-
-  private async isVirtualUserEnabled(): Promise<boolean> {
-    return getQueueBooleanField(this.redis, 'virtual.enabled', false);
-  }
-
-  private async seedVirtualConfig(): Promise<void> {
-    await seedQueueNumberField(
-      this.redis,
-      'virtual.target_total',
-      undefined,
-      1000,
-    );
-    await seedQueueNumberField(
-      this.redis,
-      'virtual.initial_jump_ratio',
-      undefined,
-      0.3,
-    );
-    await seedQueueNumberField(
-      this.redis,
-      'virtual.burst_duration_sec',
-      undefined,
-      30,
-    );
-    await seedQueueNumberField(
-      this.redis,
-      'virtual.inject_batch_size',
-      undefined,
-      50,
-    );
-    await seedQueueNumberField(
-      this.redis,
-      'virtual.inject_batch_delay_ms',
-      undefined,
-      0,
-    );
-    await seedQueueBooleanField(
-      this.redis,
-      'virtual.enabled',
-      undefined,
-      false,
-    );
-    await seedQueueNumberField(
-      this.redis,
-      'virtual.tick_interval_ms',
-      undefined,
-      1000,
-    );
-  }
-
-  private async injectBatch(count: number, now: number): Promise<void> {
-    const batchSize = await getQueueNumberField(
-      this.redis,
-      'virtual.inject_batch_size',
-      50,
-      { min: 1 },
-    );
-    const batchDelayMs = await getQueueNumberField(
-      this.redis,
-      'virtual.inject_batch_delay_ms',
-      0,
-      { min: 0 },
-    );
-
-    for (let offset = 0; offset < count; offset += batchSize) {
+    for (let offset = 0; offset < count; offset += virtual.injectBatchSize) {
+      const currentBatchSize = Math.min(
+        count - offset,
+        virtual.injectBatchSize,
+      );
       const pipeline = this.redis.pipeline();
-      const end = Math.min(offset + batchSize, count);
 
-      for (let i = offset; i < end; i += 1) {
-        const userId = this.generateUserId();
-        const score = now + i;
-        pipeline.zadd(REDIS_KEYS.WAITING_QUEUE, score, userId);
+      for (let i = 0; i < currentBatchSize; i++) {
+        pipeline.zadd(
+          REDIS_KEYS.WAITING_QUEUE,
+          now + offset + i,
+          this.generateUserId(),
+        );
       }
 
       const results = await pipeline.exec();
-      if (!results) {
-        throw new Error('가상 유저 주입 파이프라인이 중단되었습니다.');
-      }
-      for (const [err] of results) {
-        if (err) throw err;
+      const hasError = results?.some(([err]) => err);
+      if (hasError) {
+        this.logger.error('대기열 주입 실패', { results });
+        throw new Error('waiting queue injection failed');
       }
 
-      if (batchDelayMs > 0 && end < count) {
-        await this.delay(batchDelayMs);
+      if (virtual.injectBatchDelayMs > 0 && offset + currentBatchSize < count) {
+        await this.delay(virtual.injectBatchDelayMs);
       }
     }
   }
 
-  private generateUserId() {
-    return randomBytes(12).toString('base64url');
+  private async incrementState(amount: number): Promise<number> {
+    const results = await this.redis
+      .pipeline()
+      .incrby(REDIS_KEYS.INJECTOR_STATE, amount)
+      .expire(REDIS_KEYS.INJECTOR_STATE, 86400)
+      .exec();
+    const [err, value] = results?.[0] ?? [];
+    if (err || typeof value !== 'number') {
+      this.logger.warn(
+        `⚠️ 가상 유저 주입 인원 수 증가 실패: ${err?.message ?? 'invalid value'}`,
+      );
+      return 0;
+    }
+    return value;
   }
 
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  private safeParseNumber(val: string | null): number {
+    if (!val) return 0;
+    const parsed = parseInt(val, 10);
+    return Number.isFinite(parsed) ? parsed : 0;
   }
+
+  public stop(): void {
+    this.isRunning = false;
+    if (this.timerId) {
+      clearTimeout(this.timerId);
+      this.timerId = null;
+    }
+  }
+
+  private generateUserId = () => randomBytes(12).toString('base64url');
+  private delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
 }

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { QueueService } from './queue.service';
+import { QueueConfigService } from './queue-config.service';
 import { QueueController } from './queue.controller';
 import { QueueWorker } from './queue.worker';
 import { QueueTrigger } from './queue.trigger';
@@ -8,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import type { JwtSignOptions } from '@nestjs/jwt';
 import { HeartbeatService } from './heartbeat.service';
 import { VirtualUserInjector } from './virtual-user.injector';
+import { TicketingStateService } from './ticketing-state.service';
 
 @Module({
   imports: [
@@ -33,10 +35,12 @@ import { VirtualUserInjector } from './virtual-user.injector';
   ],
   providers: [
     QueueService,
+    QueueConfigService,
     QueueWorker,
     QueueTrigger,
     HeartbeatService,
     VirtualUserInjector,
+    TicketingStateService,
   ],
   controllers: [QueueController],
 })

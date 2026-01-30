@@ -8,7 +8,7 @@ import {
   VenueResponse,
 } from '../performance-api/performance-api.service';
 import { RedisService } from '../redis/redis.service';
-import { REDIS_KEYS } from '@beastcamp/shared-constants';
+import { REDIS_CHANNELS, REDIS_KEYS } from '@beastcamp/shared-constants';
 
 describe('TicketSetupService', () => {
   let service: TicketSetupService;
@@ -29,12 +29,14 @@ describe('TicketSetupService', () => {
         },
         {
           provide: RedisService,
+
           useValue: {
-            set: jest.fn(),
+            set: jest.fn().mockResolvedValue('OK'),
             sadd: jest.fn(),
             del: jest.fn(),
             deleteAllExceptPrefix: jest.fn(),
             deleteAllExceptPrefixQueue: jest.fn(),
+            publishToTicket: jest.fn().mockResolvedValue(1),
           },
         },
       ],
@@ -110,6 +112,10 @@ describe('TicketSetupService', () => {
         expectedKey,
         expectedData,
       );
+      expect(jest.mocked(redisService.publishToTicket)).toHaveBeenCalledWith(
+        REDIS_CHANNELS.TICKETING_STATE_CHANGED,
+        'setup',
+      );
     });
   });
 
@@ -119,6 +125,10 @@ describe('TicketSetupService', () => {
       expect(jest.mocked(redisService.set)).toHaveBeenCalledWith(
         REDIS_KEYS.TICKETING_OPEN,
         'true',
+      );
+      expect(jest.mocked(redisService.publishToTicket)).toHaveBeenCalledWith(
+        REDIS_CHANNELS.TICKETING_STATE_CHANGED,
+        'open',
       );
     });
 
@@ -143,6 +153,10 @@ describe('TicketSetupService', () => {
       );
       expect(jest.mocked(redisService.del)).toHaveBeenCalledWith(
         REDIS_KEYS.CURRENT_TICKETING_SESSION,
+      );
+      expect(jest.mocked(redisService.publishToTicket)).toHaveBeenCalledWith(
+        REDIS_CHANNELS.TICKETING_STATE_CHANGED,
+        'close',
       );
     });
   });
