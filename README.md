@@ -65,6 +65,7 @@
 ## 📌 주요 기능
 
 
+
 ### 모의 티켓팅 시뮬레이션
 - 실제 티켓팅 환경과 동일한 환경에서 단계별 티켓팅 프로세스 제공
 - 공연 정보에 따라 플랫폼 별 UI/UX 제공 ( 인터파크, Yes24, 티켓링크, 멜론티켓 ) 
@@ -155,14 +156,24 @@
 - 각 플랫폼 (인터파크·YES24·멜론티켓) 별로 실제 예매 사이트 UI/UX 를 기준으로 최적화된 연습을 진행
 
 
-## 기술적 도전 
+
+## 시스템 아키텍처
 > 수십만명 트래픽을 감당할 수 있는 대규모 시스템 설계를 목적으로 안정성, 가용성을 중시한 아키텍처를 설계했습니다.
 더 자세한 기술적 설계 여정은 Wiki ADR 문서를 참고해주세요.
 
 <img width="587" height="386" alt="Screenshot 2026-01-30 at 3 06 59 AM" src="https://github.com/user-attachments/assets/04a2dedc-0824-49cd-a679-e7862577611e" />
 <img width="869" height="512" alt="Screenshot 2026-01-30 at 2 12 26 AM" src="https://github.com/user-attachments/assets/3778af0f-333d-465d-886e-e440ed3f159d" />
 
-- [MSA 대기열 티켓 예매 시스템 설계](https://github.com/boostcampwm2025/web10-beastcamp/wiki/%ED%8B%B0%EC%BC%93-%EC%98%88%EB%A7%A4-%EB%8C%80%EA%B8%B0%EC%97%B4-%EC%8B%9C%EC%8A%A4%ED%85%9C-%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98-%EC%84%A4%EA%B3%84)
+
+- [기술 스택 선정 이유]()
+- [모노레포 pnpm을 도입한 이유]()
+- [공연장 좌석 렌더링 방식]()
+- [티켓팅 중복 예매 방지]()
+- [모의 트래픽(봇) 발생 원리]()
+- [티켓팅 대기열 시스템 동작 알고리즘]()
+- [티켓팅 스케쥴링 방식]()
+- [대규모 트래픽을 감당하는 예매 시스템 아키텍처 확장](https://github.com/boostcampwm2025/web10-beastcamp/wiki/%EB%8C%80%EA%B7%9C%EB%AA%A8-%EC%8B%9C%EC%8A%A4%ED%85%9C-%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98-%EC%84%A4%EA%B3%84-%EB%B0%8F-%ED%99%95%EC%9E%A5-%EB%B0%A9%EC%95%88)
+
 
 ---
 
