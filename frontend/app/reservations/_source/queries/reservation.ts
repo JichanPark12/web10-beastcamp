@@ -1,0 +1,34 @@
+import { useMutation } from "@tanstack/react-query";
+import { api } from "@/lib/api/api";
+
+interface ReservedSeat {
+  block_id: number;
+  row: number;
+  col: number;
+}
+
+interface ReservationResult {
+  rank: number;
+  seats: ReservedSeat[];
+}
+
+interface ReservationPayload {
+  session_id: number;
+  seats: ReservedSeat[];
+}
+
+export const useReservationMutation = (token: string) => {
+  return useMutation({
+    mutationFn: async (payload: ReservationPayload) => {
+      const response = await api.post<ReservationResult>(
+        "/reservations",
+        payload,
+        {
+          serverType: "ticket",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      return response;
+    },
+  });
+};
