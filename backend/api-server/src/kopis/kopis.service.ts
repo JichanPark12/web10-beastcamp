@@ -265,12 +265,9 @@ export class KopisService {
     // filterSupportedPlatforms()에서 이미 단일 객체로 변환했으므로 배열이 아님
     const relate = detail.relates.relate;
 
-    // 배열이 아닌 경우에만 처리 (filterSupportedPlatforms에서 단일 객체로 변환됨)
     if (Array.isArray(relate)) {
       return null;
     }
-
-    // relatenm이 이미 영문 코드로 변환되어 있음
     const platform = relate.relatenm;
 
     // 유효한 플랫폼인지 확인
