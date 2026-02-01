@@ -2,11 +2,18 @@ import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { PROVIDERS } from '@beastcamp/shared-constants';
 import { Redis } from 'ioredis';
 
+interface RedisWithCommands extends Redis {
+  atomicReservation(
+    numKeys: number,
+    ...args: (string | number)[]
+  ): Promise<[number, number]>;
+}
+
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   constructor(
     @Inject(PROVIDERS.REDIS_TICKET)
-    private readonly ticketClient: Redis,
+    private readonly ticketClient: RedisWithCommands,
     @Inject(PROVIDERS.REDIS_QUEUE)
     private readonly queueClient: Redis,
   ) {}
@@ -14,6 +21,19 @@ export class RedisService implements OnModuleDestroy {
   onModuleDestroy() {
     this.ticketClient.disconnect();
     this.queueClient.disconnect();
+  }
+
+  async atomicReservation(
+    seatKeys: string[],
+    userId: string,
+    rankKey: string,
+  ): Promise<[number, number]> {
+    return this.ticketClient.atomicReservation(
+      seatKeys.length,
+      ...seatKeys,
+      userId,
+      rankKey,
+    );
   }
 
   async setNx(key: string, value: string): Promise<boolean> {
