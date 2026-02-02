@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { ReservationService } from '../reservation/reservation.service';
-import { REDIS_KEYS } from '@beastcamp/shared-constants';
+import { REDIS_CHANNELS, REDIS_KEYS } from '@beastcamp/shared-constants';
 import { TicketConfigService } from '../config/ticket-config.service';
 
 @Injectable()
@@ -88,6 +88,7 @@ export class VirtualUserWorker implements OnModuleInit, OnModuleDestroy {
       this.logger.warn(
         '가상 유저 처리 실패: 현재 티켓팅 회차가 설정되지 않았습니다.',
       );
+      await this.releaseActiveUser(userId, 'no_session');
       return;
     }
 
@@ -98,12 +99,14 @@ export class VirtualUserWorker implements OnModuleInit, OnModuleDestroy {
       this.logger.warn(
         `가상 유저 처리 실패: 회차 ${sessionId}에 블록이 없습니다.`,
       );
+      await this.releaseActiveUser(userId, 'no_block');
       return;
     }
 
     const blockData = await this.redisService.get(`block:${blockId}`);
     if (!blockData) {
       this.logger.warn(`가상 유저 처리 실패: 블록 ${blockId} 정보가 없습니다.`);
+      await this.releaseActiveUser(userId, 'no_block_data');
       return;
     }
 
@@ -131,6 +134,7 @@ export class VirtualUserWorker implements OnModuleInit, OnModuleDestroy {
       } catch (error: unknown) {
         if (error instanceof ForbiddenException) {
           this.logger.debug('티켓팅이 열려있지 않아 가상 예약을 건너뜁니다.');
+          await this.releaseActiveUser(userId, 'ticketing_closed');
           return;
         }
 
@@ -140,6 +144,7 @@ export class VirtualUserWorker implements OnModuleInit, OnModuleDestroy {
 
         const err = error instanceof Error ? error : new Error('Unknown error');
         this.logger.error(`가상 유저 예약 실패: ${err.message}`, err.stack);
+        await this.releaseActiveUser(userId, 'unexpected_error');
         return;
       }
     }
@@ -147,6 +152,25 @@ export class VirtualUserWorker implements OnModuleInit, OnModuleDestroy {
     this.logger.warn(
       `가상 유저 예약 실패: user=${userId}, seat 선택 재시도 한도 초과`,
     );
+    await this.releaseActiveUser(userId, 'max_attempts');
+  }
+
+  private async releaseActiveUser(
+    userId: string,
+    reason: string,
+  ): Promise<void> {
+    try {
+      await this.redisService.publishToQueue(
+        REDIS_CHANNELS.QUEUE_EVENT_DONE,
+        userId,
+      );
+      this.logger.debug(
+        `가상 유저 활성 해제 요청: user=${userId}, reason=${reason}`,
+      );
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error('Unknown error');
+      this.logger.error(`가상 유저 활성 해제 실패: ${err.message}`, err.stack);
+    }
   }
 
   private delay(ms: number): Promise<void> {
