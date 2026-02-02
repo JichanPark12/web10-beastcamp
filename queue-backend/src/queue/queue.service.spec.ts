@@ -34,7 +34,6 @@ describe('QueueService', () => {
   };
   const ticketingStateServiceMock = {
     isOpen: jest.fn(),
-    currentSessionId: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -104,15 +103,11 @@ describe('QueueService', () => {
       randomBytesSpy.mockImplementation(() => randomBuffer);
       redisMock.zrank.mockResolvedValueOnce(5);
       ticketingStateServiceMock.isOpen.mockResolvedValueOnce(true);
-      ticketingStateServiceMock.currentSessionId.mockResolvedValueOnce(
-        'session-123',
-      );
 
       const result = await service.createEntry();
 
       const expectedUserId = randomBuffer.toString('base64url');
       expect(ticketingStateServiceMock.isOpen).toHaveBeenCalled();
-      expect(ticketingStateServiceMock.currentSessionId).toHaveBeenCalled();
       expect(redisMock.multi).toHaveBeenCalled();
       expect(redisMock.zrank).toHaveBeenCalledWith(
         REDIS_KEYS.WAITING_QUEUE,

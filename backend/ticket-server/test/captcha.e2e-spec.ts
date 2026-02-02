@@ -119,7 +119,7 @@ describe('Captcha E2E Tests', () => {
         .expect(400);
     });
 
-    it('should reject reused captcha (one-time use)', async () => {
+    it('should reject reused captcha after success (one-time use)', async () => {
       // 새로운 보안 문자 생성
       const captchaResponse = await request(app.getHttpServer())
         .get('/captcha')
@@ -157,6 +157,44 @@ describe('Captcha E2E Tests', () => {
       expect(secondResponse.body.message).toBe(
         '보안 문자가 일치하지 않습니다.',
       );
+    });
+
+    it('should allow retry after incorrect attempt', async () => {
+      // 새로운 보안 문자 생성
+      const captchaResponse = await request(app.getHttpServer())
+        .get('/captcha')
+        .expect(200);
+
+      const newCaptchaId = captchaResponse.headers['x-captcha-id'];
+      const svgText = captchaResponse.body.toString();
+      const textMatches = svgText.match(/<text[^>]*>([A-Z0-9])<\/text>/g);
+      const code = textMatches!
+        .map((match: string) => match.match(/>([A-Z0-9])</)![1])
+        .join('');
+
+      // 첫 번째 검증 (실패 - 잘못된 입력)
+      const firstResponse = await request(app.getHttpServer())
+        .post('/captcha/verify')
+        .send({
+          captchaId: newCaptchaId,
+          userInput: 'WRONG1',
+        })
+        .expect(201);
+
+      expect(firstResponse.body.success).toBe(false);
+      expect(firstResponse.body.message).toBe('보안 문자가 일치하지 않습니다.');
+
+      // 두 번째 검증 (성공 - 올바른 입력으로 재시도)
+      const secondResponse = await request(app.getHttpServer())
+        .post('/captcha/verify')
+        .send({
+          captchaId: newCaptchaId,
+          userInput: code,
+        })
+        .expect(201);
+
+      expect(secondResponse.body.success).toBe(true);
+      expect(secondResponse.body.message).toBe('보안 문자 검증 성공');
     });
   });
 });

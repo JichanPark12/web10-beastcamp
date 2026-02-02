@@ -50,8 +50,10 @@ export class CaptchaService {
     // 대소문자 구분 없이 비교
     const isValid = session.code.toLowerCase() === userInput.toLowerCase();
 
-    // 사용한 세션 삭제 (일회용)
-    this.sessions.delete(captchaId);
+    // 성공했을 때만 세션 삭제 (일회용)
+    if (isValid) {
+      this.sessions.delete(captchaId);
+    }
 
     return isValid;
   }

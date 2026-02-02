@@ -300,118 +300,123 @@ export default function Yes24PerformanceDetail({
           </div>
         </div>
 
-        {/* 하단: 날짜/시간 선택 */}
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* 좌측: 날짜/시간 선택 */}
-          <div>
-            <div className="bg-white rounded-lg shadow-sm p-8">
-              <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gray-900">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  날짜/시간 선택
+        {/* 하단: 날짜/시간 선택 - 티켓팅 오픈 후에만 표시 */}
+        {isTicketingOpen && (
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 좌측: 날짜/시간 선택 */}
+            <div>
+              <div className="bg-white rounded-lg shadow-sm p-8">
+                <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gray-900">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    날짜/시간 선택
+                  </h2>
+                  <button className="px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50">
+                    캘린더일괄
+                  </button>
+                </div>
+
+                <div className="flex gap-6">
+                  <div className="flex-1">
+                    <Yes24Calendar
+                      selectedDate={selectedDate}
+                      onDateSelect={handleDateSelect}
+                      sessions={sessions}
+                    />
+                  </div>
+                  <div className="w-56 space-y-2">
+                    {selectedDate ? (
+                      sessions
+                        .filter((session) => {
+                          const sessionDate = new Date(session.sessionDate);
+                          return (
+                            sessionDate.getFullYear() ===
+                              selectedDate.getFullYear() &&
+                            sessionDate.getMonth() === selectedDate.getMonth() &&
+                            sessionDate.getDate() === selectedDate.getDate()
+                          );
+                        })
+                        .map((session, index) => {
+                          const date = new Date(session.sessionDate);
+                          const hours = date.getHours();
+                          const minutes = date.getMinutes();
+                          const period = hours < 12 ? "오전" : "오후";
+                          const displayHours =
+                            hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+                          const displayMinutes = String(minutes).padStart(
+                            2,
+                            "0",
+                          );
+
+                          return (
+                            <button
+                              key={session.id}
+                              onClick={() =>
+                                setSelectedSession(session.id.toString())
+                              }
+                              className={`w-full py-3 text-center text-sm font-bold rounded transition-colors ${
+                                selectedSession === session.id.toString()
+                                  ? "bg-orange-500 text-white"
+                                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              }`}
+                            >
+                              {index + 1}회 {period} {displayHours}시{" "}
+                              {displayMinutes}분
+                            </button>
+                          );
+                        })
+                    ) : (
+                      <div className="text-center text-sm text-gray-500 py-3">
+                        날짜를 먼저 선택해주세요
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 우측: 예매 가능 좌석 */}
+            <div>
+              <div className="bg-white rounded-lg shadow-sm p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-900">
+                  예매 가능 좌석
                 </h2>
-                <button className="px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50">
-                  캘린더일괄
-                </button>
-              </div>
 
-              <div className="flex gap-6">
-                <div className="flex-1">
-                  <Yes24Calendar
-                    selectedDate={selectedDate}
-                    onDateSelect={handleDateSelect}
-                    sessions={sessions}
-                  />
-                </div>
-                <div className="w-56 space-y-2">
-                  {selectedDate ? (
-                    sessions
-                      .filter((session) => {
-                        const sessionDate = new Date(session.sessionDate);
-                        return (
-                          sessionDate.getFullYear() ===
-                            selectedDate.getFullYear() &&
-                          sessionDate.getMonth() === selectedDate.getMonth() &&
-                          sessionDate.getDate() === selectedDate.getDate()
-                        );
-                      })
-                      .map((session, index) => {
-                        const date = new Date(session.sessionDate);
-                        const hours = date.getHours();
-                        const minutes = date.getMinutes();
-                        const period = hours < 12 ? "오전" : "오후";
-                        const displayHours =
-                          hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-                        const displayMinutes = String(minutes).padStart(2, "0");
-
-                        return (
-                          <button
-                            key={session.id}
-                            onClick={() =>
-                              setSelectedSession(session.id.toString())
-                            }
-                            className={`w-full py-3 text-center text-sm font-bold rounded transition-colors ${
-                              selectedSession === session.id.toString()
-                                ? "bg-orange-500 text-white"
-                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                            }`}
-                          >
-                            {index + 1}회 {period} {displayHours}시{" "}
-                            {displayMinutes}분
-                          </button>
-                        );
-                      })
-                  ) : (
-                    <div className="text-center text-sm text-gray-500 py-3">
-                      날짜를 먼저 선택해주세요
-                    </div>
-                  )}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-3">
+                    <span className="text-gray-900 font-medium">
+                      OP석 190,000원
+                    </span>
+                    <span className="text-red-500 text-sm">(잔여:매진)</span>
+                  </div>
+                  <div className="flex items-center justify-between py-3">
+                    <span className="text-gray-900 font-medium">
+                      R석 190,000원
+                    </span>
+                    <span className="text-red-500 text-sm">(잔여:매진)</span>
+                  </div>
+                  <div className="flex items-center justify-between py-3">
+                    <span className="text-gray-900 font-medium">
+                      S석 160,000원
+                    </span>
+                    <span className="text-red-500 text-sm">(잔여:매진)</span>
+                  </div>
+                  <div className="flex items-center justify-between py-3">
+                    <span className="text-gray-900 font-medium">
+                      A석 130,000원
+                    </span>
+                    <span className="text-red-500 text-sm">(잔여:1석)</span>
+                  </div>
+                  <div className="flex items-center justify-between py-3">
+                    <span className="text-gray-900 font-medium">
+                      B석 90,000원
+                    </span>
+                    <span className="text-red-500 text-sm">(잔여:매진)</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* 우측: 예매 가능 좌석 */}
-          <div>
-            <div className="bg-white rounded-lg shadow-sm p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-900">
-                예매 가능 좌석
-              </h2>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between py-3">
-                  <span className="text-gray-900 font-medium">
-                    OP석 190,000원
-                  </span>
-                  <span className="text-red-500 text-sm">(잔여:매진)</span>
-                </div>
-                <div className="flex items-center justify-between py-3">
-                  <span className="text-gray-900 font-medium">
-                    R석 190,000원
-                  </span>
-                  <span className="text-red-500 text-sm">(잔여:매진)</span>
-                </div>
-                <div className="flex items-center justify-between py-3">
-                  <span className="text-gray-900 font-medium">
-                    S석 160,000원
-                  </span>
-                  <span className="text-red-500 text-sm">(잔여:매진)</span>
-                </div>
-                <div className="flex items-center justify-between py-3">
-                  <span className="text-gray-900 font-medium">
-                    A석 130,000원
-                  </span>
-                  <span className="text-red-500 text-sm">(잔여:1석)</span>
-                </div>
-                <div className="flex items-center justify-between py-3">
-                  <span className="text-gray-900 font-medium">
-                    B석 90,000원
-                  </span>
-                  <span className="text-red-500 text-sm">(잔여:매진)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* 하단 버튼 */}
         <div className="mt-8 flex items-center justify-center gap-4">

@@ -31,9 +31,10 @@ export class TicketSetupService {
       throw new Error('No sessions found');
     }
 
-    await this.redisService.set(
-      REDIS_KEYS.CURRENT_TICKETING_SESSION,
-      sessions[0].id.toString(),
+    const sessionIds = sessions.map((session) => session.id.toString());
+    await this.redisService.sadd(
+      REDIS_KEYS.CURRENT_TICKETING_SESSIONS,
+      ...sessionIds,
     );
 
     await this.redisService.publishToTicket(
@@ -74,7 +75,9 @@ export class TicketSetupService {
   async tearDown(): Promise<void> {
     try {
       await this.redisService.set(REDIS_KEYS.TICKETING_OPEN, 'false');
-      await this.redisService.del(REDIS_KEYS.CURRENT_TICKETING_SESSION);
+      await this.redisService.del(REDIS_KEYS.CURRENT_TICKETING_SESSIONS);
+      await this.redisService.deleteAllExceptPrefix('config:');
+      await this.redisService.deleteAllExceptPrefixQueue('config:');
       this.logger.log('Ticketing closed (tear-down)');
 
       void this.redisService

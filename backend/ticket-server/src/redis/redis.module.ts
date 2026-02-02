@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PROVIDERS, CONFIG_PATHS } from '@beastcamp/shared-constants';
 import { Redis } from 'ioredis';
 import { RedisService } from './redis.service';
+import { REDIS_COMMANDS } from './redis.commands';
 
 @Global()
 @Module({
@@ -16,12 +17,18 @@ import { RedisService } from './redis.service';
           CONFIG_PATHS.REDIS_TICKET_PASSWORD,
         );
 
-        return new Redis({
+        const redis = new Redis({
           host,
           port,
           password,
           retryStrategy: (times) => Math.min(times * 50, 2000),
         });
+
+        redis.defineCommand(REDIS_COMMANDS.ATOMIC_RESERVATION.name, {
+          lua: REDIS_COMMANDS.ATOMIC_RESERVATION.lua,
+        });
+
+        return redis;
       },
       inject: [ConfigService],
     },

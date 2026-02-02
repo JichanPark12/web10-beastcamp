@@ -77,6 +77,7 @@ export class SeedingService implements OnApplicationBootstrap {
       const perfName = PERFORMANCE_NAMES[perfIndex % PERFORMANCE_NAMES.length];
       const platform = Math.random() < 0.5 ? 'nol-ticket' : 'yes24';
       const performance = new Performance(
+        undefined,
         perfName,
         new Date(currentTime),
         platform,

@@ -19,8 +19,7 @@ import { TicketingStateService } from './ticketing-state.service';
 @Injectable()
 export class QueueService {
   private readonly logger = new Logger(QueueService.name);
-
-  private lastTriggeredSessionId: string | null = null;
+  private hasTriggeredInjection = false;
 
   constructor(
     @Inject(PROVIDERS.REDIS_QUEUE) private readonly redis: Redis,
@@ -44,16 +43,21 @@ export class QueueService {
       }
     }
 
-    const sessionId = await this.validateTicketingOpen();
+    await this.validateTicketingOpen();
 
     const newUserId = this.generateUserId();
     await this.registerUser(newUserId);
 
-    void this.ensureVirtualInjectionStarted(sessionId);
+    const newUserPos = await this.getPosition(newUserId);
+
+    if (newUserPos === 1) {
+      this.hasTriggeredInjection = false;
+    }
+    void this.ensureVirtualInjectionStarted();
 
     return {
       userId: newUserId,
-      position: await this.getPosition(newUserId),
+      position: newUserPos,
     };
   }
 
@@ -104,8 +108,8 @@ export class QueueService {
       .exec();
   }
 
-  private async ensureVirtualInjectionStarted(sessionId: string) {
-    if (this.lastTriggeredSessionId === sessionId) {
+  private async ensureVirtualInjectionStarted() {
+    if (this.hasTriggeredInjection) {
       return;
     }
 
@@ -115,11 +119,11 @@ export class QueueService {
         return;
       }
 
-      const lockKey = `queue:started:${sessionId}`;
+      const lockKey = 'queue:started:ticketing';
       const acquired = await this.redis.set(lockKey, 'OK', 'EX', 86400, 'NX');
 
       if (acquired === 'OK') {
-        this.logger.log(`🚀 [세션 ${sessionId}] 가상 유저 주입 프로세스 시작`);
+        this.logger.log('🚀 가상 유저 주입 프로세스 시작');
         try {
           await this.virtualUserInjector.start();
         } catch (error) {
@@ -131,8 +135,7 @@ export class QueueService {
           return;
         }
       }
-
-      this.lastTriggeredSessionId = sessionId;
+      this.hasTriggeredInjection = true;
     } catch (error) {
       this.logger.error('가상 유저 시작 체크 중 오류:', (error as Error).stack);
     }
@@ -152,16 +155,10 @@ export class QueueService {
   private updateHeartbeat = async (userId: string) =>
     await this.heartbeatService.update(userId);
 
-  private async validateTicketingOpen(): Promise<string> {
-    const [isOpen, sessionId] = await Promise.all([
-      this.ticketingStateService.isOpen(),
-      this.ticketingStateService.currentSessionId(),
-    ]);
-
-    if (!isOpen || !sessionId) {
+  private async validateTicketingOpen(): Promise<void> {
+    const isOpen = await this.ticketingStateService.isOpen();
+    if (!isOpen) {
       throw new ForbiddenException('티켓팅이 진행 중이 아닙니다.');
     }
-
-    return sessionId;
   }
 }

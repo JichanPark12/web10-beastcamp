@@ -5,26 +5,36 @@ services:
     image: redis:7.2-alpine
     container_name: queue-redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
     networks:
       - queue-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
     # volumes:
     #   - ./queue-backend/redis_data:/data
   queue-backend:
-    build:
-      context: ..
-      dockerfile: queue-backend/Dockerfile
+    image: ${NCP_REGISTRY_URL}/beastcamp-queue-backend:${IMAGE_TAG:-latest}
+    container_name: queue-backend
     ports:
-      - "3003:3003"
+      - '3003:3003'
     environment:
       - NODE_ENV=production
     env_file:
       - .env
     restart: unless-stopped
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - queue-network
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
 
 networks:
   queue-network:
