@@ -25,12 +25,4 @@ export class ManualSyncDto {
   @IsISO8601()
   @Matches(/.*Z$/, { message: '날짜는 UTC 형식이어야 합니다 (Z로 끝나야 함)' })
   end_date?: string;
-
-  @ApiProperty({
-    description: '수동 동기화 시 ID 중복 방지를 위한 식별자',
-    example: 'test1',
-    required: false,
-  })
-  @IsOptional()
-  id_identifier?: string;
 }

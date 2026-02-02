@@ -11,6 +11,8 @@ import { Block } from '../venues/entities/block.entity';
 import { VENUES_DATA } from '../seeding/data/venues.data';
 import { BLOCK_GRADE_RULES } from '../seeding/data/performances.data';
 
+import { isMySqlDuplicateEntryError } from '../common/utils/error.utils';
+
 @Injectable()
 export class KopisScheduler {
   private readonly logger = new Logger(KopisScheduler.name);
@@ -28,11 +30,7 @@ export class KopisScheduler {
     this.logger.log('KOPIS data sync completed.');
   }
 
-  async syncPerformances(
-    startDate?: Date,
-    endDate?: Date,
-    idIdentifier?: string,
-  ) {
+  async syncPerformances(startDate?: Date, endDate?: Date) {
     const performanceRepository = this.dataSource.getRepository(Performance);
     const sessionRepository = this.dataSource.getRepository(Session);
     const venueRepository = this.dataSource.getRepository(Venue);
@@ -140,16 +138,7 @@ export class KopisScheduler {
 
         const performanceEntity = this.kopisService.toPerformanceEntity(detail);
         performanceEntity.ticketingDate = new Date(currentTime);
-        performanceEntity.ticketingDate = new Date(currentTime);
-
-        if (idIdentifier) {
-          // 수동 실행: ID 식별자와 타임스탬프(밀리초 + 루프 인덱스 보정) 사용
-          const uniqueTime = Date.now() + performanceCount;
-          performanceEntity.kopisId = `${detail.mt20id}_${idIdentifier}_${uniqueTime}`;
-        } else {
-          // 자동/기본 실행: 기존 방식 유지
-          performanceEntity.kopisId = `${detail.mt20id}_${performanceCount}`;
-        }
+        performanceEntity.kopisId = detail.mt20id; // 순수 KOPIS ID 사용
 
         try {
           const savedPerformance =
@@ -243,9 +232,15 @@ export class KopisScheduler {
             this.logger.warn('⚠️ No venues available to assign sessions.');
           }
         } catch (e) {
-          this.logger.error(
-            `Error saving performance ${performanceEntity.kopisId}: ${e}`,
-          );
+          if (isMySqlDuplicateEntryError(e)) {
+            this.logger.warn(
+              `Duplicate ticketing date for ${performanceEntity.kopisId} at ${performanceEntity.ticketingDate.toISOString()} - Skipped`,
+            );
+          } else {
+            this.logger.error(
+              `Error saving performance ${performanceEntity.kopisId}: ${e}`,
+            );
+          }
         }
 
         // 5분 추가

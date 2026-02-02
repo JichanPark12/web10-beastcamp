@@ -4,15 +4,25 @@ import { Session } from './session.entity';
 @Entity('performances')
 export class Performance {
   constructor(
+    kopisId?: string,
     performanceName?: string,
     ticketingDate?: Date,
     platform?: 'nol-ticket' | 'yes24' | 'melon-ticket' | 'interpark',
     posterUrl?: string,
+    platformTicketingUrl?: string,
+    castInfo?: string,
+    runtime?: string,
+    ageLimit?: string,
   ) {
+    if (kopisId) this.kopisId = kopisId;
     if (performanceName) this.performanceName = performanceName;
     if (ticketingDate) this.ticketingDate = ticketingDate;
     if (platform) this.platform = platform;
     if (posterUrl) this.posterUrl = posterUrl;
+    if (platformTicketingUrl) this.platformTicketingUrl = platformTicketingUrl;
+    if (castInfo) this.castInfo = castInfo;
+    if (runtime) this.runtime = runtime;
+    if (ageLimit) this.ageLimit = ageLimit;
   }
 
   @PrimaryGeneratedColumn()
@@ -23,7 +33,6 @@ export class Performance {
     length: 50,
     name: 'kopis_id',
     nullable: true,
-    unique: true,
     comment: 'KOPIS API 공연 ID (mt20id)',
   })
   kopisId: string | null;
@@ -40,6 +49,7 @@ export class Performance {
     type: 'datetime',
     name: 'ticketing_date',
     comment: '티켓팅 일시 (ISO 8601)',
+    unique: true,
   })
   ticketingDate: Date;
 

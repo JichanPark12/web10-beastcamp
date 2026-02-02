@@ -26,14 +26,8 @@ export class KopisController {
   async syncManual(@Body() body: ManualSyncDto) {
     const startDate = body.start_date ? new Date(body.start_date) : undefined;
     const endDate = body.end_date ? new Date(body.end_date) : undefined;
-    const idIdentifier = body.id_identifier;
-
     try {
-      await this.kopisScheduler.syncPerformances(
-        startDate,
-        endDate,
-        idIdentifier,
-      );
+      await this.kopisScheduler.syncPerformances(startDate, endDate);
       return { message: 'KOPIS data sync completed' };
     } catch (error) {
       if (error instanceof Error) {

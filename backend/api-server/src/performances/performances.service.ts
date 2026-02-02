@@ -33,8 +33,15 @@ export class PerformancesService {
     requestDto: CreatePerformanceRequestDto,
   ): Promise<{ id: number }> {
     const performance = new Performance(
+      requestDto.kopis_id,
       requestDto.performance_name,
       new Date(requestDto.ticketing_date),
+      requestDto.platform,
+      requestDto.poster_url,
+      requestDto.platform_ticketing_url,
+      requestDto.cast_info,
+      requestDto.runtime,
+      requestDto.age_limit,
     );
     const savedPerformance =
       await this.performancesRepository.save(performance);
