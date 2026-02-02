@@ -8,15 +8,18 @@ async function bootstrap() {
   app.use(cookieParser());
   app.setGlobalPrefix('api');
 
-  app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'https://web10-beastcamp.vercel.app',
-      'https://www.web10.site',
-    ],
-    credentials: true,
-  });
+  // 배포 시 CORS를 nginx에서만 처리. 중복 시 'true, true' 등으로 깨짐.
+  if (process.env.NODE_ENV !== 'production') {
+    app.enableCors({
+      origin: [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://web10-beastcamp.vercel.app',
+        'https://www.web10.site',
+      ],
+      credentials: true,
+    });
+  }
 
   const config = new DocumentBuilder()
     .setTitle('대기열 API 서버')
