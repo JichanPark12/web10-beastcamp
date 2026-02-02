@@ -11,7 +11,7 @@ import { Block } from '../venues/entities/block.entity';
 import { VENUES_DATA } from '../seeding/data/venues.data';
 import { BLOCK_GRADE_RULES } from '../seeding/data/performances.data';
 
-import { isMySqlDuplicateEntryError } from 'src/common/utils/error.utils';
+import { isMySqlDuplicateEntryError } from '../common/utils/error.utils';
 
 @Injectable()
 export class KopisScheduler {

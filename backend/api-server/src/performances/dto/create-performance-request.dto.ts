@@ -1,4 +1,5 @@
 import {
+  IsEnum,
   IsISO8601,
   IsNotEmpty,
   IsOptional,
@@ -42,7 +43,7 @@ export class CreatePerformanceRequestDto {
     enum: ['nol-ticket', 'yes24', 'melon-ticket', 'interpark'],
     default: 'nol-ticket',
   })
-  @IsString()
+  @IsEnum(['nol-ticket', 'yes24', 'melon-ticket', 'interpark'])
   @IsOptional()
   platform?: 'nol-ticket' | 'yes24' | 'melon-ticket' | 'interpark';
 
@@ -51,7 +52,6 @@ export class CreatePerformanceRequestDto {
     required: false,
     example: 'https://example.com/poster.jpg',
   })
-  @IsString()
   @IsUrl()
   @IsOptional()
   poster_url?: string;
@@ -61,7 +61,6 @@ export class CreatePerformanceRequestDto {
     required: false,
     example: 'https://ticket.yes24.com/Perf/12345',
   })
-  @IsString()
   @IsUrl()
   @IsOptional()
   platform_ticketing_url?: string;
