@@ -23,8 +23,8 @@
 </div>
 
 <br/><br/>
-<img src="https://github.com/user-attachments/assets/9a74b181-f5ee-445a-8433-8942a74016ea" />
 
+![전체과정](https://github.com/user-attachments/assets/f508ce06-6bac-4035-8b77-7e7f913651fe)
 
 ## 팀원 소개
 <table>
