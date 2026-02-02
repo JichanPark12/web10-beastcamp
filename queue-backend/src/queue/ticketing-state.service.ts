@@ -16,7 +16,6 @@ import Redis from 'ioredis';
 export class TicketingStateService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TicketingStateService.name);
 
-  private cachedSessionId: string | null | undefined = undefined;
   private cachedIsOpen: boolean | undefined = undefined;
 
   private lastSyncAt = 0;
@@ -63,13 +62,8 @@ export class TicketingStateService implements OnModuleInit, OnModuleDestroy {
 
     this.refreshPromise = (async () => {
       try {
-        const [isOpen, sessionId] = await this.ticketRedis.mget(
-          REDIS_KEYS.TICKETING_OPEN,
-          REDIS_KEYS.CURRENT_TICKETING_SESSION,
-        );
-
+        const isOpen = await this.ticketRedis.get(REDIS_KEYS.TICKETING_OPEN);
         this.cachedIsOpen = isOpen === 'true';
-        this.cachedSessionId = sessionId;
         this.lastSyncAt = Date.now();
       } catch (error) {
         this.logger.error('동기화 실패', (error as Error).stack);
@@ -88,13 +82,5 @@ export class TicketingStateService implements OnModuleInit, OnModuleDestroy {
   async isOpen(): Promise<boolean> {
     await this.refreshIfNeeded();
     return this.cachedIsOpen ?? false;
-  }
-
-  /**
-   * 현재 진행 중인 세션 ID 반환
-   */
-  async currentSessionId(): Promise<string | null> {
-    await this.refreshIfNeeded();
-    return this.cachedSessionId ?? null;
   }
 }

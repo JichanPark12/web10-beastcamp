@@ -3,7 +3,6 @@ import {
   Logger,
   BadRequestException,
   ForbiddenException,
-  ConflictException,
 } from '@nestjs/common';
 import { REDIS_CHANNELS, REDIS_KEYS } from '@beastcamp/shared-constants';
 import { RedisService } from '../redis/redis.service';
@@ -14,7 +13,6 @@ import { CreateReservationResponseDto } from './dto/create-reservation-response.
 @Injectable()
 export class ReservationService {
   private readonly logger = new Logger(ReservationService.name);
-  private readonly lockTtlMs = 5000;
 
   constructor(private readonly redisService: RedisService) {}
 
@@ -36,53 +34,22 @@ export class ReservationService {
     userId: string,
   ): Promise<CreateReservationResponseDto> {
     const { session_id: sessionId, seats } = dto;
-    await this.acquireUserLock(userId);
-    try {
-      await this.validateTicketingOpen();
+    await this.validateTicketingOpen();
 
-      const reservationMap = await this.prepareReservationMap(
-        sessionId,
-        seats,
-        userId,
-      );
-      const rank = await this.executeAtomicReservation(
-        reservationMap,
-        sessionId,
-        userId,
-      );
-      await this.publishReservationDoneEvent(userId);
+    const seatKeys = await this.prepareReservationKeys(sessionId, seats);
+    const rank = await this.executeAtomicReservation(
+      seatKeys,
+      sessionId,
+      userId,
+    );
+    await this.publishReservationDoneEvent(userId);
 
-      return { rank, seats };
-    } finally {
-      await this.releaseUserLock(userId);
-    }
+    return { rank, seats };
   }
 
   private async validateTicketingOpen() {
     const isOpen = await this.redisService.get(REDIS_KEYS.TICKETING_OPEN);
     if (isOpen !== 'true') throw new ForbiddenException('Ticketing not open');
-  }
-
-  private async acquireUserLock(userId: string): Promise<void> {
-    const lockKey = `reservation:lock:user:${userId}`;
-    const acquired = await this.redisService.setNxWithTtl(
-      lockKey,
-      '1',
-      this.lockTtlMs,
-    );
-    if (!acquired) {
-      throw new ConflictException('티켓팅 요청이 이미 진행 중입니다.');
-    }
-  }
-
-  private async releaseUserLock(userId: string): Promise<void> {
-    const lockKey = `reservation:lock:user:${userId}`;
-    try {
-      await this.redisService.del(lockKey);
-    } catch (error: unknown) {
-      const err = error instanceof Error ? error : new Error('Unknown error');
-      this.logger.error('유저 락 해제 실패:', err.stack ?? err.message);
-    }
   }
 
   private async publishReservationDoneEvent(userId: string): Promise<void> {
@@ -98,16 +65,17 @@ export class ReservationService {
     }
   }
 
-  private async prepareReservationMap(
+  private async prepareReservationKeys(
     sessionId: number,
     seats: { block_id: number; row: number; col: number }[],
-    userId: string,
-  ): Promise<Record<string, string>> {
-    const reservationMap: Record<string, string> = {};
+  ): Promise<string[]> {
+    const seatKeys: string[] = [];
     const blockInfoMap = new Map<
       number,
       { rowSize: number; colSize: number }
     >();
+
+    const uniqueKeys = new Set<string>();
 
     for (const seat of seats) {
       const { block_id: blockId, row, col } = seat;
@@ -127,27 +95,32 @@ export class ReservationService {
       }
       const key = `reservation:session:${sessionId}:block:${blockId}:row:${row}:col:${col}`;
 
-      if (reservationMap[key]) {
+      if (uniqueKeys.has(key)) {
         throw new BadRequestException('Duplicate seats in request');
       }
-      reservationMap[key] = userId;
+      uniqueKeys.add(key);
+      seatKeys.push(key);
     }
-    return reservationMap;
+    return seatKeys;
   }
 
   private async executeAtomicReservation(
-    reservationMap: Record<string, string>,
+    seatKeys: string[],
     sessionId: number,
     userId: string,
   ): Promise<number> {
-    const success = await this.redisService.msetnx(reservationMap);
+    const rankKey = `rank:session:${sessionId}`;
+    const [success, rank] = await this.redisService.atomicReservation(
+      seatKeys,
+      userId,
+      rankKey,
+    );
 
-    if (!success)
+    if (success !== 1)
       throw new BadRequestException('Some seats are already reserved');
 
-    const rank = await this.redisService.incr(`rank:session:${sessionId}`);
     this.logger.log(
-      `Reserved: ${userId} -> ${Object.keys(reservationMap).length} seats (Rank: ${rank})`,
+      `Reserved: ${userId} -> ${seatKeys.length} seats (Rank: ${rank})`,
     );
     return rank;
   }

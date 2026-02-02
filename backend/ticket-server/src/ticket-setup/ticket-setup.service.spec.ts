@@ -104,8 +104,8 @@ describe('TicketSetupService', () => {
 
       const expectedKey = 'block:100';
       const expectedData = JSON.stringify({ rowSize: 10, colSize: 10 });
-      expect(jest.mocked(redisService.set)).toHaveBeenCalledWith(
-        REDIS_KEYS.CURRENT_TICKETING_SESSION,
+      expect(jest.mocked(redisService.sadd)).toHaveBeenCalledWith(
+        REDIS_KEYS.CURRENT_TICKETING_SESSIONS,
         '1',
       );
       expect(jest.mocked(redisService.set)).toHaveBeenCalledWith(
@@ -152,7 +152,7 @@ describe('TicketSetupService', () => {
         'false',
       );
       expect(jest.mocked(redisService.del)).toHaveBeenCalledWith(
-        REDIS_KEYS.CURRENT_TICKETING_SESSION,
+        REDIS_KEYS.CURRENT_TICKETING_SESSIONS,
       );
       expect(jest.mocked(redisService.publishToTicket)).toHaveBeenCalledWith(
         REDIS_CHANNELS.TICKETING_STATE_CHANGED,

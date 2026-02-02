@@ -31,6 +31,34 @@ export class PerformanceDto {
   })
   platform: 'nol-ticket' | 'yes24' | 'melon-ticket' | 'interpark';
 
+  @ApiProperty({
+    description: '실제 예매처 티켓팅 페이지 URL',
+    example: 'https://tickets.interpark.com/goods/22000000',
+    nullable: true,
+  })
+  platform_ticketing_url: string | null;
+
+  @ApiProperty({
+    description: '출연진 정보',
+    example: '홍길동, 김철수',
+    nullable: true,
+  })
+  cast_info: string | null;
+
+  @ApiProperty({
+    description: '공연 런타임',
+    example: '120분',
+    nullable: true,
+  })
+  runtime: string | null;
+
+  @ApiProperty({
+    description: '관람 연령 제한',
+    example: '만 7세 이상',
+    nullable: true,
+  })
+  age_limit: string | null;
+
   static fromEntity(performance: Performance): PerformanceDto {
     const dto = new PerformanceDto();
     dto.performance_id = performance.id;
@@ -38,6 +66,10 @@ export class PerformanceDto {
     dto.poster_url = performance.posterUrl;
     dto.ticketing_date = performance.ticketingDate.toISOString();
     dto.platform = performance.platform;
+    dto.platform_ticketing_url = performance.platformTicketingUrl;
+    dto.cast_info = performance.castInfo;
+    dto.runtime = performance.runtime;
+    dto.age_limit = performance.ageLimit;
     return dto;
   }
 }

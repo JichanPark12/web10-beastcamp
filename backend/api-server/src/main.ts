@@ -6,16 +6,18 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // CORS 설정
-  app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'https://www.web10.site',
-      'https://web10-beastcamp.vercel.app',
-    ], // 프론트엔드 URL
-    credentials: true,
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    // CORS 설정
+    app.enableCors({
+      origin: [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://www.web10.site',
+        'https://web10-beastcamp.vercel.app',
+      ], // 프론트엔드 URL
+      credentials: true,
+    });
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({

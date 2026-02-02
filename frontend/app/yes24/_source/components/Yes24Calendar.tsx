@@ -161,11 +161,6 @@ export default function Yes24Calendar({
           const dayOfWeek = index % 7;
           const hasSession = date !== null && sessionDates.has(date);
           const isSelected = isSelectedDate(date);
-          const isToday =
-            date !== null &&
-            new Date().getDate() === date &&
-            new Date().getMonth() === currentMonth.getMonth() &&
-            new Date().getFullYear() === currentMonth.getFullYear();
 
           return (
             <button
@@ -184,7 +179,6 @@ export default function Yes24Calendar({
                 ${!isSelected && hasSession && dayOfWeek === 0 ? 'text-red-500 font-medium' : ''}
                 ${!isSelected && hasSession && dayOfWeek === 6 ? 'text-blue-500' : ''}
                 ${!isSelected && hasSession && dayOfWeek !== 0 && dayOfWeek !== 6 ? 'text-gray-900' : ''}
-                ${isToday && !isSelected ? 'ring-2 ring-orange-500' : ''}
               `}
             >
               {date}

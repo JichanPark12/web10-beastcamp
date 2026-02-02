@@ -20,12 +20,11 @@ on:
         default: "dev"
 
 jobs:
-  # 1단계: 어떤 서비스를 빌드/배포할지 결정하는 작업
+  # 1단계: 배포 대상 결정 (JSON 매트릭스 생성)
   resolve-targets:
     name: 배포 대상 결정
     runs-on: ubuntu-latest
     outputs:
-      # 빌드와 배포에서 사용할 리스트를 JSON 형태로 내보냄
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       has_targets: ${{ steps.set-matrix.outputs.has_targets }}
     steps:
@@ -33,7 +32,6 @@ jobs:
         shell: bash
         run: |
           SERVICES="${{ github.event.inputs.services }}"
-          # 입력값에 따라 매트릭스 구성 (JSON 배열)
           if [ "$SERVICES" = "all" ]; then
             JSON='["api-server", "ticket-server", "queue-backend"]'
           elif [ "$SERVICES" = "backend" ]; then
@@ -41,18 +39,17 @@ jobs:
           else
             JSON="[\"$SERVICES\"]"
           fi
-          
           echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
           echo "has_targets=true" >> "$GITHUB_OUTPUT"
 
-  # 2단계: 이미지 빌드 및 푸시 (동시 병렬 처리)
+  # 2단계: 이미지 빌드 및 푸시 (GHA 캐시 활용)
   build-and-push:
     name: Build & Push - ${{ matrix.service }}
     needs: resolve-targets
     if: needs.resolve-targets.outputs.has_targets == 'true'
     runs-on: ubuntu-latest
     strategy:
-      # 결정된 서비스 개수만큼 머신을 동시에 띄워서 빌드
+      fail-fast: false
       matrix:
         service: ${{ fromJson(needs.resolve-targets.outputs.matrix) }}
     steps:
@@ -61,7 +58,7 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch }}
 
-      - name: Docker Buildx 설치 (캐싱 활성화용)
+      - name: Docker Buildx 설치
         uses: docker/setup-buildx-action@v3
 
       - name: NCP 레지스트리 로그인
@@ -75,69 +72,73 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          # Dockerfile 경로 동적 설정
           file: ${{ matrix.service == 'queue-backend' && 'queue-backend/Dockerfile' || format('backend/{0}/Dockerfile', matrix.service) }}
           push: true
-          # 이미지 태그를 커밋 해시로 고정 (버전 관리 용이)
           tags: ${{ secrets.NCP_REGISTRY_URL }}/beastcamp-${{ matrix.service }}:${{ github.sha }}
-          # GHA 전용 캐시 사용 (pnpm fetch 레이어 등을 영구 보존)
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # 3단계: 각 서버로 배포 (병렬 실행)
+  # 3단계: 각 서버로 배포 (인증 정보 동적 매핑)
   deploy:
     name: Deploy - ${{ matrix.service }}
     needs: [resolve-targets, build-and-push]
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - service: api-server
             host_secret: BACKEND_SERVER_HOST
+            user_secret: BACKEND_SERVER_USER
+            pass_secret: BACKEND_SERVER_PASSWORD
           - service: ticket-server
             host_secret: BACKEND_SERVER_HOST
+            user_secret: BACKEND_SERVER_USER
+            pass_secret: BACKEND_SERVER_PASSWORD
           - service: queue-backend
             host_secret: QUEUE_SERVER_HOST
+            user_secret: QUEUE_SERVER_USER
+            pass_secret: QUEUE_SERVER_PASSWORD
     steps:
-      # Job if에서 matrix를 못 쓰기 때문에 Step if에서 필터링
-      - name: 배포 타겟 확인 및 실행
+      - name: 배포 실행
         if: contains(fromJson(needs.resolve-targets.outputs.matrix), matrix.service)
         uses: appleboy/ssh-action@v1.0.3
         with:
+          # Matrix에 정의된 키 이름을 사용하여 서버별로 다른 비밀번호/호스트 주입
           host: ${{ secrets[matrix.host_secret] }}
-          username: ${{ secrets.BACKEND_SERVER_USER }}
-          password: ${{ secrets.BACKEND_SERVER_PASSWORD }}
-          # 서버로 넘길 환경변수들
+          username: ${{ secrets[matrix.user_secret] }}
+          password: ${{ secrets[matrix.pass_secret] }}
           envs: NCP_REGISTRY_URL,NCP_REGISTRY_USERNAME,NCP_REGISTRY_PASSWORD,IMAGE_TAG,SERVICE_NAME,TARGET_BRANCH
           script: |
             cd /app/web10-beastcamp
-            
-            # 1. 최신 코드로 동기화 (설정파일 업데이트용)
+
+            # 1. 최신 코드 동기화
             git fetch origin $TARGET_BRANCH
             git reset --hard origin/$TARGET_BRANCH
-            
+
             # 2. 서비스 위치로 이동
             [ "$SERVICE_NAME" == "queue-backend" ] && cd queue-backend || cd backend
-            
+
             # 3. NCP 레지스트리 로그인
             echo "$NCP_REGISTRY_PASSWORD" | docker login "$NCP_REGISTRY_URL" -u "$NCP_REGISTRY_USERNAME" --password-stdin
-            
-            # 4. 배포 (Override 파일 생성 없이 환경변수로 이미지 주입)
-            # 서버의 docker-compose.yml에 image: ...:${IMAGE_TAG} 설정이 되어있어야 함
-            export IMAGE_TAG=$IMAGE_TAG
+
+            # 4. 배포 (Clean Export 문법 반영 및 --wait 적용)
+            export IMAGE_TAG NCP_REGISTRY_URL SERVICE_NAME
+
+            echo "🚀 $SERVICE_NAME 배포 중 (Healthcheck 대기)..."
             docker compose pull $SERVICE_NAME
-            docker compose up -d --no-build $SERVICE_NAME
-            
-            # 5. 디스크 청소
+            docker compose up -d --wait --no-build $SERVICE_NAME
+
+            # 5. 디스크 청소 (24시간 이내 이미지는 보존하여 롤백 대비)
             docker image prune -af --filter "until=24h"
             echo "✅ $SERVICE_NAME 배포 완료"
         env:
-          NCP_REGISTRY_URL: ${{ secrets.NCP_REGISTRY_URL }}
-          NCP_REGISTRY_USERNAME: ${{ secrets.NCP_REGISTRY_USERNAME }}
-          NCP_REGISTRY_PASSWORD: ${{ secrets.NCP_REGISTRY_PASSWORD }}
           IMAGE_TAG: ${{ github.sha }}
           SERVICE_NAME: ${{ matrix.service }}
           TARGET_BRANCH: ${{ github.event.inputs.branch }}
+          NCP_REGISTRY_URL: ${{ secrets.NCP_REGISTRY_URL }}
+          NCP_REGISTRY_USERNAME: ${{ secrets.NCP_REGISTRY_USERNAME }}
+          NCP_REGISTRY_PASSWORD: ${{ secrets.NCP_REGISTRY_PASSWORD }}
 
   # 4단계: 결과 요약
   deployment-summary:
@@ -148,5 +149,6 @@ jobs:
     steps:
       - name: 결과 출력
         run: |
-          echo "=== 배포가 완료되었습니다 ==="
+          echo "=== 배포 요약 ==="
           echo "대상: ${{ needs.resolve-targets.outputs.matrix }}"
+          echo "결과: 모든 작업이 완료되었습니다."

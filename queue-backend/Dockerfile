@@ -2,7 +2,7 @@
 FROM node:24.12.0-alpine AS base
 
 # pnpm 설치 및 작업 디렉토리 설정
-RUN npm i -g pnpm
+RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
 WORKDIR /usr/src/app
     
 # 1. 오직 락파일만 복사

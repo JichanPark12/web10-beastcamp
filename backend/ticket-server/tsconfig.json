@@ -27,5 +27,7 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "include": ["src/**/*", "test/**/*", "webpack.config.js"],
+  "exclude": ["node_modules", "dist"]
 }
