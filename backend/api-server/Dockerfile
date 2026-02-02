@@ -29,6 +29,9 @@ COPY pnpm-workspace.yaml package.json ./
 
 # Build application
 WORKDIR /app/backend/api-server
+RUN pnpm --filter @beastcamp/backend-config build && \
+    pnpm --filter @beastcamp/shared-types build && \
+    pnpm --filter @beastcamp/shared-constants build
 RUN pnpm build
 
 # Stage 3: Production
