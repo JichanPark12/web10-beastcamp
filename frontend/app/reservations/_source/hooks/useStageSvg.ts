@@ -12,7 +12,7 @@ export const useStageSvg = (blockMapUrl: string | null | undefined) => {
         const response = await fetch(
           process.env.NEXT_PUBLIC_API_MODE === "mock"
             ? blockMapUrl
-            : "https://api.web10.site" + blockMapUrl,
+            : "https://api.neticket.site" + blockMapUrl,
         );
         if (!response.ok) {
           throw new Error(`Failed to load SVG: ${response.statusText}`);
