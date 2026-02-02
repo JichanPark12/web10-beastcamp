@@ -35,17 +35,19 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 
-  // CORS 설정
-  app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'https://web10-beastcamp.vercel.app',
-      'https://www.web10.site',
-    ], // 프론트엔드 URL
-    credentials: true,
-    exposedHeaders: ['X-Captcha-Id'], // 커스텀 헤더 노출
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    // CORS 설정
+    app.enableCors({
+      origin: [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://web10-beastcamp.vercel.app',
+        'https://www.web10.site',
+      ], // 프론트엔드 URL
+      credentials: true,
+      exposedHeaders: ['X-Captcha-Id'], // 커스텀 헤더 노출
+    });
+  }
 
   await app.listen(process.env.PORT ?? 3001);
 }
