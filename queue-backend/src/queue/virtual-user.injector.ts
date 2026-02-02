@@ -3,6 +3,7 @@ import { PROVIDERS, REDIS_KEYS } from '@beastcamp/shared-constants';
 import { randomBytes } from 'crypto';
 import Redis from 'ioredis';
 import { QueueConfigService } from './queue-config.service';
+import { TicketingStateService } from './ticketing-state.service';
 
 @Injectable()
 export class VirtualUserInjector {
@@ -14,6 +15,7 @@ export class VirtualUserInjector {
   constructor(
     @Inject(PROVIDERS.REDIS_QUEUE) private readonly redis: Redis,
     private readonly configService: QueueConfigService,
+    private readonly ticketingStateService: TicketingStateService,
   ) {}
 
   async start(): Promise<void> {
@@ -59,6 +61,12 @@ export class VirtualUserInjector {
 
   private async runTick(): Promise<void> {
     if (!this.isRunning) return;
+
+    const isOpen = await this.ticketingStateService.isOpen();
+    if (!isOpen) {
+      this.logger.log('⚠️ 티켓팅이 종료되어 가상 유저 주입을 중단합니다.');
+      return this.stop();
+    }
 
     try {
       await this.configService.sync();
