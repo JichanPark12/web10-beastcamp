@@ -25,7 +25,7 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
-    "@beastcamp/backend-config": "workspace:*",
+    "@beastcamp/shared-nestjs": "workspace:*",
     "@beastcamp/shared-constants": "workspace:*",
     "@beastcamp/shared-types": "workspace:*",
     "@nestjs/common": "^11.0.1",
@@ -91,7 +91,7 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^@beastcamp/shared-constants$": "<rootDir>/../../packages/shared-constants/src",
-      "^@beastcamp/backend-config$": "<rootDir>/../../packages/backend-config/src"
+      "^@beastcamp/shared-nestjs$": "<rootDir>/../../packages/shared-nestjs/src"
     }
   }
 }

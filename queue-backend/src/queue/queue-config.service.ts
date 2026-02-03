@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit, Inject, Logger } from '@nestjs/common';
 import { ChainableCommander, Redis } from 'ioredis';
-import { DynamicConfigManager } from '@beastcamp/backend-config';
+import { DynamicConfigManager } from '@beastcamp/shared-nestjs';
 import { PROVIDERS, REDIS_KEYS } from '@beastcamp/shared-constants';
 
 @Injectable()

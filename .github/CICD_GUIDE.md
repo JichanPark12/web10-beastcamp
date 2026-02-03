@@ -25,7 +25,7 @@ web10-beastcamp/
 │   └── Dockerfile
 ├── packages/
 │   ├── shared-types/           # 공통 타입 정의
-│   ├── backend-config/         # 백엔드 공통 설정
+│   ├── shared-nestjs/          # 백엔드 공통 설정
 │   └── shared-constants/       # 공통 상수
 └── .github/
     ├── workflows/
@@ -118,7 +118,7 @@ web10-beastcamp/
   - → api-server 재배포
   - → ticket-server 재배포
 
-- `packages/backend-config/**` 변경
+- `packages/shared-nestjs/**` 변경
 
   - → queue-backend 재배포
 

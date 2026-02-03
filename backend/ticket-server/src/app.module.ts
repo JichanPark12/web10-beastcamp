@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { jwtConfig, redisConfig } from '@beastcamp/backend-config';
+import { jwtConfig, redisConfig } from '@beastcamp/shared-nestjs';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReservationModule } from './reservation/reservation.module';
 import { TicketSchedulerModule } from './ticket-scheduler/ticket-scheduler.module';

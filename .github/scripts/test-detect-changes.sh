@@ -62,7 +62,7 @@ echo ""
 echo "=== 공통 패키지 의존성 체크 ==="
 # 공통 패키지 변경 시 의존 서비스 추가
 check_package_dependencies "shared-types" "api-server" "ticket-server"
-check_package_dependencies "backend-config" "queue-backend"
+check_package_dependencies "shared-nestjs" "queue-backend"
 check_package_dependencies "shared-constants" "queue-backend"
 
 echo ""

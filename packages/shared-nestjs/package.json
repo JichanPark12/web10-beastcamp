@@ -1,5 +1,5 @@
 {
-  "name": "@beastcamp/backend-config",
+  "name": "@beastcamp/shared-nestjs",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,6 +11,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.1.11",
     "@nestjs/config": "^4.0.2",
     "ioredis": "^5.9.2",
