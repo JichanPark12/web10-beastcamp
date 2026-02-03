@@ -36,6 +36,24 @@ services:
         max-size: '10m'
         max-file: '3'
 
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: promtail-queue
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yaml:/etc/promtail/config.yaml
+    command: -config.file=/etc/promtail/config.yaml -config.expand-env=true
+    environment:
+      - LOKI_URL=${LOKI_URL:-http://host.docker.internal:3100/loki/api/v1/push}
+    networks:
+      - queue-network
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
 networks:
   queue-network:
     driver: bridge

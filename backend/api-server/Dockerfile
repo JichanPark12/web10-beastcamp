@@ -10,8 +10,12 @@ COPY packages ./packages
 # Copy api-server package.json
 COPY backend/api-server/package.json ./backend/api-server/
 
-# Install dependencies (including workspace dependencies)
-RUN pnpm install --frozen-lockfile --filter @beastcamp/api-server...
+# api-server, backend-config, shared-types, shared-constants 의존성 설치
+RUN pnpm install --frozen-lockfile \
+    --filter @beastcamp/api-server... \
+    --filter @beastcamp/backend-config... \
+    --filter @beastcamp/shared-types... \
+    --filter @beastcamp/shared-constants...
 
 # Stage 2: Builder
 FROM node:22-alpine AS builder
@@ -29,6 +33,9 @@ COPY pnpm-workspace.yaml package.json ./
 
 # Build application
 WORKDIR /app/backend/api-server
+RUN pnpm --filter @beastcamp/backend-config build && \
+    pnpm --filter @beastcamp/shared-types build && \
+    pnpm --filter @beastcamp/shared-constants build
 RUN pnpm build
 
 # Stage 3: Production
