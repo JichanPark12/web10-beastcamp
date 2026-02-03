@@ -8,12 +8,9 @@ export interface NetworkStatusType {
   message: string;
 }
 
-// 각 티케팅 사이트들 주소
-const PING_TARGETS = [
-  { name: "Interpark", url: "https://ticket.interpark.com" },
-  { name: "Yes24", url: "https://ticket.yes24.com" },
-  { name: "Melon", url: "https://ticket.melon.com" },
-];
+import { TICKETING_SITES } from "@/constants/ticketingSites";
+
+const PING_TARGETS = TICKETING_SITES;
 
 // mbps 속도 테스트를 위한 public cdn 주소 (jsdelivr)
 const SPEED_TEST_FILE =

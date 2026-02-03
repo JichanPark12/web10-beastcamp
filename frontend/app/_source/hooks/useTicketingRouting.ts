@@ -1,6 +1,8 @@
 import { useRouter } from "next/navigation";
 import { Performance } from "@/types/performance";
 
+import { TICKETING_SITES } from "@/constants/ticketingSites";
+
 export function useTicketingRouting() {
   const router = useRouter();
 
@@ -10,15 +12,8 @@ export function useTicketingRouting() {
       return;
     }
 
-    const platformRoutes = {
-      "nol-ticket": "/nol-ticket",
-      yes24: "/yes24",
-      "melon-ticket": "/yes24",
-    };
-
-    const route =
-      platformRoutes[performance.platform as keyof typeof platformRoutes];
-    router.push(route || "/nol-ticket");
+    const site = TICKETING_SITES.find((s) => s.id === performance.platform);
+    router.push(site?.path || "/nol-ticket");
   };
 
   return { handleBooking };
