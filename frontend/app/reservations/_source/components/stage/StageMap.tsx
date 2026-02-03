@@ -26,7 +26,7 @@ export default function StageMap() {
     <div className="relative h-full w-full bg-[#EDEFF3] rounded-lg overflow-hidden flex items-center justify-center">
       <div className="relative h-full w-full flex items-center justify-center">
         {isShowArea ? (
-          <ErrorBoundary fallbackRender={AreaSeatFallback}>
+          <ErrorBoundary FallbackComponent={AreaSeatFallback}>
             <Suspense>
               <AreaSeats />
             </Suspense>

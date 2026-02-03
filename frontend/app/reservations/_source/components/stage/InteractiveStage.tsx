@@ -13,7 +13,7 @@ const StageMap = dynamic(() => import("./StageMap"), {
 export default function InteractiveStage() {
   return (
     <>
-      <ErrorBoundary fallbackRender={StageMapFallback}>
+      <ErrorBoundary FallbackComponent={StageMapFallback}>
         <Suspense fallback={<div>좌석 데이터를 불러오는 중입니다.</div>}>
           <StageMap />
         </Suspense>
