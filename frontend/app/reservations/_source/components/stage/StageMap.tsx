@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 import { ErrorBoundary } from "react-error-boundary";
 import VenueMap from "./VenueMap";
 import { useStageSvg } from "../../hooks/useStageSvg";
+import AreaSeatFallback from "./seats/AreaSeatFallback";
 
 const AreaSeats = dynamic(() => import("./seats/AreaSeats"), {
   ssr: false,
@@ -25,11 +26,7 @@ export default function StageMap() {
     <div className="relative h-full w-full bg-[#EDEFF3] rounded-lg overflow-hidden flex items-center justify-center">
       <div className="relative h-full w-full flex items-center justify-center">
         {isShowArea ? (
-          <ErrorBoundary
-            fallback={
-              <div>구역 좌석 정보를 불러오는 중 오류가 발생했습니다.</div>
-            }
-          >
+          <ErrorBoundary fallbackRender={AreaSeatFallback}>
             <Suspense>
               <AreaSeats />
             </Suspense>

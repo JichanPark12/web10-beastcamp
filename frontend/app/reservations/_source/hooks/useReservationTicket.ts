@@ -45,7 +45,7 @@ export function useReservationTicket() {
     sessionId: number,
   ) => {
     if (error instanceof ApiError) {
-      if (error.status === 403) {
+      if (error.status === 403 || error.status === 401) {
         alert("마감된 티케팅 입니다.메인으로 이동합니다.");
         router.replace("/");
         return;
