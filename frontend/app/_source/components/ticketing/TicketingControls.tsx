@@ -18,7 +18,7 @@ interface TicketingControlsProps {
 export default function TicketingControls({
   performance,
 }: TicketingControlsProps) {
-  const { handleBooking } = useTicketingRouting();
+  const { navigateToPractice } = useTicketingRouting();
   const { timeLeft, status } = useCountdown(performance?.ticketing_date);
 
   return (
@@ -45,7 +45,7 @@ export default function TicketingControls({
       <CountdownTimer timeLeft={timeLeft} status={status} />
 
       <button
-        onClick={() => handleBooking(performance)}
+        onClick={() => navigateToPractice(performance)}
         className={`w-full py-4 rounded-xl transition-all bg-white text-purple-600 hover:bg-gray-100 shadow-lg hover:shadow-xl cursor-pointer`}
       >
         연습하러 가기

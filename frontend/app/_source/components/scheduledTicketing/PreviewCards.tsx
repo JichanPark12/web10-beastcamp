@@ -3,14 +3,18 @@
 import { useScheduledTicketingQuery } from "../../queries/ticketingSchdule";
 import { TicketingPreviewCard } from "./TicketingPreviewCard";
 
+import { useTicketingRouting } from "../../hooks/useTicketingRouting";
+
 export default function PreviewCards() {
   const { data: scheduledTicketings } = useScheduledTicketingQuery(null, 5);
+  const { navigateToExternal } = useTicketingRouting();
 
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
       {scheduledTicketings.map((ticketing) => (
         <div
           key={ticketing.performance_id}
+          onClick={() => navigateToExternal(ticketing)}
           className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all border border-gray-100 hover:border-purple-200 group cursor-pointer"
         >
           <TicketingPreviewCard
