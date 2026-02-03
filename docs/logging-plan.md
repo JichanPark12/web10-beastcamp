@@ -192,25 +192,20 @@
 
 
 
-## 4. 환경 변수 설정 가이드 (.env)
+## 4. 환경 변수 설정 가이드 (Environment Variables)
 
+보안 및 관리 편의성을 위해 `LOKI_URL`은 **GitHub Repository Secrets**로 관리하며, 배포 파이프라인(CD) 실행 시 자동으로 주입된다.
 
+### 4.1. GitHub Secrets 설정
 
-운영 서버 배포 시 각 서버의 `.env` 파일에 아래 내용을 반드시 추가해야 한다.
+*   **위치:** GitHub Repository > Settings > Secrets and variables > Actions
+*   **Key:** `LOKI_URL`
+*   **Value:** `http://[MONITORING_INSTANCE_IP]:3100/loki/api/v1/push`
+    *   *주의: 반드시 `http://` 프로토콜을 포함해야 한다.*
 
+### 4.2. 배포 시 적용 원리
 
-
-### Queue-instance & Backend-instance (애플리케이션 서버)
-
-```bash
-
-# Monitoring-instance(모니터링 서버)의 IP 주소를 입력
-
-# 포트는 3100 (Loki 수집 포트)
-
-LOKI_URL=http://[MONITORING_INSTANCE_IP]:3100/loki/api/v1/push
-
-```
+*   GitHub Actions Workflow(`cd-manual-o.yml` 등)가 실행될 때 Secrets에서 값을 읽어와 각 서버의 `.env` 파일에 추가하거나 컨테이너 환경 변수로 주입한다.
 
 
 
