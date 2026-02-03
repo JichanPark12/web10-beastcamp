@@ -4,6 +4,7 @@ import { Suspense, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTimeLogStore } from "@/hooks/timeLogStore";
+import { useRouter } from "next/navigation";
 
 // 동적 import로 클라이언트 전용 로드 (SSR 비활성화)
 const CaptchaVerification = dynamic(
@@ -63,8 +64,17 @@ function CaptchaErrorFallback({
   error: unknown;
   resetErrorBoundary: () => void;
 }) {
+  const router = useRouter();
   const errorMessage =
     error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
+  useEffect(() => {
+    if (error instanceof Error) {
+      if (error.message.includes("401")) {
+        alert("인증이 만료되었습니다. 메인으로 이동합니다.");
+        router.replace("/");
+      }
+    }
+  }, [error, router]);
   return (
     <div className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl">
       <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
