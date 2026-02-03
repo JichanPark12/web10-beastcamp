@@ -2,6 +2,8 @@
 
 import { Grade } from "@/types/venue";
 
+// 우리 서버 데이터 타입
+
 export interface Seat {
   id: string;
   seatGrade: Grade;
@@ -11,57 +13,58 @@ export interface Seat {
   isReserved?: boolean;
 }
 
-// nol 티켓 타입 : 더이상 안씀
-// export interface Seat {
-//   seatInfoId: string;
-//   seatGrade: Grade;
-//   seatGradeName: string;
-//   floor: string;
-//   rowNo: string;
-//   seatNo: string;
-//   salesPrice: number;
-//   posLeft: number;
-//   posTop: number;
-//   isExposable: boolean;
-// }
+// nol mock 타입
 
-// export type Grade = "1" | "2" | "3" | "4" | "5";
+export interface NolSeat {
+  seatInfoId: string;
+  seatGrade: NolGrade;
+  seatGradeName: string;
+  floor: string;
+  rowNo: string;
+  seatNo: string;
+  salesPrice: number;
+  posLeft: number;
+  posTop: number;
+  isExposable: boolean;
+}
 
-// export interface SeatBlock {
-//   blockKey: string;
-//   seats: Seat[];
-// }
+export type NolGrade = "1" | "2" | "3" | "4" | "5";
 
-// export interface SeatStatus {
-//   seatInfoId: string;
-//   statusInfo: "OCCUPIED" | "RELEASED";
-// }
+export interface NolSeatBlock {
+  blockKey: string;
+  seats: NolSeat[];
+}
 
-// export interface SeatReservation {
-//   blockKey: string;
-//   seats: SeatStatus[];
-// }
+export interface NolSeatStatus {
+  seatInfoId: string;
+  statusInfo: "OCCUPIED" | "RELEASED";
+}
 
-// export interface BlockArea {
-//   blockKey: string;
-//   selfDefineBlock: string;
-//   absoluteLeft: number;
-//   absoluteTop: number;
-//   absoluteRight: number;
-//   absoluteBottom: number;
-// }
+export interface NolSeatReservation {
+  blockKey: string;
+  seats: NolSeatStatus[];
+}
 
-// export interface CombinedSeat extends Seat {
-//   statusInfo?: "OCCUPIED" | "AVAILABLE" | "SELECTED";
-// }
+export interface NolBlockArea {
+  blockKey: string;
+  selfDefineBlock: string;
+  absoluteLeft: number;
+  absoluteTop: number;
+  absoluteRight: number;
+  absoluteBottom: number;
+}
 
-// export interface CombinedSeatBlock {
-//   blockKey: string;
-//   blockArea?: BlockArea;
-//   seats: CombinedSeat[];
-// }
+export interface NolCombinedSeat extends NolSeat {
+  statusInfo?: "OCCUPIED" | "AVAILABLE" | "SELECTED";
+}
 
-// export type SeatDataResponse = SeatBlock[];
+export interface NolCombinedSeatBlock {
+  blockKey: string;
+  blockArea?: NolBlockArea;
+  seats: NolCombinedSeat[];
+}
 
-// export type ReservationResponse = SeatReservation[];
-// export type BlockDataResponse = BlockArea[];
+export type NolSeatDataResponse = NolSeatBlock[];
+
+export type NolReservationResponse = NolSeatReservation[];
+export type NolBlockDataResponse = NolBlockArea[];

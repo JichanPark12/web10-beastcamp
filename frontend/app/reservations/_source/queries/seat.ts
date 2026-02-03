@@ -1,6 +1,11 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api/api";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import {
+  NolBlockDataResponse,
+  NolReservationResponse,
+  NolSeatDataResponse,
+} from "../types/reservationType";
 
 interface ReservationResponse {
   seats: boolean[][];
@@ -28,36 +33,38 @@ export const useReservationSeatsQuery = (
     gcTime: 0,
   });
 };
-// 구버전...
 
-// export const useSeatMetaQuery = (id: string = "") => {
-//   return useSuspenseQuery({
-//     queryKey: ["seat", id],
-//     queryFn: async () => {
-//       const response = await api.get<SeatDataResponse>(`/seatMeta`);
-//       return response;
-//     },
-//   });
-// };
+// Nol
 
-// export const useBlockSeatQuery = (id: string = "") => {
-//   return useSuspenseQuery({
-//     queryKey: ["blockSeat", id],
-//     queryFn: async () => {
-//       const response = await api.get<BlockDataResponse>(`/blockData`);
+export const useNolSeatMetaQuery = (id: string = "") => {
+  return useSuspenseQuery({
+    queryKey: ["nol-seat", id],
+    queryFn: async () => {
+      const response = await api.get<NolSeatDataResponse>(`/nol-seat-meta`);
+      return response;
+    },
+  });
+};
 
-//       return response;
-//     },
-//   });
-// };
+export const useNolBlockSeatQuery = (id: string = "") => {
+  return useSuspenseQuery({
+    queryKey: ["nol-blockSeat", id],
+    queryFn: async () => {
+      const response = await api.get<NolBlockDataResponse>(`/nol-block-data`);
 
-// export const useReservedSeatQuery = (id: string = "") => {
-//   return useSuspenseQuery({
-//     queryKey: ["reservedSeat", id],
-//     queryFn: async () => {
-//       const response = await api.get<ReservationResponse>(`/reservations`);
+      return response;
+    },
+  });
+};
 
-//       return response;
-//     },
-//   });
-// };
+export const useNolReservedSeatQuery = (id: string = "") => {
+  return useSuspenseQuery({
+    queryKey: ["nol-reservedSeat", id],
+    queryFn: async () => {
+      const response =
+        await api.get<NolReservationResponse>(`/nol-reservations`);
+
+      return response;
+    },
+  });
+};
