@@ -44,12 +44,16 @@ export class TicketConfigService implements OnModuleInit {
     maxSeatPickAttempts: number;
     errorDelayMs: number;
     processDelayMs: number;
+    thinkingTimeMs: number;
+    cancelRatio: number;
   } {
     /* eslint-disable prettier/prettier */
     const brpopTimeoutSeconds = this.ticketManager.getNumber('virtual.brpop_timeout_sec', 2, { min: 1 });
     const maxSeatPickAttempts = this.ticketManager.getNumber('virtual.max_seat_attempts', 10, { min: 1 });
     const errorDelayMs = this.ticketManager.getNumber('virtual.error_delay_ms', 500, { min: 0 });
     const processDelayMs = this.ticketManager.getNumber('virtual.process_delay_ms', 1000, { min: 0 });
+    const thinkingTimeMs = this.ticketManager.getNumber('virtual.thinking_time_ms', 2000, { min: 0 });
+    const cancelRatio = this.ticketManager.getNumber('virtual.cancel_ratio', 0.1, { min: 0, max: 1 });
     /* eslint-enable prettier/prettier */
 
     return {
@@ -57,6 +61,8 @@ export class TicketConfigService implements OnModuleInit {
       maxSeatPickAttempts,
       errorDelayMs,
       processDelayMs,
+      thinkingTimeMs,
+      cancelRatio,
     };
   }
 
@@ -69,6 +75,8 @@ export class TicketConfigService implements OnModuleInit {
       'virtual.max_seat_attempts': [env.TICKET_VIRTUAL_MAX_SEAT_ATTEMPTS, '10'],
       'virtual.error_delay_ms': [env.TICKET_VIRTUAL_ERROR_DELAY_MS, '500'],
       'virtual.process_delay_ms': [env.TICKET_VIRTUAL_PROCESS_DELAY_MS, '1000'],
+      'virtual.thinking_time_ms': [env.TICKET_VIRTUAL_THINKING_TIME_MS, '2000'],
+      'virtual.cancel_ratio': [env.TICKET_VIRTUAL_CANCEL_RATIO, '0.1'],
     });
 
     try {

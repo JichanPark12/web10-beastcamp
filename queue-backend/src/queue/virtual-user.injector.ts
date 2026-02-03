@@ -131,7 +131,7 @@ export class VirtualUserInjector {
         pipeline.zadd(
           REDIS_KEYS.WAITING_QUEUE,
           Date.now() + offset + i,
-          this.generateUserId(),
+          this.generateVirtualUserId(),
         );
       }
 
@@ -178,7 +178,9 @@ export class VirtualUserInjector {
     }
   }
 
-  private generateUserId = () => randomBytes(12).toString('base64url');
+  private generateVirtualUserId = () =>
+    'V_' + randomBytes(12).toString('base64url');
+
   private delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 }
