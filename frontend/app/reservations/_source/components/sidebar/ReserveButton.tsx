@@ -2,18 +2,18 @@
 
 import {
   useReservationState,
-  useReservationDispatch,
   useReservationData,
 } from "../../contexts/ReservationProvider";
+import { useReservationTicket } from "../../hooks/useReservationTicket";
 
 export default function ReserveButton() {
-  const { selectedSeats, isReserving } = useReservationState();
+  const { selectedSeats } = useReservationState();
   const { session } = useReservationData();
-  const { handleClickReserve } = useReservationDispatch();
+  const { reserve, isReserving } = useReservationTicket();
 
   return (
     <button
-      onClick={() => handleClickReserve(+session.id, selectedSeats)}
+      onClick={() => reserve(+session.id, selectedSeats)}
       disabled={selectedSeats.size === 0 || isReserving}
       className="w-full py-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
     >

@@ -1,3 +1,5 @@
+"use client";
+
 import { useScheduledTicketingQuery } from "../../queries/ticketingSchdule";
 import { TicketingPreviewCard } from "./TicketingPreviewCard";
 

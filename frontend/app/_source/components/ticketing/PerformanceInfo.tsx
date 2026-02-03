@@ -1,6 +1,7 @@
 import { PLATFORM_DISPLAY_NAME } from "@/constants/performance";
 import { Performance, Session } from "@/types/performance";
 import { Calendar, MapPin, TrendingUp } from "lucide-react";
+import { formatPerformanceDateRange } from "../../utils/ticketingUtils";
 
 interface PerformanceInfoProps {
   performance: Performance;
@@ -13,27 +14,7 @@ export default function PerformanceInfo({
   sessions,
   venueName,
 }: PerformanceInfoProps) {
-  let dateDisplay = "";
-
-  if (sessions && sessions.length > 0) {
-    const dates = sessions.map((s) => new Date(s.sessionDate).getTime());
-    const minDate = new Date(Math.min(...dates));
-    const maxDate = new Date(Math.max(...dates));
-
-    const formatDateTime = (d: Date) => {
-      const year = d.getFullYear();
-      const month = d.getMonth() + 1;
-      const day = d.getDate();
-
-      return `${year}년 ${month}월 ${day}일 `;
-    };
-
-    if (minDate.getTime() === maxDate.getTime()) {
-      dateDisplay = formatDateTime(minDate);
-    } else {
-      dateDisplay = `${formatDateTime(minDate)} ~ ${formatDateTime(maxDate)}`;
-    }
-  }
+  const dateDisplay = formatPerformanceDateRange(sessions);
 
   const platformDisplayName = performance.platform
     ? PLATFORM_DISPLAY_NAME[performance.platform]

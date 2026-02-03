@@ -3,6 +3,7 @@ import { TicketPlatform } from "@/types/performance";
 import { formatDateTime } from "@/lib/utils";
 import { PLATFORM_DISPLAY_NAME } from "@/constants/performance";
 import Image from "next/image";
+import Mounted from "@/components/ui/common/Mounted";
 
 interface TicketingPreviewCardProps {
   platform: TicketPlatform;
@@ -46,9 +47,9 @@ export function TicketingPreviewCard(props: TicketingPreviewCardProps) {
         <div className="space-y-2 text-sm">
           <div className="flex items-start gap-2 text-gray-600">
             <Calendar className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <div>
+            <Mounted fallback={<div>시간 계산 중..</div>}>
               <div>{formatDateTime(props.ticketingDate)}</div>
-            </div>
+            </Mounted>
           </div>
 
           {/* 공연장 이름 출력 X */}
@@ -62,9 +63,13 @@ export function TicketingPreviewCard(props: TicketingPreviewCardProps) {
             <div className="pt-2 mt-2 border-t border-gray-100">
               <div className="flex items-center gap-2 text-purple-600">
                 <Clock className="w-4 h-4 flex-shrink-0" />
-                <div className="text-xs">
-                  모의 티켓팅: {formatDateTime(props.simulationDate)}
-                </div>
+                <Mounted
+                  fallback={<div className="text-xs">시간 계산 중..</div>}
+                >
+                  <div className="text-xs">
+                    모의 티켓팅: {formatDateTime(props.simulationDate)}
+                  </div>
+                </Mounted>
               </div>
             </div>
           )}

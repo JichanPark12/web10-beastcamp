@@ -1,5 +1,3 @@
-"use client";
-
 import { ErrorBoundary } from "react-error-boundary";
 import PreviewCards from "./PreviewCards";
 import { Suspense } from "react";

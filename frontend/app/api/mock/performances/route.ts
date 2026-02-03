@@ -2,7 +2,7 @@ const datas = [
   {
     performance_id: 1,
     performance_name: "wave to earth - 사랑으로 0.3",
-    ticketing_date: "2026-02-01T18:00:00Z",
+    ticketing_date: "2026-02-01T03:00:00Z",
     platform: "interpark",
   },
   {
@@ -46,7 +46,7 @@ const datas = [
 export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
 
-  const ticketingAfter = searchParams.get("ticketing_after");
+  // const ticketingAfter = searchParams.get("ticketing_after");
   const limitParam = searchParams.get("limit");
   const limit = limitParam ? parseInt(limitParam, 10) : 6;
 
@@ -56,11 +56,11 @@ export const GET = async (request: Request) => {
         new Date(a.ticketing_date).getTime() -
         new Date(b.ticketing_date).getTime(),
     )
-    .filter(
-      (performance) =>
-        !ticketingAfter ||
-        new Date(performance.ticketing_date) > new Date(ticketingAfter),
-    )
+    // .filter(
+    //   (performance) =>
+    //     !ticketingAfter ||
+    //     new Date(performance.ticketing_date) > new Date(ticketingAfter),
+    // )
     .slice(0, limit);
 
   return Response.json({ performances: result });
