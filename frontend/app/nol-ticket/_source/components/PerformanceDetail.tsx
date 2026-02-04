@@ -11,11 +11,15 @@ import { useTicketContext } from "@/contexts/TicketContext";
 import { VenueDetail } from "@/types/venue";
 import { useResetAuthToken } from "@/hooks/useResetAuthToken";
 
+import ExternalBookingBanner from "../../../../components/ui/common/ExternalBookingBanner";
+
 interface PerformanceDetailProps {
   performance: Performance;
   sessions: Session[];
   venue: VenueDetail;
 }
+
+const UNDEFINED_MESSAGE = "예매처에서 확인 가능";
 
 export default function PerformanceDetail({
   performance,
@@ -23,7 +27,9 @@ export default function PerformanceDetail({
   venue,
 }: PerformanceDetailProps) {
   const router = useRouter();
+
   const { setPerformance, selectSession, setVenue } = useTicketContext();
+
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(2076);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -208,12 +214,16 @@ export default function PerformanceDetail({
 
               <div className="flex">
                 <div className="w-24 text-gray-600 font-medium">공연시간</div>
-                <div className="flex-1 text-gray-900">120분</div>
+                <div className="flex-1 text-gray-900">
+                  {performance.runtime || UNDEFINED_MESSAGE}
+                </div>
               </div>
 
               <div className="flex">
                 <div className="w-24 text-gray-600 font-medium">관람연령</div>
-                <div className="flex-1 text-gray-900">만 11세이상</div>
+                <div className="flex-1 text-gray-900">
+                  {performance.age_limit || UNDEFINED_MESSAGE}
+                </div>
               </div>
             </div>
 
@@ -321,9 +331,7 @@ export default function PerformanceDetail({
                     {timeLeft?.minutes.toString().padStart(2, "0")}:
                     {timeLeft?.seconds.toString().padStart(2, "0")}
                   </button>
-                  <button className="w-full mt-3 py-3 rounded-xl bg-white border-2 border-purple-600 text-purple-600 font-bold hover:bg-purple-50 transition-all">
-                    BOOKING / 外國語
-                  </button>
+
                   <button className="w-full mt-3 text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-1">
                     NOL 카드 쓸 때마다 10% 적립
                     <ChevronRight className="w-4 h-4" />
@@ -371,10 +379,6 @@ export default function PerformanceDetail({
                       예매하기
                     </button>
 
-                    <button className="w-full mt-3 py-3 rounded-xl bg-white border-2 border-purple-600 text-purple-600 font-bold hover:bg-purple-50 transition-all">
-                      BOOKING / 차량팀
-                    </button>
-
                     <button className="w-full mt-3 text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-1">
                       NOL 카드 쓸 때마다 10% 적립
                       <ChevronRight className="w-4 h-4" />
@@ -389,6 +393,9 @@ export default function PerformanceDetail({
               )}
             </div>
           </div>
+        </div>
+        <div className="max-w-7xl mx-auto pb-8 mt-20">
+          <ExternalBookingBanner performance={performance} />
         </div>
       </main>
     </div>

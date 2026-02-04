@@ -9,12 +9,15 @@ import { useRouter } from "next/navigation";
 import { useTicketContext } from "@/contexts/TicketContext";
 import { VenueDetail } from "@/types/venue";
 import { useResetAuthToken } from "@/hooks/useResetAuthToken";
+import ExternalBookingBanner from "@/components/ui/common/ExternalBookingBanner";
 
 interface Yes24PerformanceDetailProps {
   performance: Performance;
   sessions: Session[];
   venue: VenueDetail | null;
 }
+
+const UNDEFINED_MESSAGE = "예매처에서 확인 가능";
 
 export default function Yes24PerformanceDetail({
   performance,
@@ -186,7 +189,7 @@ export default function Yes24PerformanceDetail({
                     등급
                   </div>
                   <div className="flex-1 text-gray-900 text-sm">
-                    만 7세이상 관람가능
+                    {performance.age_limit || UNDEFINED_MESSAGE}
                   </div>
                 </div>
 
@@ -194,14 +197,18 @@ export default function Yes24PerformanceDetail({
                   <div className="w-24 text-gray-600 font-medium text-sm">
                     관람시간
                   </div>
-                  <div className="flex-1 text-gray-900 text-sm">120분</div>
+                  <div className="flex-1 text-gray-900 text-sm">
+                    {performance.runtime || UNDEFINED_MESSAGE}
+                  </div>
                 </div>
 
                 <div className="flex border-b pb-3">
                   <div className="w-24 text-gray-600 font-medium text-sm">
                     출연
                   </div>
-                  <div className="flex-1 text-gray-900 text-sm">이창섭</div>
+                  <div className="flex-1 text-gray-900 text-sm">
+                    {performance.cast_info || UNDEFINED_MESSAGE}
+                  </div>
                 </div>
 
                 <div className="flex border-b pb-3">
@@ -331,7 +338,8 @@ export default function Yes24PerformanceDetail({
                           return (
                             sessionDate.getFullYear() ===
                               selectedDate.getFullYear() &&
-                            sessionDate.getMonth() === selectedDate.getMonth() &&
+                            sessionDate.getMonth() ===
+                              selectedDate.getMonth() &&
                             sessionDate.getDate() === selectedDate.getDate()
                           );
                         })
@@ -435,6 +443,9 @@ export default function Yes24PerformanceDetail({
             GLOBAL BOOKING
           </button>
         </div>
+      </div>
+      <div className="max-w-7xl mx-auto pb-8 mt-20 border-t border-gray-300">
+        <ExternalBookingBanner performance={performance} />
       </div>
     </div>
   );

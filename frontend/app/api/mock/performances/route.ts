@@ -4,12 +4,14 @@ const datas = [
     performance_name: "wave to earth - 사랑으로 0.3",
     ticketing_date: "2026-02-01T03:00:00Z",
     platform: "interpark",
+    platform_ticketing_url: "https://tickets.interpark.com/goods/26000737",
   },
   {
     performance_id: 2,
     performance_name: "테스트공연2",
     ticketing_date: "2026-02-01T18:00:00Z",
     platform: "nol-ticket",
+    platform_ticketing_url: "https://tickets.interpark.com/goods/26000737",
   },
   {
     performance_id: 3,
