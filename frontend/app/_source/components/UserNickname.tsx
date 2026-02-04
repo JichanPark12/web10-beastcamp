@@ -3,7 +3,10 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { User } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useRegisterNicknameMutation } from "@/app/_source/queries/chat";
+import {
+  useRegisterNicknameMutation,
+  useNicknameQuery,
+} from "@/app/_source/queries/chat";
 
 export default function UserNickname() {
   const { nickname, setNickname, userId } = useAuth();
@@ -11,13 +14,15 @@ export default function UserNickname() {
   const [inputValue, setInputValue] = useState("");
   const { mutate: registerNickname, isPending } = useRegisterNicknameMutation();
 
+  // 서버에서 닉네임 조회
+  const { data: serverNickname } = useNicknameQuery(userId);
+
   useEffect(() => {
-    // 로컬스토리지에서 닉네임 불러오기
-    const savedNickname = localStorage.getItem("userNickname");
-    if (savedNickname) {
-      setNickname(savedNickname);
+    // 서버에서 닉네임을 가져와서 상태 업데이트
+    if (serverNickname) {
+      setNickname(serverNickname);
     }
-  }, [setNickname]);
+  }, [serverNickname, setNickname]);
 
   const handleSaveNickname = () => {
     if (!inputValue.trim() || !userId) return;
@@ -30,7 +35,6 @@ export default function UserNickname() {
       {
         onSuccess: () => {
           setNickname(inputValue.trim());
-          localStorage.setItem("userNickname", inputValue.trim());
           setIsEditing(false);
           setInputValue("");
         },
