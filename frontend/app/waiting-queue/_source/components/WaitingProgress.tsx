@@ -55,6 +55,10 @@ export default function WaitingProgress() {
     return <div>대기열 진입 중...</div>;
   }
 
+  // 에러/마감 시 렌더링 차단 (alert 후 이동 대기)
+  if (isError || initialOrder === undefined || status === "closed") {
+    return null;
+  }
   const statusText = isFinished ? "입장 중입니다" : `${currentOrder ?? 0}번`;
 
   return (
@@ -62,7 +66,7 @@ export default function WaitingProgress() {
       <p className="text-gray-500  text-xl text-center">{statusText}</p>
 
       <div className="bg-gray-200 rounded-full h-4 mb-4 overflow-hidden">
-        <ProgressBar value={currentOrder ?? 0} maxValue={initialOrder} />
+        <ProgressBar value={currentOrder ?? 0} maxValue={initialOrder ?? 0} />
       </div>
     </div>
   );
