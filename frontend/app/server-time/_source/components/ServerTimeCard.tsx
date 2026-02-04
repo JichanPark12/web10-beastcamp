@@ -34,6 +34,7 @@ export function ServerTimeCard({ site }: { site: TicketingSite }) {
           </div>
 
           <button
+            type="button"
             onClick={() => refresh()}
             className="p-3 rounded-full hover:bg-gray-100 text-gray-400 hover:text-purple-600 transition-colors"
             title="시간 수동 동기화"

@@ -16,6 +16,7 @@ export function ServerTimeContainer() {
           const isSelected = selectedSiteId === site.id;
           return (
             <button
+              type="button"
               key={site.id}
               onClick={() => setSelectedSiteId(site.id)}
               className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
