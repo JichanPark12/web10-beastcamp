@@ -106,42 +106,17 @@ export default function Chat() {
           </div>
         ) : (
           messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.nickname === nickname ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                  msg.nickname === nickname
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-white border border-gray-200'
-                }`}
-              >
+            <div key={msg.id} className="flex justify-start">
+              <div className="max-w-[85%] rounded-lg px-4 py-3 bg-white border border-gray-200 shadow-sm">
                 <div className="flex items-baseline gap-2 mb-1">
-                  <span
-                    className={`text-sm font-semibold ${
-                      msg.nickname === nickname
-                        ? 'text-purple-100'
-                        : 'text-purple-600'
-                    }`}
-                  >
+                  <span className="text-sm font-semibold text-purple-600">
                     {msg.nickname}
                   </span>
-                  <span
-                    className={`text-xs ${
-                      msg.nickname === nickname
-                        ? 'text-purple-200'
-                        : 'text-gray-400'
-                    }`}
-                  >
+                  <span className="text-xs text-gray-400">
                     {formatTime(msg.timestamp)}
                   </span>
                 </div>
-                <p
-                  className={`text-sm break-words ${
-                    msg.nickname === nickname ? 'text-white' : 'text-gray-800'
-                  }`}
-                >
+                <p className="text-sm break-words text-gray-800">
                   {msg.message}
                 </p>
               </div>
