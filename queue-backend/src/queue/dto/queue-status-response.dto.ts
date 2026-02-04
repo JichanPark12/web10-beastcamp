@@ -6,6 +6,13 @@ export class QueueStatusResponseDto implements QueueStatusResponse {
   position: number | null;
 
   @ApiProperty({
+    description: '상태',
+    enum: ['open', 'closed'],
+    example: 'open',
+  })
+  status: 'open' | 'closed';
+
+  @ApiProperty({
     required: false,
     description: '활성 토큰',
     example:

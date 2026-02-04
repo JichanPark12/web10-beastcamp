@@ -119,13 +119,16 @@ describe('QueueService', () => {
 
   describe('getStatus', () => {
     it('userId가 undefined이면 position null을 반환한다', async () => {
+      ticketingStateServiceMock.isOpen.mockResolvedValueOnce(true);
       const result = await service.getStatus(undefined);
 
+      expect(ticketingStateServiceMock.isOpen).toHaveBeenCalled();
       expect(redisMock.zrank).not.toHaveBeenCalled();
-      expect(result).toEqual({ position: null });
+      expect(result).toEqual({ position: null, status: 'open' });
     });
 
     it('활성 상태면 토큰과 position 0을 반환한다', async () => {
+      ticketingStateServiceMock.isOpen.mockResolvedValueOnce(true);
       redisMock.exists.mockResolvedValueOnce(1);
       jwtServiceMock.signAsync.mockResolvedValueOnce('token-123');
 
@@ -133,10 +136,15 @@ describe('QueueService', () => {
 
       expect(redisMock.exists).toHaveBeenCalled();
       expect(jwtServiceMock.signAsync).toHaveBeenCalled();
-      expect(result).toEqual({ token: 'token-123', position: 0 });
+      expect(result).toEqual({
+        token: 'token-123',
+        position: 0,
+        status: 'open',
+      });
     });
 
     it('대기열에 존재하면 position을 반환한다', async () => {
+      ticketingStateServiceMock.isOpen.mockResolvedValueOnce(true);
       redisMock.exists.mockResolvedValueOnce(0);
       redisMock.zrank.mockResolvedValueOnce(4);
 
@@ -147,10 +155,11 @@ describe('QueueService', () => {
         'user-123',
       );
       expect(heartbeatServiceMock.update).toHaveBeenCalledWith('user-123');
-      expect(result).toEqual({ position: 5 });
+      expect(result).toEqual({ position: 5, status: 'open' });
     });
 
     it('대기열에 없으면 position null을 반환한다', async () => {
+      ticketingStateServiceMock.isOpen.mockResolvedValueOnce(true);
       redisMock.exists.mockResolvedValueOnce(0);
       redisMock.zrank.mockResolvedValueOnce(null);
 
@@ -160,7 +169,7 @@ describe('QueueService', () => {
         REDIS_KEYS.WAITING_QUEUE,
         'unknown-user',
       );
-      expect(result).toEqual({ position: null });
+      expect(result).toEqual({ position: null, status: 'open' });
     });
   });
 });

@@ -65,15 +65,19 @@ export class QueueService {
    * [Public] 상태 확인 및 토큰 발행
    */
   async getStatus(userId: string | undefined): Promise<QueueStatusResponse> {
+    const isOpen = await this.ticketingStateService.isOpen();
+
+    const status = isOpen ? 'open' : 'closed';
+
     if (!userId) {
-      return { position: null };
+      return { position: null, status };
     }
 
     // 1. 활성 상태 확인
     const isActive = await this.checkActiveStatus(userId);
     if (isActive) {
       const token = await this.generateAccessToken(userId);
-      return { token, position: 0 };
+      return { token, position: 0, status };
     }
 
     // 2. 대기 순번 확인
@@ -84,7 +88,7 @@ export class QueueService {
       await this.updateHeartbeat(userId);
     }
 
-    return { position };
+    return { position, status };
   }
 
   // [Private] 세부 구현

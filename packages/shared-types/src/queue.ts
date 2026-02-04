@@ -5,5 +5,6 @@ export interface QueueEntryResponse {
 
 export interface QueueStatusResponse {
   position: number | null;
+  status: "open" | "closed";
   token?: string;
 }
