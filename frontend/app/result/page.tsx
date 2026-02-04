@@ -4,17 +4,13 @@ import { ResultProvider } from "./_source/contexts/ResultProvider";
 interface TicketResultPageProps {
   searchParams: Promise<{
     rank?: string;
+    virtualUserSize?: number;
   }>;
 }
 
-export default async function TicketResultPage({
-  searchParams,
-}: TicketResultPageProps) {
-  const resolvedSearchParams = await searchParams;
-  const rank = resolvedSearchParams.rank;
-
+export default async function TicketResultPage() {
   return (
-    <ResultProvider rank={rank}>
+    <ResultProvider>
       <TicketResult />
     </ResultProvider>
   );

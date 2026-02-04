@@ -4,6 +4,7 @@ import { createContext, useContext, ReactNode } from "react";
 
 interface ResultContextValue {
   rank?: string;
+  virtualUserSize?: number;
 }
 
 const ResultContext = createContext<ResultContextValue | null>(null);
@@ -11,11 +12,18 @@ const ResultContext = createContext<ResultContextValue | null>(null);
 interface ResultProviderProps {
   children: ReactNode;
   rank?: string;
+  virtualUserSize?: number;
 }
 
-export function ResultProvider({ children, rank }: ResultProviderProps) {
+export function ResultProvider({
+  children,
+  rank,
+  virtualUserSize,
+}: ResultProviderProps) {
   return (
-    <ResultContext.Provider value={{ rank }}>{children}</ResultContext.Provider>
+    <ResultContext.Provider value={{ rank, virtualUserSize }}>
+      {children}
+    </ResultContext.Provider>
   );
 }
 
