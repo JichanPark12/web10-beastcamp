@@ -12,6 +12,7 @@ import { VENUES_DATA } from '../seeding/data/venues.data';
 import { BLOCK_GRADE_RULES } from '../seeding/data/performances.data';
 
 import { isMySqlDuplicateEntryError } from '../common/utils/error.utils';
+import { formatToKstString } from 'src/common/utils/date.utils';
 
 @Injectable()
 export class KopisScheduler {
@@ -137,7 +138,9 @@ export class KopisScheduler {
         const detail = validDetails[detailIndex % validDetails.length];
 
         const performanceEntity = this.kopisService.toPerformanceEntity(detail);
-        performanceEntity.ticketingDate = new Date(currentTime);
+        performanceEntity.ticketingDate = formatToKstString(
+          new Date(currentTime),
+        );
         performanceEntity.kopisId = detail.mt20id; // 순수 KOPIS ID 사용
 
         try {
@@ -234,7 +237,7 @@ export class KopisScheduler {
         } catch (e) {
           if (isMySqlDuplicateEntryError(e)) {
             this.logger.warn(
-              `Duplicate ticketing date for ${performanceEntity.kopisId} at ${performanceEntity.ticketingDate.toISOString()} - Skipped`,
+              `Duplicate ticketing date for ${performanceEntity.kopisId} at ${performanceEntity.ticketingDate} - Skipped`,
             );
           } else {
             this.logger.error(

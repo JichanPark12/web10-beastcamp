@@ -64,7 +64,7 @@ export class PerformanceDto {
     dto.performance_id = performance.id;
     dto.performance_name = performance.performanceName;
     dto.poster_url = performance.posterUrl;
-    dto.ticketing_date = performance.ticketingDate.toISOString();
+    dto.ticketing_date = performance.ticketingDate;
     dto.platform = performance.platform;
     dto.platform_ticketing_url = performance.platformTicketingUrl;
     dto.cast_info = performance.castInfo;

@@ -15,7 +15,7 @@ import { BlockGrade } from './block-grade.entity';
 @Entity('sessions')
 @Unique(['performanceId', 'sessionDate'])
 export class Session {
-  constructor(performanceId?: number, sessionDate?: Date, venueId?: number) {
+  constructor(performanceId?: number, sessionDate?: string, venueId?: number) {
     if (performanceId) this.performanceId = performanceId;
     if (sessionDate) this.sessionDate = sessionDate;
     if (venueId) this.venueId = venueId;
@@ -31,11 +31,12 @@ export class Session {
   venueId: number;
 
   @Column({
-    type: 'datetime',
+    type: 'varchar',
+    length: 30,
     name: 'session_date',
-    comment: '공연 회차 일시 (ISO 8601)',
+    comment: '공연 회차 일시 (ISO 8601 with KST offset)',
   })
-  sessionDate: Date;
+  sessionDate: string;
 
   @ManyToOne(() => Performance, (performance) => performance.sessions)
   @JoinColumn({ name: 'performance_id' })

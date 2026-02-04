@@ -35,7 +35,7 @@ export class PerformancesService {
     const performance = new Performance(
       requestDto.kopis_id,
       requestDto.performance_name,
-      new Date(requestDto.ticketing_date),
+      requestDto.ticketing_date,
       requestDto.platform,
       requestDto.poster_url,
       requestDto.platform_ticketing_url,
@@ -80,7 +80,7 @@ export class PerformancesService {
 
     const session = new Session(
       performanceId,
-      new Date(requestDto.sessionDate),
+      requestDto.sessionDate,
       requestDto.venue_id,
     );
     const savedSession = await this.sessionsRepository.save(session);
