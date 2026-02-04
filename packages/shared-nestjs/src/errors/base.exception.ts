@@ -1,37 +1,27 @@
 import { HttpException } from "@nestjs/common";
 
-export type BaseExceptionOptions = {
-  message: string;
+export interface BaseExceptionResponse {
   errorCode: string;
-  statusCode: number;
-  traceId?: string;
-  timestamp?: string;
-};
+  message: string;
+}
 
 export class BaseException extends HttpException {
-  readonly message: string;
-  readonly errorCode: string;
-  readonly statusCode: number;
-  readonly timestamp: string;
-  readonly traceId?: string;
-
-  constructor(options: BaseExceptionOptions) {
-    const timestamp = options.timestamp ?? new Date().toISOString();
+  constructor(
+    readonly errorCode: string,
+    message: string,
+    statusCode: number = 400
+  ) {
     super(
       {
-        message: options.message,
-        errorCode: options.errorCode,
-        statusCode: options.statusCode,
-        timestamp,
-        traceId: options.traceId,
+        errorCode,
+        message,
       },
-      options.statusCode,
+      statusCode
     );
+    this.message = message;
+  }
 
-    this.message = options.message;
-    this.errorCode = options.errorCode;
-    this.statusCode = options.statusCode;
-    this.timestamp = timestamp;
-    this.traceId = options.traceId;
+  getErrorCode(): string {
+    return this.errorCode;
   }
 }

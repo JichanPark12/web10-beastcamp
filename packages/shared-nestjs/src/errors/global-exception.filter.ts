@@ -23,59 +23,62 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const timestamp = new Date().toISOString();
 
     let statusCode = 500;
-    let message = "Internal Server Error";
+    let message = "서버 내부 오류 발생";
     let errorCode = "INTERNAL_ERROR";
 
-    if (exception instanceof BaseException) {
-      statusCode = exception.statusCode;
-      message = exception.message;
-      errorCode = exception.errorCode;
-    } else if (exception instanceof HttpException) {
+    if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
-      const responseBody = exception.getResponse();
-      if (typeof responseBody === "string") {
-        message = responseBody;
-      } else if (
-        responseBody &&
-        typeof responseBody === "object" &&
-        "message" in responseBody
-      ) {
-        const responseMessage = (responseBody as { message?: unknown }).message;
-        if (Array.isArray(responseMessage)) {
-          message = responseMessage.join(", ");
-        } else if (typeof responseMessage === "string") {
-          message = responseMessage;
+      const res = exception.getResponse() as
+        | { error?: string; message?: any }
+        | string;
+
+      if (exception instanceof BaseException) {
+        errorCode = exception.errorCode;
+        message = exception.message;
+      } else {
+        if (res && typeof res === "object") {
+          errorCode = res.error || "HTTP_EXCEPTION";
+          message = Array.isArray(res.message)
+            ? res.message.join(", ")
+            : res.message || exception.message;
+        } else {
+          message = res;
+          errorCode = "HTTP_EXCEPTION";
         }
       }
-      errorCode = "HTTP_EXCEPTION";
+    } else if (exception instanceof Error) {
+      message = exception.message;
     }
 
-    const errorDetail = {
+    const logContext = {
       traceId,
       statusCode,
       errorCode,
-      message,
       path: request?.url,
       method: request?.method,
-      exception:
-        exception instanceof Error
-          ? {
-              name: exception.name,
-              message: exception.message,
-              stack: exception.stack,
-            }
-          : exception,
+      stack: exception instanceof Error ? exception.stack : undefined,
     };
 
-    this.logger.error(
-      `[GlobalException] ${message}`,
-      JSON.stringify(errorDetail),
-    );
+    const logMsg = `[${request?.method}] ${request?.url} - ${errorCode}: ${message}`;
+
+    if (statusCode >= 500) {
+      this.logger.error(
+        logMsg,
+        exception instanceof Error ? exception.stack : undefined,
+        { traceId, errorCode, statusCode }
+      );
+    } else {
+      this.logger.warn(
+        logMsg,
+        exception instanceof Error ? exception.stack : undefined,
+        { traceId, errorCode, statusCode }
+      );
+    }
 
     response.status(statusCode).json({
       success: false,
-      message,
       errorCode,
+      message,
       traceId,
       timestamp,
     });
