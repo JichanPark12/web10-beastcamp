@@ -3,6 +3,7 @@ import { useResult } from "@/contexts/ResultContext";
 export default function UserRank() {
   const { result } = useResult();
   const userRank = result?.rank ?? 0;
+  const virtualUserSize = 50000;
 
   if (!result) return null;
 
@@ -11,7 +12,7 @@ export default function UserRank() {
       <p className="text-gray-600 mb-2">전체 사용자 중</p>
       <p className="text-3xl text-purple-600 mb-2">{userRank}위</p>
       <p className="text-sm text-gray-500">
-        상위 {((userRank / 10000) * 100).toFixed(1)}%
+        상위 {((userRank / virtualUserSize) * 100).toFixed(1)}%
       </p>
     </div>
   );
