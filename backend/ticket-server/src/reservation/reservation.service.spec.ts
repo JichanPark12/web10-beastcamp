@@ -22,6 +22,7 @@ describe('ReservationService', () => {
             atomicReservation: jest.fn(),
             publishToQueue: jest.fn(),
             del: jest.fn(),
+            hgetQueue: jest.fn(),
           },
         },
       ],
@@ -155,11 +156,13 @@ describe('ReservationService', () => {
       redisService.sismember.mockResolvedValue(true);
       redisService.atomicReservation.mockResolvedValue([1, 5]);
       redisService.publishToQueue.mockResolvedValue(1);
+      redisService.hgetQueue.mockResolvedValue('50000');
 
       const result = await service.reserve(dto, userId);
 
       expect(result.rank).toBe(5);
       expect(result.seats).toEqual(dto.seats);
+      expect(result.virtual_user_size).toBe(50000);
       expect(redisService.atomicReservation).toHaveBeenCalledWith(
         ['reservation:session:1:block:10:row:0:col:0'],
         userId,
