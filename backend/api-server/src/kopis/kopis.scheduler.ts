@@ -12,6 +12,7 @@ import { VENUES_DATA } from '../seeding/data/venues.data';
 import { BLOCK_GRADE_RULES } from '../seeding/data/performances.data';
 
 import { isMySqlDuplicateEntryError } from '../common/utils/error.utils';
+import { API_ERROR_CODES, TicketException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class KopisScheduler {
@@ -93,9 +94,11 @@ export class KopisScheduler {
         );
 
         if (startTime > endTime) {
-          const message = `Invalid date range: Start date (${startTime.toISOString()}) is after end date (${endTime.toISOString()})`;
-          this.logger.warn(message);
-          throw new Error(message);
+          throw new TicketException(
+            API_ERROR_CODES.KOPIS_INVALID_DATE_RANGE,
+            `시작 날짜(${startTime.toISOString()})는 종료 날짜(${endTime.toISOString()})보다 이후일 수 없습니다.`,
+            400,
+          );
         }
       } else {
         // 기본값: 실행 기준(UTC 14:30 = KST 23:30) 다음날 KST 00:05 ~ 24:00
@@ -258,15 +261,25 @@ export class KopisScheduler {
       this.logger.log(`Total Performances Scheduled: ${performanceCount}`);
       this.logger.log(`Total Sessions Scheduled: ${sessionCount}`);
     } catch (error) {
-      const isDateRangeError =
-        error instanceof Error &&
-        error.message.startsWith('Invalid date range');
-
-      if (!isDateRangeError) {
-        this.logger.error('KOPIS data sync failed:', error);
+      if (error instanceof TicketException) {
+        const statusCode = error.getStatus();
+        if (statusCode >= 500) {
+          this.logger.error(
+            `[${error.errorCode}] ${error.message}`,
+            error.stack,
+          );
+        } else {
+          this.logger.warn(`[${error.errorCode}] ${error.message}`);
+        }
+        throw error;
       }
 
-      throw error;
+      this.logger.error('KOPIS data sync failed:', error);
+      throw new TicketException(
+        API_ERROR_CODES.KOPIS_SYNC_FAILED,
+        'KOPIS 데이터 동기화에 실패했습니다.',
+        500,
+      );
     }
   }
 }

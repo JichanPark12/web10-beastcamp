@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Post,
-  HttpCode,
-  HttpStatus,
-  Body,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Post, HttpCode, HttpStatus, Body } from '@nestjs/common';
 import { KopisScheduler } from './kopis.scheduler';
 import { ApiOperation, ApiTags, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { ManualSyncDto } from './dto/manual-sync.dto';
@@ -26,14 +19,7 @@ export class KopisController {
   async syncManual(@Body() body: ManualSyncDto) {
     const startDate = body.start_date ? new Date(body.start_date) : undefined;
     const endDate = body.end_date ? new Date(body.end_date) : undefined;
-    try {
-      await this.kopisScheduler.syncPerformances(startDate, endDate);
-      return { message: 'KOPIS data sync completed' };
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new BadRequestException(error.message);
-      }
-      throw new BadRequestException('KOPIS sync failed');
-    }
+    await this.kopisScheduler.syncPerformances(startDate, endDate);
+    return { message: 'KOPIS data sync completed' };
   }
 }

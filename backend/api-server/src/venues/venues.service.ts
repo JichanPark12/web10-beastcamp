@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Venue } from './entities/venue.entity';
@@ -8,6 +8,7 @@ import { GetVenuesResponseDto } from './dto/get-venues-response.dto';
 import { GetVenueResponseDto } from './dto/get-venue-response.dto';
 import { CreateBlocksRequestDto } from './dto/create-blocks-request.dto';
 import { BlockRepository } from './block.repository';
+import { API_ERROR_CODES, TicketException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class VenuesService {
@@ -50,7 +51,11 @@ export class VenuesService {
     });
 
     if (!venue) {
-      throw new BadRequestException('Invalid venue id');
+      throw new TicketException(
+        API_ERROR_CODES.VENUE_NOT_FOUND,
+        '공연장을 찾을 수 없습니다.',
+        404,
+      );
     }
 
     const requestBlockNames = requestDto.blocks.map((b) => b.blockDataName);
@@ -60,8 +65,10 @@ export class VenuesService {
     );
 
     if (duplicateNames.length > 0) {
-      throw new BadRequestException(
-        `중복된 블록 이름이 존재합니다 : ${duplicateNames.join(', ')}`,
+      throw new TicketException(
+        API_ERROR_CODES.BLOCK_NAME_DUPLICATE,
+        `중복된 블록 이름이 존재합니다: ${duplicateNames.join(', ')}`,
+        409,
       );
     }
 

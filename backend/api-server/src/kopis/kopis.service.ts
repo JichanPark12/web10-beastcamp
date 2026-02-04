@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { XMLParser } from 'fast-xml-parser';
@@ -12,6 +8,7 @@ import {
   KopisPerformanceDetail,
 } from './interfaces/kopis.interfaces';
 import { Performance } from '../performances/entities/performance.entity';
+import { API_ERROR_CODES, TicketException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class KopisService {
@@ -104,7 +101,11 @@ export class KopisService {
       return results.flat();
     } catch (error) {
       this.logger.error(`전체 조회 프로세스 실패: ${error}`);
-      throw new InternalServerErrorException('KOPIS 데이터 수집 실패');
+      throw new TicketException(
+        API_ERROR_CODES.KOPIS_SYNC_FAILED,
+        'KOPIS 데이터 수집에 실패했습니다.',
+        500,
+      );
     }
   }
 
