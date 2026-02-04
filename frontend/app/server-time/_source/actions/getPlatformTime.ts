@@ -14,9 +14,21 @@ const globalCache: Record<
 > = {};
 const CACHE_TTL = 1000; // 1초 유지
 
+import { TICKETING_SITES } from "@/constants/ticketingSites";
+
+const ALLOWED_ORIGINS = TICKETING_SITES.map((site) => site.url);
+
 export async function getPlatformTime(
   baseUrl: string,
 ): Promise<ServerTimeResponse | null> {
+  const isAllowed = ALLOWED_ORIGINS.some((origin) =>
+    baseUrl.startsWith(origin),
+  );
+
+  if (!isAllowed) {
+    return null;
+  }
+
   const now = Date.now();
 
   const cached = globalCache[baseUrl];
