@@ -73,7 +73,7 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     this.schedulerRegistry.addCronJob(name, job as any);
     job.start();
-    this.logger.log(`Scheduled ${name}: ${cron}`);
+    this.logger.log(`스케쥴 등록 ${name}: ${cron}`);
   }
 
   private async runSetup() {
@@ -81,12 +81,12 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
       this.status !== CycleStatus.CLOSE &&
       this.status !== CycleStatus.ERROR
     ) {
-      this.logger.warn(`Skip Setup: Status is ${this.status}`);
+      this.logger.warn(`티켓팅 Setup 실패 : Status is ${this.status}`);
       return;
     }
 
     try {
-      this.logger.log('Starting Setup...');
+      this.logger.log('티켓팅 Setup 시작!');
       await this.setupService.setup();
       this.status = CycleStatus.SETUP;
     } catch (e) {
@@ -96,12 +96,12 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
 
   private async runOpen() {
     if (this.status !== CycleStatus.SETUP) {
-      this.logger.warn(`Skip Open: Status is ${this.status}`);
+      this.logger.warn(`티켓팅 Open 실패 : Status is ${this.status}`);
       return;
     }
 
     try {
-      this.logger.log('Starting Open...');
+      this.logger.log('티켓팅 Open 시작!');
       await this.setupService.openTicketing();
       this.status = CycleStatus.OPEN;
     } catch (e) {
@@ -111,12 +111,12 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
 
   private async runClose() {
     if (this.status !== CycleStatus.OPEN) {
-      this.logger.warn(`Skip Close: Status is ${this.status}`);
+      this.logger.warn(`티켓팅 Close 실패 : Status is ${this.status}`);
       return;
     }
 
     try {
-      this.logger.log('Starting Close...');
+      this.logger.log('티켓팅 Close 시작!');
       await this.setupService.tearDown();
       this.status = CycleStatus.CLOSE;
     } catch (e) {
@@ -127,6 +127,6 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
   private handleErr(stage: string, e: unknown) {
     const err = e as Error;
     this.status = CycleStatus.ERROR;
-    this.logger.error(`${stage} failed: ${err.message}`, err.stack);
+    this.logger.error(`${stage} 단계 실패 : ${err.message}`, err.stack);
   }
 }

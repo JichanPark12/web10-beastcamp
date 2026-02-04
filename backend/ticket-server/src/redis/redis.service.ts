@@ -1,6 +1,6 @@
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { PROVIDERS } from '@beastcamp/shared-constants';
-import { Redis } from 'ioredis';
+import { ChainableCommander, Redis } from 'ioredis';
 
 interface RedisWithCommands extends Redis {
   atomicReservation(
@@ -131,6 +131,10 @@ export class RedisService implements OnModuleDestroy {
 
   async publishToTicket(channel: string, message: string): Promise<number> {
     return this.ticketClient.publish(channel, message);
+  }
+
+  pipeline(): ChainableCommander {
+    return this.ticketClient.pipeline();
   }
 
   async brpopQueueList(

@@ -24,11 +24,16 @@ export class TicketSetupService {
       throw new Error('No performances found');
     }
     const performanceId = performances[0].performance_id;
-    this.logger.log(`Starting setup for performance: ${performanceId}`);
+    this.logger.log(`Setup 진행중. performanceId: ${performanceId}`);
 
     const sessions = await this.performanceApi.getSessions(performanceId);
     if (sessions.length === 0) {
-      throw new Error('No sessions found');
+      this.logger.error(
+        `해당 공연에 해당하는 회차가 없습니다. performanceId: ${performanceId}`,
+      );
+      throw new Error(
+        '해당 공연에 해당하는 회차가 없습니다. performanceId: ' + performanceId,
+      );
     }
 
     const sessionIds = sessions.map((session) => session.id.toString());
@@ -45,19 +50,19 @@ export class TicketSetupService {
     const registTasks = sessions.map((session) => this.registToRedis(session));
 
     await Promise.all(registTasks);
-    this.logger.log(`Setup completed for performance: ${performanceId}`);
+    this.logger.log(`공연 Setup 완료. performance: ${performanceId}`);
   }
 
   async openTicketing(): Promise<void> {
     try {
       await this.redisService.set(REDIS_KEYS.TICKETING_OPEN, 'true');
-      this.logger.log('Ticketing opened');
+      this.logger.log('is_ticketing_open : true');
 
       void this.redisService
         .publishToTicket(REDIS_CHANNELS.TICKETING_STATE_CHANGED, 'open')
         .catch((e) => {
           const err = e as Error;
-          this.logger.error(`⚠️ 오픈 이벤트 발행 실패: ${err.message}`);
+          this.logger.error(`오픈 이벤트 발행 실패: ${err.message}`);
         });
     } catch (e) {
       const err = e as Error;
@@ -66,7 +71,7 @@ export class TicketSetupService {
         .set(REDIS_KEYS.TICKETING_OPEN, 'false')
         .catch((rollbackErr) => {
           this.logger.warn(
-            `⚠️ 롤백 실패 - TICKETING_OPEN 상태 불일치 가능: ${(rollbackErr as Error).message}`,
+            `롤백 실패 - TICKETING_OPEN 상태 불일치 가능: ${(rollbackErr as Error).message}`,
           );
         });
     }
@@ -84,7 +89,7 @@ export class TicketSetupService {
         .publishToTicket(REDIS_CHANNELS.TICKETING_STATE_CHANGED, 'close')
         .catch((e) => {
           const err = e as Error;
-          this.logger.error(`⚠️ 종료 이벤트 발행 실패: ${err.message}`);
+          this.logger.error(`종료 이벤트 발행 실패: ${err.message}`);
         });
     } catch (e) {
       const err = e as Error;

@@ -144,6 +144,7 @@ jobs:
           NCP_REGISTRY_URL: ${{ secrets.NCP_REGISTRY_URL }}
           NCP_REGISTRY_USERNAME: ${{ secrets.NCP_REGISTRY_USERNAME }}
           NCP_REGISTRY_PASSWORD: ${{ secrets.NCP_REGISTRY_PASSWORD }}
+          LOKI_URL: ${{ secrets.LOKI_URL }}
 
   # 4단계: 결과 요약
   deployment-summary:

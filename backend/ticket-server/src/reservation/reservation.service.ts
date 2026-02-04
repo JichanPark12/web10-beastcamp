@@ -58,7 +58,9 @@ export class ReservationService {
         REDIS_CHANNELS.QUEUE_EVENT_DONE,
         userId,
       );
-      this.logger.log(`이벤트 발행 성공: ${userId}님이 티켓팅을 완료했습니다.`);
+      this.logger.log(
+        `티켓팅 완료 이벤트(active token 만료): ${userId}님이 티켓팅을 완료했습니다.`,
+      );
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Unknown error');
       this.logger.error('이벤트 발행 중 오류 발생:', err.stack ?? err.message);
@@ -120,7 +122,7 @@ export class ReservationService {
       throw new BadRequestException('Some seats are already reserved');
 
     this.logger.log(
-      `Reserved: ${userId} -> ${seatKeys.length} seats (Rank: ${rank})`,
+      `예매 완료: userId:${userId} -> ${seatKeys.length}개의 seats. sessionId:${sessionId}, rank:${rank}`,
     );
     return rank;
   }
