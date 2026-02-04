@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Ip } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -25,14 +25,12 @@ export class ChatController {
     description: '이미 사용 중인 닉네임',
   })
   async registerNickname(
+    @Ip() ip: string,
     @Body() registerNicknameDto: RegisterNicknameDto,
   ): Promise<{
     success: boolean;
   }> {
-    await this.chatService.registerNickname(
-      registerNicknameDto.userId,
-      registerNicknameDto.nickname,
-    );
+    await this.chatService.registerNickname(ip, registerNicknameDto.nickname);
     return { success: true };
   }
 
@@ -60,11 +58,9 @@ export class ChatController {
     description: '닉네임을 먼저 설정해주세요',
   })
   async sendMessage(
+    @Ip() ip: string,
     @Body() sendMessageDto: SendMessageDto,
   ): Promise<ChatMessageResponseDto> {
-    return await this.chatService.addMessage(
-      sendMessageDto.userId,
-      sendMessageDto.message,
-    );
+    return await this.chatService.addMessage(ip, sendMessageDto.message);
   }
 }
