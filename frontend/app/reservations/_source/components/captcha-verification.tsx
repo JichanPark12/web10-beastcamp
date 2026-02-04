@@ -5,6 +5,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { fetchCaptcha, verifyCaptcha } from "@/services/ticket";
 import { useAuth } from "@/contexts/AuthContext";
+import { isExperienceMode } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 interface CaptchaVerificationProps {
@@ -22,10 +23,11 @@ export function CaptchaVerification({
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const { token: realToken } = useAuth();
+
+  const isExperience = isExperienceMode();
+  const token = realToken || (isExperience ? "isExperience" : undefined);
   const router = useRouter();
-
-  const { token } = useAuth();
-
   // useSuspenseQuery로 보안 문자 데이터 로드
   // Suspense와 ErrorBoundary가 로딩/에러 상태를 처리
   // ssr: false로 클라이언트에서만 실행 (Blob URL hydration 에러 방지)

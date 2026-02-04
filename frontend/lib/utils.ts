@@ -25,3 +25,10 @@ export const formatDateTime = (iso: string) => {
   if (Number.isNaN(date.getTime())) return "";
   return format(date, "yyyy.MM.dd HH:mm");
 };
+
+export const isExperienceMode = () => {
+  return (
+    typeof window !== "undefined" &&
+    document.cookie.includes("EXPERIENCE_MODE=true")
+  );
+};

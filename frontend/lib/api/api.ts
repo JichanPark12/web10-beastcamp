@@ -48,7 +48,22 @@ async function request<T = unknown>(
 ): Promise<T> {
   const { params, headers = {}, serverType = "api", ...restOptions } = options;
 
-  let baseUrl = getServerUrl(serverType);
+  let isMockMode = false;
+
+  // 1. Server Side: cookies() 확인 (Dynamic Import)
+  if (typeof window === "undefined") {
+    try {
+      const { cookies } = await import("next/headers");
+      const cookieStore = await cookies();
+      isMockMode = cookieStore.get("EXPERIENCE_MODE")?.value === "true";
+    } catch {}
+  } else {
+    // 2. Client Side: document.cookie 확인 (가장 확실)
+
+    isMockMode = document.cookie.includes("EXPERIENCE_MODE=true");
+  }
+
+  let baseUrl = getServerUrl(serverType, isMockMode);
 
   // 서버 사이드에서 상대 경로인 경우 절대 URL로 변환
   if (typeof window === "undefined" && baseUrl.startsWith("/")) {
