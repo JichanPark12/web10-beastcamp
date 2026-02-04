@@ -4,11 +4,11 @@ import { Entity, PrimaryColumn, Column, CreateDateColumn } from 'typeorm';
 export class UserNickname {
   @PrimaryColumn({
     type: 'varchar',
-    length: 36,
-    name: 'user_id',
-    comment: '사용자 UUID',
+    length: 45,
+    name: 'ip',
+    comment: '사용자 IP 주소',
   })
-  userId: string;
+  ip: string;
 
   @Column({
     type: 'varchar',
