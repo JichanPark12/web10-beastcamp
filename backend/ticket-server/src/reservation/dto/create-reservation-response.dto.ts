@@ -23,4 +23,10 @@ export class CreateReservationResponseDto {
     type: [Seat],
   })
   seats: Seat[];
+
+  @ApiProperty({
+    description: '설정된 가상 유저 규모 (Queue 설정값)',
+    example: 50000,
+  })
+  virtual_user_size: number;
 }

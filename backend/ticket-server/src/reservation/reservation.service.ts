@@ -44,7 +44,17 @@ export class ReservationService {
     );
     await this.publishReservationDoneEvent(userId);
 
-    return { rank, seats };
+    const virtual_user_size = await this.getVirtualSize();
+
+    return { rank, seats, virtual_user_size };
+  }
+
+  private async getVirtualSize(): Promise<number> {
+    const sizeStr = await this.redisService.hgetQueue(
+      REDIS_KEYS.CONFIG_QUEUE,
+      'virtual.target_total',
+    );
+    return sizeStr ? parseInt(sizeStr, 10) : 0;
   }
 
   private async validateTicketingOpen() {
