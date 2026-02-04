@@ -1,7 +1,6 @@
-import { ErrorBoundary } from "react-error-boundary";
-import { Suspense } from "react";
-import TicketingData from "./TicketingData";
-import Links from "./links/Links";
+import { ErrorBoundary } from 'react-error-boundary';
+import { Suspense } from 'react';
+import TicketingData from './TicketingData';
 
 export default function UpcomingTicketing() {
   return (
@@ -14,7 +13,6 @@ export default function UpcomingTicketing() {
             </Suspense>
           </ErrorBoundary>
         </div>
-        <Links />
       </div>
     </main>
   );

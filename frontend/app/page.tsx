@@ -4,14 +4,14 @@
  * Resources: app/_source/
  */
 
-import ExperienceCleanup from "./_source/components/demoTicketing/ExperienceCleanup";
-import PracticeSection from "./_source/components/demoTicketing/PracticeSection";
-import NetworkStatus from "./_source/components/network/NetworkStatus";
-import { ScheduledTicketings } from "./_source/components/scheduledTicketing/ScheduledTicketings";
-import UpcomingTicketing from "./_source/components/ticketing/UpcomingTicketing";
+import ExperienceCleanup from './_source/components/demoTicketing/ExperienceCleanup';
+import PracticeSection from './_source/components/demoTicketing/PracticeSection';
+import NetworkStatus from './_source/components/network/NetworkStatus';
+import { ScheduledTicketings } from './_source/components/scheduledTicketing/ScheduledTicketings';
+import UpcomingTicketing from './_source/components/ticketing/UpcomingTicketing';
 import Chat from './_source/components/chat/Chat';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   return (
