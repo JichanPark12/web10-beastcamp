@@ -45,8 +45,9 @@ export class ReservationService {
     await this.publishReservationDoneEvent(userId);
 
     const virtual_user_size = await this.getVirtualSize();
+    const reserved_at = new Date().toISOString();
 
-    return { rank, seats, virtual_user_size };
+    return { rank, seats, virtual_user_size, reserved_at };
   }
 
   private async getVirtualSize(): Promise<number> {
