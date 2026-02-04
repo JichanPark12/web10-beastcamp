@@ -20,7 +20,9 @@ export const useServerTime = (url: string) => {
       const result = await getPlatformTime(url);
       const end = performance.now();
 
-      if (!result) return null;
+      if (!result) {
+        throw new Error("Failed to fetch server time");
+      }
 
       const currentRTT = end - start;
       rttHistory.current = [...rttHistory.current, currentRTT].slice(
