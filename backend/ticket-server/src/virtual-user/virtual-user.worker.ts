@@ -1,6 +1,4 @@
 import {
-  BadRequestException,
-  ForbiddenException,
   Injectable,
   Logger,
   OnModuleDestroy,
@@ -10,6 +8,7 @@ import { RedisService } from '../redis/redis.service';
 import { ReservationService } from '../reservation/reservation.service';
 import { REDIS_CHANNELS, REDIS_KEYS } from '@beastcamp/shared-constants';
 import { TicketConfigService } from '../config/ticket-config.service';
+import { TICKET_ERROR_CODES, TicketException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class VirtualUserWorker implements OnModuleInit, OnModuleDestroy {
@@ -62,10 +61,17 @@ export class VirtualUserWorker implements OnModuleInit, OnModuleDestroy {
           await this.delay(config.processDelayMs);
         }
       } catch (error: unknown) {
-        const err = error instanceof Error ? error : new Error('Unknown error');
+        const wrappedError =
+          error instanceof TicketException
+            ? error
+            : new TicketException(
+                TICKET_ERROR_CODES.VIRTUAL_USER_PROCESS_FAILED,
+                '가상 유저 처리 중 오류가 발생했습니다.',
+                500,
+              );
         this.logger.error(
-          `가상 유저 처리 루프 오류: ${err.message}`,
-          err.stack,
+          `[${wrappedError.errorCode}] ${wrappedError.message}`,
+          error instanceof Error ? error.stack : undefined,
         );
         const { errorDelayMs } = this.configService.getVirtualConfig();
         await this.delay(errorDelayMs);
@@ -137,18 +143,29 @@ export class VirtualUserWorker implements OnModuleInit, OnModuleDestroy {
 
         return;
       } catch (error: unknown) {
-        if (error instanceof ForbiddenException) {
-          this.logger.debug('티켓팅이 열려있지 않아 가상 예약을 건너뜁니다.');
-          await this.releaseActiveUser(userId, 'ticketing_closed');
-          return;
+        if (error instanceof TicketException) {
+          if (error.errorCode === TICKET_ERROR_CODES.TICKETING_NOT_OPEN) {
+            this.logger.debug('티켓팅이 열려있지 않아 가상 예약을 건너뜁니다.');
+            await this.releaseActiveUser(userId, 'ticketing_closed');
+            return;
+          }
+          if (error.getStatus() < 500) {
+            continue;
+          }
         }
 
-        if (error instanceof BadRequestException) {
-          continue;
-        }
-
-        const err = error instanceof Error ? error : new Error('Unknown error');
-        this.logger.error(`가상 유저 예약 실패: ${err.message}`, err.stack);
+        const wrappedError =
+          error instanceof TicketException
+            ? error
+            : new TicketException(
+                TICKET_ERROR_CODES.VIRTUAL_USER_PROCESS_FAILED,
+                '가상 유저 예약 중 오류가 발생했습니다.',
+                500,
+              );
+        this.logger.error(
+          `[${wrappedError.errorCode}] ${wrappedError.message}`,
+          error instanceof Error ? error.stack : undefined,
+        );
         await this.releaseActiveUser(userId, 'unexpected_error');
         return;
       }
@@ -203,8 +220,18 @@ export class VirtualUserWorker implements OnModuleInit, OnModuleDestroy {
         `가상 유저 활성 해제 요청: user=${userId}, reason=${reason}`,
       );
     } catch (error: unknown) {
-      const err = error instanceof Error ? error : new Error('Unknown error');
-      this.logger.error(`가상 유저 활성 해제 실패: ${err.message}`, err.stack);
+      const wrappedError =
+        error instanceof TicketException
+          ? error
+          : new TicketException(
+              TICKET_ERROR_CODES.VIRTUAL_USER_RELEASE_FAILED,
+              '가상 유저 활성 해제에 실패했습니다.',
+              500,
+            );
+      this.logger.error(
+        `[${wrappedError.errorCode}] ${wrappedError.message}`,
+        error instanceof Error ? error.stack : undefined,
+      );
     }
   }
 

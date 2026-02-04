@@ -4,7 +4,7 @@ jest.mock('@beastcamp/backend-config', () => ({
 }));
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { TicketException, TICKET_ERROR_CODES } from '@beastcamp/shared-nestjs';
 import { ChainableCommander } from 'ioredis';
 import { REDIS_CHANNELS } from '@beastcamp/shared-constants';
 import { VirtualUserWorker } from './virtual-user.worker';
@@ -259,11 +259,17 @@ describe('VirtualUserWorker', () => {
   });
 
   describe('processVirtualUser - 예약 실패 처리', () => {
-    it('ForbiddenException 시 releaseActiveUser(ticketing_closed) 호출', async () => {
+    it('TicketException(TICKETING_NOT_OPEN) 시 releaseActiveUser(ticketing_closed) 호출', async () => {
       setupRedisForSuccess();
       jest
         .mocked(reservationService.reserve)
-        .mockRejectedValue(new ForbiddenException());
+        .mockRejectedValue(
+          new TicketException(
+            TICKET_ERROR_CODES.TICKETING_NOT_OPEN,
+            '티켓팅이 열려있지 않습니다.',
+            403,
+          ),
+        );
 
       await workerTest.processVirtualUser('vu-1', 10);
 
@@ -273,7 +279,7 @@ describe('VirtualUserWorker', () => {
       );
     });
 
-    it('BadRequestException 시 재시도 후 한도 초과하면 releaseActiveUser(max_attempts) 호출', async () => {
+    it('TicketException(좌석 오류) 시 재시도 후 한도 초과하면 releaseActiveUser(max_attempts) 호출', async () => {
       configService.getVirtualConfig.mockReturnValue({
         ...defaultVirtualConfig,
         maxSeatPickAttempts: 2,
@@ -281,7 +287,13 @@ describe('VirtualUserWorker', () => {
       setupRedisForSuccess();
       jest
         .mocked(reservationService.reserve)
-        .mockRejectedValue(new BadRequestException('already reserved'));
+        .mockRejectedValue(
+          new TicketException(
+            TICKET_ERROR_CODES.SEATS_ALREADY_RESERVED,
+            '이미 예약된 좌석이 포함되어 있습니다.',
+            400,
+          ),
+        );
 
       await workerTest.processVirtualUser('vu-1', 2);
 

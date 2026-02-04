@@ -1,12 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Res,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Res } from '@nestjs/common';
 import type { Response } from 'express';
+import { TICKET_ERROR_CODES, TicketException } from '@beastcamp/shared-nestjs';
 import { CaptchaService } from './captcha.service';
 
 @Controller('captcha')
@@ -30,7 +24,11 @@ export class CaptchaController {
     const { captchaId, userInput } = body;
 
     if (!captchaId || !userInput) {
-      throw new BadRequestException('captchaId and userInput are required');
+      throw new TicketException(
+        TICKET_ERROR_CODES.CAPTCHA_PARAMS_REQUIRED,
+        'captchaId와 userInput은 필수입니다.',
+        400,
+      );
     }
 
     const isValid = this.captchaService.verifyCaptcha(captchaId, userInput);

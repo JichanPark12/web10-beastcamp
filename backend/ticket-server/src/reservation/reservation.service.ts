@@ -1,11 +1,7 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { REDIS_CHANNELS, REDIS_KEYS } from '@beastcamp/shared-constants';
 import { TraceService } from '@beastcamp/shared-nestjs/trace/trace.service';
+import { TICKET_ERROR_CODES, TicketException } from '@beastcamp/shared-nestjs';
 import { RedisService } from '../redis/redis.service';
 import { CreateReservationRequestDto } from './dto/create-reservation-request.dto';
 import { GetReservationsResponseDto } from './dto/get-reservations-response.dto';
@@ -63,7 +59,13 @@ export class ReservationService {
 
   private async validateTicketingOpen() {
     const isOpen = await this.redisService.get(REDIS_KEYS.TICKETING_OPEN);
-    if (isOpen !== 'true') throw new ForbiddenException('Ticketing not open');
+    if (isOpen !== 'true') {
+      throw new TicketException(
+        TICKET_ERROR_CODES.TICKETING_NOT_OPEN,
+        '티켓팅이 열려있지 않습니다.',
+        403,
+      );
+    }
   }
 
   private async publishReservationDoneEvent(userId: string): Promise<void> {
@@ -108,14 +110,20 @@ export class ReservationService {
       const { rowSize, colSize } = blockInfoMap.get(blockId)!;
 
       if (row < 0 || row >= rowSize || col < 0 || col >= colSize) {
-        throw new BadRequestException(
-          `Invalid coordinates for block ${blockId}`,
+        throw new TicketException(
+          TICKET_ERROR_CODES.INVALID_SEAT_COORDINATES,
+          `좌석 좌표가 유효하지 않습니다. (block: ${blockId})`,
+          400,
         );
       }
       const key = `reservation:session:${sessionId}:block:${blockId}:row:${row}:col:${col}`;
 
       if (uniqueKeys.has(key)) {
-        throw new BadRequestException('Duplicate seats in request');
+        throw new TicketException(
+          TICKET_ERROR_CODES.DUPLICATE_SEATS,
+          '요청에 중복된 좌석이 포함되어 있습니다.',
+          400,
+        );
       }
       uniqueKeys.add(key);
       seatKeys.push(key);
@@ -135,8 +143,13 @@ export class ReservationService {
       rankKey,
     );
 
-    if (success !== 1)
-      throw new BadRequestException('Some seats are already reserved');
+    if (success !== 1) {
+      throw new TicketException(
+        TICKET_ERROR_CODES.SEATS_ALREADY_RESERVED,
+        '이미 예약된 좌석이 포함되어 있습니다.',
+        400,
+      );
+    }
 
     this.logger.log(
       `예매 완료: userId:${userId} -> ${seatKeys.length}개의 seats. sessionId:${sessionId}, rank:${rank}`,
@@ -149,15 +162,24 @@ export class ReservationService {
       `session:${sessionId}:blocks`,
       String(blockId),
     );
-    if (!isValid)
-      throw new BadRequestException(
-        `Invalid block ${blockId} for session ${sessionId}`,
+    if (!isValid) {
+      throw new TicketException(
+        TICKET_ERROR_CODES.INVALID_BLOCK_FOR_SESSION,
+        `회차 ${sessionId}에 대한 블록 정보가 유효하지 않습니다. (block: ${blockId})`,
+        400,
       );
+    }
   }
 
   private async getBlockInfo(blockId: number) {
     const data = await this.redisService.get(`block:${blockId}`);
-    if (!data) throw new BadRequestException(`Block ${blockId} data not found`);
+    if (!data) {
+      throw new TicketException(
+        TICKET_ERROR_CODES.BLOCK_DATA_NOT_FOUND,
+        `블록 정보가 존재하지 않습니다. (block: ${blockId})`,
+        400,
+      );
+    }
     return JSON.parse(data) as { rowSize: number; colSize: number };
   }
 

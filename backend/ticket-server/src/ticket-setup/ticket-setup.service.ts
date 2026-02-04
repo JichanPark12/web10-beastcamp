@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { REDIS_CHANNELS, REDIS_KEYS } from '@beastcamp/shared-constants';
+import { TICKET_ERROR_CODES, TicketException } from '@beastcamp/shared-nestjs';
 import {
   PerformanceApiService,
   SessionResponse,
@@ -21,7 +22,11 @@ export class TicketSetupService {
 
     const performances = await this.performanceApi.getPerformances(1);
     if (performances.length === 0) {
-      throw new Error('No performances found');
+      throw new TicketException(
+        TICKET_ERROR_CODES.NO_PERFORMANCES_FOUND,
+        '공연 정보가 존재하지 않습니다.',
+        500,
+      );
     }
     const performanceId = performances[0].performance_id;
     this.logger.log(`Setup 진행중. performanceId: ${performanceId}`);
@@ -31,8 +36,10 @@ export class TicketSetupService {
       this.logger.error(
         `해당 공연에 해당하는 회차가 없습니다. performanceId: ${performanceId}`,
       );
-      throw new Error(
-        '해당 공연에 해당하는 회차가 없습니다. performanceId: ' + performanceId,
+      throw new TicketException(
+        TICKET_ERROR_CODES.NO_SESSIONS_FOUND,
+        '해당 공연에 해당하는 회차가 없습니다.',
+        500,
       );
     }
 
@@ -100,7 +107,11 @@ export class TicketSetupService {
   private async registToRedis(session: SessionResponse): Promise<void> {
     const venue = await this.performanceApi.getVenueWithBlocks(session.venueId);
     if (venue.blocks.length === 0) {
-      throw new Error(`No blocks found for venue: ${session.venueId}`);
+      throw new TicketException(
+        TICKET_ERROR_CODES.NO_BLOCKS_FOUND,
+        '공연장의 블록 정보가 존재하지 않습니다.',
+        500,
+      );
     }
 
     const blockIds = venue.blocks.map((b) => b.id);
