@@ -154,7 +154,7 @@ describe('VirtualUserWorker', () => {
 
   describe('processVirtualUser - 예매 후 취소표', () => {
     it('cancelRatio 확률로 취소 시 Redis 좌석 키를 삭제한다 (취소표 반영)', async () => {
-      // Math.random: 0.05 → jitter, then row = floor(0.05*5)=0, col = floor(0.05*5)=0 → 취소 시 (0,0) 키 삭제
+      // Math.random: 0.05 < cancelRatio(0.1) → 취소 발생, reserve mock의 (0,0) 좌석 키 삭제
       jest.spyOn(Math, 'random').mockReturnValue(0.05); // 0.05 < 0.1 → 취소
       configService.getVirtualConfig.mockReturnValue({
         ...defaultVirtualConfig,
@@ -193,7 +193,7 @@ describe('VirtualUserWorker', () => {
     });
 
     it('취소 시 예약한 좌석 키가 reservation:session:block:row:col 형식으로 삭제된다', async () => {
-      jest.spyOn(Math, 'random').mockReturnValue(0.3); // row=1, col=1 (floor(0.3*5)=1), 0.3 < 1 → 취소
+      jest.spyOn(Math, 'random').mockReturnValue(0.3); // cancelRatio=1 이므로 항상 취소, reserve mock의 (1,1) 좌석 키 삭제
       configService.getVirtualConfig.mockReturnValue({
         ...defaultVirtualConfig,
         cancelRatio: 1,
