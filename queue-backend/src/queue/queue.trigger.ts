@@ -11,6 +11,7 @@ import { QueueWorker } from './queue.worker';
 import { QueueConfigService } from './queue-config.service';
 import { runWithPubSubContext } from '@beastcamp/shared-nestjs/trace/pubsub-context';
 import { TraceService } from '@beastcamp/shared-nestjs/trace/trace.service';
+import { QUEUE_ERROR_CODES, QueueException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class QueueTrigger implements OnModuleInit, OnModuleDestroy {
@@ -64,7 +65,18 @@ export class QueueTrigger implements OnModuleInit, OnModuleDestroy {
       await this.configService.sync();
       await this.worker.processQueueTransfer();
     } catch (error) {
-      this.logger.error('대기열 스케줄링 중 오류 발생:', error);
+      const wrappedError =
+        error instanceof QueueException
+          ? error
+          : new QueueException(
+              QUEUE_ERROR_CODES.QUEUE_TRIGGER_FAILED,
+              '대기열 스케줄링 중 오류가 발생했습니다.',
+              500,
+            );
+      this.logger.error(
+        `[${wrappedError.errorCode}] ${wrappedError.message}`,
+        error instanceof Error ? error.stack : undefined,
+      );
     } finally {
       this.scheduleNextTransfer();
     }
@@ -76,9 +88,17 @@ export class QueueTrigger implements OnModuleInit, OnModuleDestroy {
       await this.worker.removeActiveUser(userId);
       await this.worker.processQueueTransfer();
     } catch (err) {
+      const wrappedError =
+        err instanceof QueueException
+          ? err
+          : new QueueException(
+              QUEUE_ERROR_CODES.QUEUE_DONE_EVENT_FAILED,
+              '티켓팅 완료 이벤트 처리 중 오류가 발생했습니다.',
+              500,
+            );
       this.logger.error(
-        `🚨 [트리거 오류] message: ${userId}`,
-        (err as Error).stack,
+        `[${wrappedError.errorCode}] ${wrappedError.message}`,
+        err instanceof Error ? err.stack : undefined,
       );
     }
   }

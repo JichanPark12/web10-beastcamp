@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit, Inject, Logger } from '@nestjs/common';
 import { ChainableCommander, Redis } from 'ioredis';
 import { DynamicConfigManager } from '@beastcamp/shared-nestjs';
 import { PROVIDERS, REDIS_KEYS } from '@beastcamp/shared-constants';
+import { QUEUE_ERROR_CODES, QueueException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class QueueConfigService implements OnModuleInit {
@@ -62,7 +63,18 @@ export class QueueConfigService implements OnModuleInit {
     try {
       await pipeline.exec();
     } catch (error) {
-      this.logger.error('Queue Config 시딩 실패', (error as Error).stack);
+      const wrappedError =
+        error instanceof QueueException
+          ? error
+          : new QueueException(
+              QUEUE_ERROR_CODES.QUEUE_CONFIG_SEED_FAILED,
+              '대기열 설정 시딩에 실패했습니다.',
+              500,
+            );
+      this.logger.error(
+        `[${wrappedError.errorCode}] ${wrappedError.message}`,
+        error instanceof Error ? error.stack : undefined,
+      );
     }
   }
 

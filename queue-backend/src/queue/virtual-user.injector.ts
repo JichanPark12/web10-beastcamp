@@ -4,6 +4,7 @@ import { randomBytes } from 'crypto';
 import Redis from 'ioredis';
 import { QueueConfigService } from './queue-config.service';
 import { TicketingStateService } from './ticketing-state.service';
+import { QUEUE_ERROR_CODES, QueueException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class VirtualUserInjector {
@@ -109,9 +110,19 @@ export class VirtualUserInjector {
         );
         return this.stop();
       }
-    } catch (error: unknown) {
-      const err = error instanceof Error ? error : new Error('Unknown error');
-      this.logger.error(`가상 유저 주입 오류: ${err.message}`, err.stack);
+    } catch (error) {
+      const wrappedError =
+        error instanceof QueueException
+          ? error
+          : new QueueException(
+              QUEUE_ERROR_CODES.QUEUE_VIRTUAL_INJECT_FAILED,
+              '가상 유저 주입 중 오류가 발생했습니다.',
+              500,
+            );
+      this.logger.error(
+        `[${wrappedError.errorCode}] ${wrappedError.message}`,
+        error instanceof Error ? error.stack : undefined,
+      );
     }
 
     this.scheduleNextTick();

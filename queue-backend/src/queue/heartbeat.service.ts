@@ -2,6 +2,7 @@ import { PROVIDERS, REDIS_KEYS } from '@beastcamp/shared-constants';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import { QueueConfigService } from './queue-config.service';
+import { QUEUE_ERROR_CODES, QueueException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class HeartbeatService {
@@ -39,7 +40,18 @@ export class HeartbeatService {
         );
       }
     } catch (error) {
-      this.logger.error(`하트비트 업데이트 실패 (userId: ${userId}):`, error);
+      const wrappedError =
+        error instanceof QueueException
+          ? error
+          : new QueueException(
+              QUEUE_ERROR_CODES.QUEUE_HEARTBEAT_UPDATE_FAILED,
+              '하트비트 업데이트에 실패했습니다.',
+              500,
+            );
+      this.logger.error(
+        `[${wrappedError.errorCode}] ${wrappedError.message} (userId: ${userId})`,
+        error instanceof Error ? error.stack : undefined,
+      );
     }
   }
 }

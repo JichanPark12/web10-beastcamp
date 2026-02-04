@@ -6,6 +6,7 @@ import {
   REDIS_KEY_PREFIXES,
 } from '@beastcamp/shared-constants';
 import { QueueConfigService } from './queue-config.service';
+import { QUEUE_ERROR_CODES, QueueException } from '@beastcamp/shared-nestjs';
 
 interface RedisWithCommands extends Redis {
   syncAndPromoteWaiters(
@@ -62,7 +63,18 @@ export class QueueWorker {
         );
       }
     } catch (error) {
-      this.logger.error('대기열 스케줄링 중 오류 발생:', error);
+      const wrappedError =
+        error instanceof QueueException
+          ? error
+          : new QueueException(
+              QUEUE_ERROR_CODES.QUEUE_TRANSFER_FAILED,
+              '대기열 처리 중 오류가 발생했습니다.',
+              500,
+            );
+      this.logger.error(
+        `[${wrappedError.errorCode}] ${wrappedError.message}`,
+        error instanceof Error ? error.stack : undefined,
+      );
     } finally {
       this.isProcessing = false;
     }
@@ -89,7 +101,18 @@ export class QueueWorker {
         );
       }
     } catch (error) {
-      this.logger.error(`활성 큐 제거 실패 (userId: ${userId}):`, error);
+      const wrappedError =
+        error instanceof QueueException
+          ? error
+          : new QueueException(
+              QUEUE_ERROR_CODES.QUEUE_REMOVE_ACTIVE_FAILED,
+              '활성 큐 제거에 실패했습니다.',
+              500,
+            );
+      this.logger.error(
+        `[${wrappedError.errorCode}] ${wrappedError.message} (userId: ${userId})`,
+        error instanceof Error ? error.stack : undefined,
+      );
     }
   }
 }
