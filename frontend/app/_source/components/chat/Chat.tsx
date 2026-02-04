@@ -74,9 +74,9 @@ export default function Chat() {
         <div className="flex items-center gap-3">
           <MessageCircle className="w-6 h-6 text-white" />
           <div>
-            <h2 className="text-xl font-bold text-white">실시간 채팅</h2>
+            <h2 className="text-xl font-bold text-white">방명록 </h2>
             <p className="text-sm text-purple-100">
-              다른 사용자들과 대화해보세요
+              서비스 이용 후기를 남겨주세요!
             </p>
           </div>
         </div>
