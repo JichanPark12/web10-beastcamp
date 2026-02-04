@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'backend-metrics'
+    static_configs:
+      - targets: ['192.168.0.7:8080'] # ticket-server, api-server instance
+
+  - job_name: 'queue-metrics'
+    static_configs:
+      - targets: ['192.168.0.8:8080'] # queue-server instance

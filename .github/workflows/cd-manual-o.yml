@@ -129,10 +129,10 @@ jobs:
 
             # 5. 배포 (Clean Export 문법 반영 및 --wait 적용)
             export IMAGE_TAG NCP_REGISTRY_URL SERVICE_NAME LOKI_URL
-
+            
             echo "🚀 $SERVICE_NAME 배포 중 (Healthcheck 대기)..."
-            docker compose pull $SERVICE_NAME promtail
-            docker compose up -d --wait --no-build $SERVICE_NAME promtail
+            docker compose pull $SERVICE_NAME promtail cadvisor
+            docker compose up -d --wait --no-build $SERVICE_NAME promtail cadvisor
 
             # 5. 디스크 청소 (24시간 이내 이미지는 보존하여 롤백 대비)
             docker image prune -af --filter "until=24h"
