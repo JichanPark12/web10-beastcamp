@@ -1,10 +1,18 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 import UserNickname from './UserNickname';
 import { Ticket, Clock } from 'lucide-react';
+import { useSessionStore } from '@/stores/sessionStore';
 
 export default function Header() {
+  const { initializeSession } = useSessionStore();
+
+  useEffect(() => {
+    initializeSession();
+  }, [initializeSession]);
+
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -24,7 +32,7 @@ export default function Header() {
               </p>
             </div>
           </Link>
-          <UserNickname />
+
           <nav className="flex items-center gap-6">
             <Link
               href="/server-time"
@@ -33,6 +41,8 @@ export default function Header() {
               <Clock className="w-4 h-4" />
               서버 시간
             </Link>
+
+            <UserNickname />
           </nav>
         </div>
       </div>

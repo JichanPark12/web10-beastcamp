@@ -6,20 +6,23 @@ import {
   useRegisterNicknameMutation,
   useNicknameQuery,
 } from "@/app/_source/queries/chat";
+import { useSessionStore } from "@/stores/sessionStore";
 
 export default function UserNickname() {
+  const { sessionId } = useSessionStore();
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const { mutate: registerNickname, isPending } = useRegisterNicknameMutation();
 
-  // 서버에서 닉네임 조회 (IP 기반)
-  const { data: nickname } = useNicknameQuery();
+  // 서버에서 닉네임 조회 (세션 ID 기반)
+  const { data: nickname } = useNicknameQuery(sessionId);
 
   const handleSaveNickname = () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || !sessionId) return;
 
     registerNickname(
       {
+        sessionId,
         nickname: inputValue.trim(),
       },
       {

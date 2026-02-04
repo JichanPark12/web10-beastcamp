@@ -7,9 +7,11 @@ import {
   useSendMessageMutation,
   useNicknameQuery,
 } from '@/app/_source/queries/chat';
+import { useSessionStore } from '@/stores/sessionStore';
 
 export default function Chat() {
-  const { data: nickname } = useNicknameQuery();
+  const { sessionId } = useSessionStore();
+  const { data: nickname } = useNicknameQuery(sessionId);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -22,9 +24,14 @@ export default function Chat() {
       alert('닉네임을 먼저 설정해주세요!');
       return;
     }
+    if (!sessionId) {
+      alert('세션을 초기화하는 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
 
     sendMessage(
       {
+        sessionId,
         message: inputValue.trim(),
       },
       {

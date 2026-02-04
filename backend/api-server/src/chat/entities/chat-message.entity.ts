@@ -15,11 +15,11 @@ export class ChatMessage {
 
   @Column({
     type: 'varchar',
-    length: 45,
-    name: 'ip',
-    comment: '메시지를 보낸 사용자 IP',
+    length: 36,
+    name: 'session_id',
+    comment: '메시지를 보낸 사용자 세션 ID',
   })
-  ip: string;
+  sessionId: string;
 
   @Column({
     type: 'varchar',
@@ -37,6 +37,6 @@ export class ChatMessage {
   timestamp: Date;
 
   @ManyToOne(() => UserNickname, { eager: true })
-  @JoinColumn({ name: 'ip', referencedColumnName: 'ip' })
+  @JoinColumn({ name: 'session_id', referencedColumnName: 'sessionId' })
   user: UserNickname;
 }

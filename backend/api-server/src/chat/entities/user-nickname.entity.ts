@@ -1,14 +1,14 @@
 import { Entity, PrimaryColumn, Column, CreateDateColumn } from 'typeorm';
 
-@Entity('user_nicknames')
+@Entity('user')
 export class UserNickname {
   @PrimaryColumn({
     type: 'varchar',
-    length: 45,
-    name: 'ip',
-    comment: '사용자 IP 주소',
+    length: 36,
+    name: 'session_id',
+    comment: '사용자 세션 ID',
   })
-  ip: string;
+  sessionId: string;
 
   @Column({
     type: 'varchar',

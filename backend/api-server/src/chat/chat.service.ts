@@ -34,19 +34,19 @@ export class ChatService {
     }));
   }
 
-  async registerNickname(ip: string, nickname: string): Promise<void> {
+  async registerNickname(sessionId: string, nickname: string): Promise<void> {
     // 다른 사용자가 이미 사용 중인 닉네임인지 확인
     const existingNickname = await this.userNicknameRepository.findOne({
       where: { nickname },
     });
 
-    if (existingNickname && existingNickname.ip !== ip) {
+    if (existingNickname && existingNickname.sessionId !== sessionId) {
       throw new BadRequestException('이미 사용 중인 닉네임입니다.');
     }
 
     // 기존 사용자 닉네임 조회
     const existingUser = await this.userNicknameRepository.findOne({
-      where: { ip },
+      where: { sessionId },
     });
 
     if (existingUser) {
@@ -57,7 +57,7 @@ export class ChatService {
     } else {
       // 새 닉네임 등록
       const newUserNickname = this.userNicknameRepository.create({
-        ip,
+        sessionId,
         nickname,
         updatedAt: null,
       });
@@ -65,16 +65,19 @@ export class ChatService {
     }
   }
 
-  async getNickname(ip: string): Promise<string | undefined> {
+  async getNickname(sessionId: string): Promise<string | undefined> {
     const userNickname = await this.userNicknameRepository.findOne({
-      where: { ip },
+      where: { sessionId },
     });
     return userNickname?.nickname;
   }
 
-  async addMessage(ip: string, message: string): Promise<ChatMessageResponse> {
+  async addMessage(
+    sessionId: string,
+    message: string,
+  ): Promise<ChatMessageResponse> {
     const userNickname = await this.userNicknameRepository.findOne({
-      where: { ip },
+      where: { sessionId },
     });
 
     if (!userNickname) {
@@ -82,7 +85,7 @@ export class ChatService {
     }
 
     const newMessage = this.chatMessageRepository.create({
-      ip,
+      sessionId,
       message,
     });
 
