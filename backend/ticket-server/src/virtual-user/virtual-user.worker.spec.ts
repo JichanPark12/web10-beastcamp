@@ -106,6 +106,10 @@ describe('VirtualUserWorker', () => {
       .mockResolvedValue(undefined);
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   describe('processVirtualUser - 예매 전 지터', () => {
     it('thinkingTimeMs > 0 이면 지터(0.75~1.25)를 곱한 시간만큼 delay 호출한다', async () => {
       jest.spyOn(Math, 'random').mockReturnValue(0.5); // jitter = 0.75 + 0.25 = 1.0
@@ -142,6 +146,7 @@ describe('VirtualUserWorker', () => {
 
       await workerTest.processVirtualUser('vu-1', 10);
 
+      expect(workerTest.delay).not.toHaveBeenCalled();
       expect(configService.getVirtualConfig).toHaveBeenCalled();
       expect(reservationService.reserve).toHaveBeenCalled();
     });
