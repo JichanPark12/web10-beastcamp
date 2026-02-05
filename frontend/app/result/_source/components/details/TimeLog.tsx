@@ -3,29 +3,58 @@
 import { Clock } from "lucide-react";
 import { useTimeLogStore } from "@/hooks/timeLogStore";
 import { formatTime } from "@/lib/utils";
+import { useResult } from "@/contexts/ResultContext";
+import { useExperienceMode } from "@/hooks/useExperienceMode";
 
 export default function TimeLog() {
+  const { result } = useResult();
   const { waitingQueue, captcha, seatSelection, getTotalDuration } =
     useTimeLogStore();
+  const isExperience = useExperienceMode();
 
-  const totalTime = getTotalDuration();
+  const totalDuration = getTotalDuration();
+
+  // 1. 대기열 진입 시간 (예매하기 버튼 클릭 시간)
+  const entryTime = result?.reservedAt
+    ? new Date(new Date(result.reservedAt).getTime() - totalDuration * 1000)
+    : null;
+
+  const openDelay = entryTime
+    ? (entryTime.getTime() -
+        (function () {
+          const t = new Date(entryTime);
+          t.setMinutes(Math.floor(t.getMinutes() / 5) * 5);
+          t.setSeconds(0);
+          t.setMilliseconds(0);
+          return t.getTime();
+        })()) /
+      1000
+    : 0;
+
+  const totalTime = totalDuration + (isExperience ? 0 : openDelay);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6">
-      <h4 className="mb-4 flex items-center gap-2">
-        <Clock className="w-5 h-5 text-gray-400" />
+    <div className="bg-gray-50 rounded-xl p-4">
+      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <Clock className="w-4 h-4 text-gray-500" />
         단계별 소요 시간
       </h4>
       <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <span className="text-gray-600">대기열 통과</span>
+        {!isExperience && entryTime && (
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-500"> 오픈 후 진입까지 경과 시간</span>
+            <span>{formatTime(openDelay)}</span>
+          </div>
+        )}
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-gray-500">대기열 통과</span>
           <span>{formatTime(waitingQueue.duration)}</span>
         </div>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center text-sm">
           <span className="text-gray-600">보안문자 입력</span>
           <span>{formatTime(captcha.duration)}</span>
         </div>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center text-sm">
           <span className="text-gray-600">좌석 선택</span>
           <span>{formatTime(seatSelection.duration)}</span>
         </div>

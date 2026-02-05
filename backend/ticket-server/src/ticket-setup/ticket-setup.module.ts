@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { PerformanceApiModule } from '../performance-api/performance-api.module';
 import { RedisModule } from '../redis/redis.module';
 import { TicketSetupService } from './ticket-setup.service';
+import { TraceModule } from '@beastcamp/shared-nestjs';
 
 @Module({
-  imports: [PerformanceApiModule, RedisModule],
+  imports: [PerformanceApiModule, RedisModule, TraceModule],
   providers: [TicketSetupService],
   exports: [TicketSetupService],
 })

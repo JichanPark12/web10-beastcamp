@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Performance } from './entities/performance.entity';
@@ -17,6 +17,7 @@ import { CreateGradeRequestDto } from './dto/create-grade-request.dto';
 import { CreateBlockGradeRequestDto } from './dto/create-block-grade-request.dto';
 import { GetGradeResponseDto } from './dto/get-grade-response.dto';
 import { GetBlockGradeResponseDto } from './dto/get-block-grade-response.dto';
+import { API_ERROR_CODES, TicketException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class PerformancesService {
@@ -68,14 +69,22 @@ export class PerformancesService {
       where: { id: performanceId },
     });
     if (!performance) {
-      throw new BadRequestException('Invalid performance id');
+      throw new TicketException(
+        API_ERROR_CODES.PERFORMANCE_NOT_FOUND,
+        '공연 정보를 찾을 수 없습니다.',
+        404,
+      );
     }
 
     const venue = await this.venuesRepository.findOne({
       where: { id: requestDto.venue_id },
     });
     if (!venue) {
-      throw new BadRequestException('Invalid venue id');
+      throw new TicketException(
+        API_ERROR_CODES.VENUE_NOT_FOUND,
+        '공연장을 찾을 수 없습니다.',
+        404,
+      );
     }
 
     const session = new Session(
@@ -101,7 +110,11 @@ export class PerformancesService {
       where: { id: sessionId },
     });
     if (!session) {
-      throw new BadRequestException('Invalid session id');
+      throw new TicketException(
+        API_ERROR_CODES.SESSION_NOT_FOUND,
+        '회차 정보를 찾을 수 없습니다.',
+        404,
+      );
     }
 
     await this.gradesRepository.createMany(sessionId, requestDtos);
@@ -120,7 +133,11 @@ export class PerformancesService {
       where: { id: sessionId },
     });
     if (!session) {
-      throw new BadRequestException('Invalid session id');
+      throw new TicketException(
+        API_ERROR_CODES.SESSION_NOT_FOUND,
+        '회차 정보를 찾을 수 없습니다.',
+        404,
+      );
     }
 
     // Validation: Check for duplicates
@@ -132,10 +149,10 @@ export class PerformancesService {
       );
 
     if (existingMappings.length > 0) {
-      throw new BadRequestException(
-        `Some blocks are already assigned to a grade: ${existingMappings
-          .map((m) => m.blockId)
-          .join(', ')}`,
+      throw new TicketException(
+        API_ERROR_CODES.BLOCK_GRADE_ALREADY_ASSIGNED,
+        '일부 블록은 이미 등급이 지정되어 있습니다.',
+        409,
       );
     }
 

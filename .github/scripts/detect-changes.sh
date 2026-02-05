@@ -56,7 +56,7 @@ else
 
   # 공통 패키지 변경 시 의존 서비스 추가
   check_package_dependencies "shared-types" "api-server" "ticket-server" "queue-backend"
-  check_package_dependencies "backend-config" "ticket-server" "queue-backend" 
+  check_package_dependencies "shared-nestjs" "ticket-server" "queue-backend" "api-server"
   check_package_dependencies "shared-constants" "ticket-server" "queue-backend"
 fi
 

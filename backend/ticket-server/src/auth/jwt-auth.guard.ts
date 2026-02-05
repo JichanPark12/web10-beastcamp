@@ -1,11 +1,8 @@
-import {
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from './public.decorator';
+import { AUTH_ERROR_CODES, AuthException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -33,12 +30,28 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     // 토큰이 없거나 검증 실패 시
     if (err || !user) {
       if ((info as { name?: string })?.name === 'TokenExpiredError') {
-        throw new UnauthorizedException('Active token has expired');
+        throw new AuthException(
+          AUTH_ERROR_CODES.ACTIVE_TOKEN_EXPIRED,
+          '인증 토큰이 만료되었습니다.',
+          401,
+        );
       }
       if ((info as { name?: string })?.name === 'JsonWebTokenError') {
-        throw new UnauthorizedException('Invalid active token');
+        throw new AuthException(
+          AUTH_ERROR_CODES.INVALID_ACTIVE_TOKEN,
+          '유효하지 않은 인증 토큰입니다.',
+          401,
+        );
       }
-      throw err || new UnauthorizedException('Active token is required');
+
+      if (err instanceof AuthException) {
+        throw err;
+      }
+      throw new AuthException(
+        AUTH_ERROR_CODES.ACTIVE_TOKEN_REQUIRED,
+        err instanceof Error ? err.message : '인증 토큰이 필요합니다.',
+        401,
+      );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return

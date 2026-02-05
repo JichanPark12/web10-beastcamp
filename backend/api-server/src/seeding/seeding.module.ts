@@ -7,6 +7,7 @@ import { Performance } from '../performances/entities/performance.entity';
 import { Session } from '../performances/entities/session.entity';
 import { Grade } from '../performances/entities/grade.entity';
 import { BlockGrade } from '../performances/entities/block-grade.entity';
+import { TraceModule } from '@beastcamp/shared-nestjs';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { BlockGrade } from '../performances/entities/block-grade.entity';
       Grade,
       BlockGrade,
     ]),
+    TraceModule,
   ],
   providers: [SeedingService],
   exports: [SeedingService],

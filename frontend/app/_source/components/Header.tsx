@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect } from 'react';
-import UserNickname from './UserNickname';
-import { Ticket, Clock } from 'lucide-react';
-import { useSessionStore } from '@/stores/sessionStore';
+import Link from "next/link";
+import { useEffect } from "react";
+import UserNickname from "./UserNickname";
+import { Ticket, Clock } from "lucide-react";
+import { useSessionStore } from "@/stores/sessionStore";
 
 export default function Header() {
   const { initializeSession } = useSessionStore();
@@ -26,20 +26,25 @@ export default function Header() {
             </div>
             <div>
               <h1 className="text-xl">내티켓</h1>
-              <span className="sr-only">티켓팅 연습 & 시뮬레이션</span>
-              <p className="text-sm text-gray-500">
-                인터파크·예스24 티켓팅 연습
-              </p>
+              <p className="text-sm text-gray-500">티켓팅 연습 & 시뮬레이션</p>
             </div>
           </Link>
 
           <nav className="flex items-center gap-6">
-            <Link
+            {/* <Link
               href="/server-time"
               className="text-gray-600 hover:text-purple-600 font-medium transition-colors flex items-center gap-2"
             >
               <Clock className="w-4 h-4" />
               서버 시간
+            </Link> */}
+
+            <Link
+              href="/experience"
+              className="text-gray-600 hover:text-purple-600 font-medium transition-colors flex items-center gap-2"
+            >
+              <Ticket className="w-4 h-4" />
+              체험하기
             </Link>
 
             <UserNickname />

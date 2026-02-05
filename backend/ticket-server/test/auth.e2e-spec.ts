@@ -3,7 +3,7 @@ import { INestApplication, Controller, Get, UseGuards } from '@nestjs/common';
 import request from 'supertest';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
-import { jwtConfig } from '@beastcamp/backend-config';
+import { jwtConfig } from '@beastcamp/shared-nestjs';
 import { AuthModule } from '../src/auth/auth.module';
 import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 

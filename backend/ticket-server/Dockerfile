@@ -10,10 +10,10 @@ COPY packages ./packages
 # Copy ticket-server package.json
 COPY backend/ticket-server/package.json ./backend/ticket-server/
 
-# ticket-server, backend-config, shared-types, shared-constants 의존성 설치
+# ticket-server, shared-nestjs, shared-types, shared-constants 의존성 설치
 RUN pnpm install --frozen-lockfile \
     --filter @beastcamp/ticket-server... \
-    --filter @beastcamp/backend-config... \
+    --filter @beastcamp/shared-nestjs... \
     --filter @beastcamp/shared-types... \
     --filter @beastcamp/shared-constants...
 
@@ -33,7 +33,7 @@ COPY pnpm-workspace.yaml package.json tsconfig.json ./
 
 # Build application
 WORKDIR /app/backend/ticket-server
-RUN pnpm --filter @beastcamp/backend-config build && \
+RUN pnpm --filter @beastcamp/shared-nestjs build && \
     pnpm --filter @beastcamp/shared-types build && \
     pnpm --filter @beastcamp/shared-constants build
 RUN pnpm build

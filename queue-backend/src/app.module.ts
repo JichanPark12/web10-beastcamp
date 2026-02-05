@@ -2,7 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { RedisModule } from './redis/redis.module';
 import { QueueModule } from './queue/queue.module';
-import { jwtConfig, redisConfig } from '@beastcamp/backend-config';
+import {
+  GlobalExceptionFilter,
+  jwtConfig,
+  redisConfig,
+  TraceMiddleware,
+  TraceModule,
+} from '@beastcamp/shared-nestjs';
 
 @Module({
   imports: [
@@ -13,6 +19,8 @@ import { jwtConfig, redisConfig } from '@beastcamp/backend-config';
     }),
     RedisModule,
     QueueModule,
+    TraceModule,
   ],
+  providers: [GlobalExceptionFilter, TraceMiddleware],
 })
 export class AppModule {}

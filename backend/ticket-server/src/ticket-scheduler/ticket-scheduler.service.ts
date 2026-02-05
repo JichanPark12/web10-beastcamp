@@ -8,6 +8,7 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { CronJob } from 'cron';
 import { TicketSetupService } from '../ticket-setup/ticket-setup.service';
+import { TraceService } from '@beastcamp/shared-nestjs';
 
 enum CycleStatus {
   SETUP = 'SETUP',
@@ -25,6 +26,7 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
     private readonly setupService: TicketSetupService,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly config: ConfigService,
+    private readonly traceService: TraceService,
   ) {}
 
   onModuleInit() {
@@ -40,7 +42,9 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
 
         void job.stop();
       } catch (e) {
-        this.logger.error(`Stop failed (${name}): ${(e as Error).message}`);
+        this.logger.error('스케줄 중단 실패', (e as Error).stack, {
+          jobName: name,
+        });
       }
     });
   }
@@ -67,13 +71,16 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private addJob(name: string, cron: string, cb: () => Promise<void>) {
-    const job = new CronJob(cron, () => {
-      void cb();
+    const job = new CronJob(cron, async () => {
+      await this.traceService.runWithTraceId(
+        this.traceService.generateTraceId(),
+        () => cb(),
+      );
     });
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     this.schedulerRegistry.addCronJob(name, job as any);
     job.start();
-    this.logger.log(`스케쥴 등록 ${name}: ${cron}`);
+    this.logger.log('스케줄 등록 완료', { jobName: name, cron });
   }
 
   private async runSetup() {
@@ -81,7 +88,7 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
       this.status !== CycleStatus.CLOSE &&
       this.status !== CycleStatus.ERROR
     ) {
-      this.logger.warn(`티켓팅 Setup 실패 : Status is ${this.status}`);
+      this.logger.warn('Setup 단계 진입 스킵', { currentStatus: this.status });
       return;
     }
 
@@ -96,7 +103,7 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
 
   private async runOpen() {
     if (this.status !== CycleStatus.SETUP) {
-      this.logger.warn(`티켓팅 Open 실패 : Status is ${this.status}`);
+      this.logger.warn('Open 단계 진입 스킵', { currentStatus: this.status });
       return;
     }
 
@@ -111,7 +118,7 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
 
   private async runClose() {
     if (this.status !== CycleStatus.OPEN) {
-      this.logger.warn(`티켓팅 Close 실패 : Status is ${this.status}`);
+      this.logger.warn('Close 단계 진입 스킵', { currentStatus: this.status });
       return;
     }
 
@@ -127,6 +134,6 @@ export class TicketSchedulerService implements OnModuleInit, OnModuleDestroy {
   private handleErr(stage: string, e: unknown) {
     const err = e as Error;
     this.status = CycleStatus.ERROR;
-    this.logger.error(`${stage} 단계 실패 : ${err.message}`, err.stack);
+    this.logger.error('스케줄러 단계 처리 실패', err.stack, { stage });
   }
 }

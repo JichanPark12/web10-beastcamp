@@ -10,10 +10,10 @@ COPY packages ./packages
 # Copy api-server package.json
 COPY backend/api-server/package.json ./backend/api-server/
 
-# api-server, backend-config, shared-types, shared-constants 의존성 설치
+# api-server, shared-nestjs, shared-types, shared-constants 의존성 설치
 RUN pnpm install --frozen-lockfile \
     --filter @beastcamp/api-server... \
-    --filter @beastcamp/backend-config... \
+    --filter @beastcamp/shared-nestjs... \
     --filter @beastcamp/shared-types... \
     --filter @beastcamp/shared-constants...
 
@@ -33,7 +33,7 @@ COPY pnpm-workspace.yaml package.json ./
 
 # Build application
 WORKDIR /app/backend/api-server
-RUN pnpm --filter @beastcamp/backend-config build && \
+RUN pnpm --filter @beastcamp/shared-nestjs build && \
     pnpm --filter @beastcamp/shared-types build && \
     pnpm --filter @beastcamp/shared-constants build
 RUN pnpm build
@@ -60,4 +60,4 @@ USER nestjs
 EXPOSE 3002
 
 WORKDIR /app/backend/api-server
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/backend/api-server/src/main.js"]

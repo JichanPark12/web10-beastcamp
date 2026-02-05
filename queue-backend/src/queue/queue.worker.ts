@@ -6,6 +6,7 @@ import {
   REDIS_KEY_PREFIXES,
 } from '@beastcamp/shared-constants';
 import { QueueConfigService } from './queue-config.service';
+import { QUEUE_ERROR_CODES, QueueException } from '@beastcamp/shared-nestjs';
 
 interface RedisWithCommands extends Redis {
   syncAndPromoteWaiters(
@@ -34,7 +35,7 @@ export class QueueWorker {
 
   async processQueueTransfer() {
     if (this.isProcessing) {
-      this.logger.debug('🚫 이미 활성 큐 처리 중입니다.');
+      this.logger.debug('🚫 이미 활성 큐 처리 중');
       return;
     }
 
@@ -57,24 +58,38 @@ export class QueueWorker {
       );
 
       if (movedUsers.length > 0) {
-        this.logger.log(
-          `🚀 [입장] 유저 ${movedUsers.join(', ')}님이 활성 큐로 이동했습니다.`,
-        );
+        this.logger.debug('🚀 유저 활성 큐 이동 완료', {
+          count: movedUsers.length,
+          userIds: movedUsers,
+        });
       }
     } catch (error) {
-      this.logger.error('대기열 스케줄링 중 오류 발생:', error);
+      const wrappedError =
+        error instanceof QueueException
+          ? error
+          : new QueueException(
+              QUEUE_ERROR_CODES.QUEUE_TRANSFER_FAILED,
+              '대기열 처리 중 오류가 발생했습니다.',
+              500,
+            );
+      this.logger.error(
+        wrappedError.message,
+        error instanceof Error ? error.stack : undefined,
+        {
+          errorCode: wrappedError.errorCode,
+        },
+      );
     } finally {
       this.isProcessing = false;
     }
   }
 
-  async removeActiveUser(userId: string) {
+  async removeActiveUser(userId: string, isVirtual: boolean) {
     if (!userId) {
       return;
     }
 
     const statusKey = `${REDIS_KEY_PREFIXES.ACTIVE_USER}${userId}`;
-
     try {
       const results = await this.redis
         .pipeline()
@@ -84,12 +99,32 @@ export class QueueWorker {
 
       const removed = (results?.[0]?.[1] as number) ?? 0;
       if (removed > 0) {
-        this.logger.log(
-          `🛑 [퇴장] 유저 ${userId}님을 활성 큐에서 제거했습니다.`,
-        );
+        const samplingRate = isVirtual ? 0.01 : 1.0;
+        if (Math.random() < samplingRate) {
+          this.logger.log('🛑 유저 퇴장 완료', {
+            userId,
+            isVirtual,
+            sampled: isVirtual,
+          });
+        }
       }
     } catch (error) {
-      this.logger.error(`활성 큐 제거 실패 (userId: ${userId}):`, error);
+      const wrappedError =
+        error instanceof QueueException
+          ? error
+          : new QueueException(
+              QUEUE_ERROR_CODES.QUEUE_REMOVE_ACTIVE_FAILED,
+              '활성 큐 제거에 실패했습니다.',
+              500,
+            );
+      this.logger.error(
+        wrappedError.message,
+        error instanceof Error ? error.stack : undefined,
+        {
+          errorCode: wrappedError.errorCode,
+          userId,
+        },
+      );
     }
   }
 }

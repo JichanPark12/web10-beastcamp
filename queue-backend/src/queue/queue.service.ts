@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, ForbiddenException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   PROVIDERS,
   REDIS_KEYS,
@@ -15,6 +15,7 @@ import { HeartbeatService } from './heartbeat.service';
 import { VirtualUserInjector } from './virtual-user.injector';
 import { QueueConfigService } from './queue-config.service';
 import { TicketingStateService } from './ticketing-state.service';
+import { QUEUE_ERROR_CODES, QueueException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class QueueService {
@@ -132,16 +133,31 @@ export class QueueService {
           await this.virtualUserInjector.start();
         } catch (error) {
           await this.redis.del(lockKey);
+          const wrappedError =
+            error instanceof QueueException
+              ? error
+              : new QueueException(
+                  QUEUE_ERROR_CODES.QUEUE_INJECTION_START_FAILED,
+                  '가상 유저 주입 시작에 실패했습니다.',
+                  500,
+                );
           this.logger.error(
-            '가상 유저 시작 체크 중 오류:',
-            (error as Error).stack,
+            wrappedError.message,
+            error instanceof Error ? error.stack : undefined,
+            {
+              errorCode: wrappedError.errorCode,
+              lockKey,
+            },
           );
           return;
         }
       }
       this.hasTriggeredInjection = true;
     } catch (error) {
-      this.logger.error('가상 유저 시작 체크 중 오류:', (error as Error).stack);
+      this.logger.error(
+        '가상 유저 주입 준비 중 오류가 발생했습니다.',
+        error instanceof Error ? error.stack : undefined,
+      );
     }
   }
 
@@ -162,7 +178,11 @@ export class QueueService {
   private async validateTicketingOpen(): Promise<void> {
     const isOpen = await this.ticketingStateService.isOpen();
     if (!isOpen) {
-      throw new ForbiddenException('티켓팅이 진행 중이 아닙니다.');
+      throw new QueueException(
+        QUEUE_ERROR_CODES.QUEUE_TICKETING_NOT_OPEN,
+        '티켓팅이 진행 중이 아닙니다.',
+        403,
+      );
     }
   }
 }
