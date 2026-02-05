@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect } from 'react';
-import UserNickname from './UserNickname';
-import { Ticket, Clock } from 'lucide-react';
-import { useSessionStore } from '@/stores/sessionStore';
+import Link from "next/link";
+import { useEffect } from "react";
+import UserNickname from "./UserNickname";
+import { Ticket, Clock } from "lucide-react";
+import { useSessionStore } from "@/stores/sessionStore";
 
 export default function Header() {
   const { initializeSession } = useSessionStore();
@@ -33,7 +33,7 @@ export default function Header() {
             </div>
           </Link>
 
-          <nav className="flex items-center gap-6">
+          {/* <nav className="flex items-center gap-6">
             <Link
               href="/server-time"
               className="text-gray-600 hover:text-purple-600 font-medium transition-colors flex items-center gap-2"
@@ -43,7 +43,7 @@ export default function Header() {
             </Link>
 
             <UserNickname />
-          </nav>
+          </nav> */}
         </div>
       </div>
     </header>
