@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { MessageCircle, Send, RefreshCw } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { MessageCircle, Send, RefreshCw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import {
   useChatMessagesQuery,
   useSendMessageMutation,
   useNicknameQuery,
-} from '@/app/_source/queries/chat';
-import { useSessionStore } from '@/stores/sessionStore';
+} from "@/app/_source/queries/chat";
+import { useSessionStore } from "@/stores/sessionStore";
 
 export default function Chat() {
   const { sessionId } = useSessionStore();
   const { data: nickname } = useNicknameQuery(sessionId);
-  const [inputValue, setInputValue] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [inputValue, setInputValue] = useState("");
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: messages = [], refetch, isRefetching } = useChatMessagesQuery();
   const { mutate: sendMessage, isPending } = useSendMessageMutation();
@@ -21,11 +21,11 @@ export default function Chat() {
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
     if (!nickname) {
-      alert('닉네임을 먼저 설정해주세요!');
+      alert("닉네임을 먼저 설정해주세요!");
       return;
     }
     if (!sessionId) {
-      alert('세션을 초기화하는 중입니다. 잠시 후 다시 시도해주세요.');
+      alert("세션을 초기화하는 중입니다. 잠시 후 다시 시도해주세요.");
       return;
     }
 
@@ -36,17 +36,17 @@ export default function Chat() {
       },
       {
         onSuccess: () => {
-          setInputValue('');
+          setInputValue("");
         },
         onError: (error) => {
-          alert(error.message || '메시지 전송에 실패했습니다.');
+          alert(error.message || "메시지 전송에 실패했습니다.");
         },
       },
     );
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -54,18 +54,19 @@ export default function Chat() {
 
   // 새 메시지 시 스크롤 하단으로 (채팅 영역 내에서만)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'nearest',
-    });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }, [messages]);
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleTimeString("ko-KR", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -91,14 +92,17 @@ export default function Chat() {
               title="메시지 새로고침"
             >
               <RefreshCw
-                className={`w-5 h-5 text-white ${isRefetching ? 'animate-spin' : ''}`}
+                className={`w-5 h-5 text-white ${isRefetching ? "animate-spin" : ""}`}
               />
             </button>
           </div>
         </div>
 
         {/* 메시지 목록 */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+        <div
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50"
+        >
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-gray-400">
               <div className="text-center">
@@ -126,7 +130,6 @@ export default function Chat() {
               </div>
             ))
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {/* 입력 영역 */}
