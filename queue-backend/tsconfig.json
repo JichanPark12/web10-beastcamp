@@ -2,6 +2,10 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "baseUrl": "..",
+    "paths": {
+      "@beastcamp/shared-nestjs": ["packages/shared-nestjs/src/index.ts"],
+      "@beastcamp/shared-nestjs/*": ["packages/shared-nestjs/src/*"]
+    },
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "resolvePackageJsonExports": true,

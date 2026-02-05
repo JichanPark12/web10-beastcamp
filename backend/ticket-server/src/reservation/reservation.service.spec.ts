@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { TicketException, TraceService } from '@beastcamp/shared-nestjs';
 import { ReservationService } from './reservation.service';
 import { REDIS_KEYS } from '@beastcamp/shared-constants';
 import { RedisService } from '../redis/redis.service';
@@ -25,6 +25,16 @@ describe('ReservationService', () => {
             hgetQueue: jest.fn(),
           },
         },
+        {
+          provide: TraceService,
+          useValue: {
+            generateTraceId: jest.fn().mockReturnValue('trace-id'),
+            getOrCreateTraceId: jest.fn().mockReturnValue('trace-id'),
+            runWithTraceId: jest
+              .fn()
+              .mockImplementation((_id: string, fn: () => unknown) => fn()),
+          },
+        },
       ],
     }).compile();
 
@@ -36,20 +46,20 @@ describe('ReservationService', () => {
     const sessionId = 1;
     const blockId = 10;
 
-    it('유효하지 않은 블록이면 BadRequestException을 던져야 한다', async () => {
+    it('유효하지 않은 블록이면 TicketException을 던져야 한다', async () => {
       redisService.sismember.mockResolvedValue(false);
 
       await expect(service.getSeats(sessionId, blockId)).rejects.toThrow(
-        BadRequestException,
+        TicketException,
       );
     });
 
-    it('블록 정보가 없으면 BadRequestException을 던져야 한다', async () => {
+    it('블록 정보가 없으면 TicketException을 던져야 한다', async () => {
       redisService.sismember.mockResolvedValue(true);
       redisService.get.mockResolvedValue(null);
 
       await expect(service.getSeats(sessionId, blockId)).rejects.toThrow(
-        BadRequestException,
+        TicketException,
       );
     });
 
@@ -75,24 +85,24 @@ describe('ReservationService', () => {
     };
     const userId = 'user-1';
 
-    it('티켓팅이 오픈되지 않았으면 ForbiddenException을 던져야 한다', async () => {
+    it('티켓팅이 오픈되지 않았으면 TicketException을 던져야 한다', async () => {
       redisService.get.mockResolvedValue('false');
 
       await expect(service.reserve(dto, userId)).rejects.toThrow(
-        ForbiddenException,
+        TicketException,
       );
     });
 
-    it('유효하지 않은 블록이면 BadRequestException을 던져야 한다', async () => {
+    it('유효하지 않은 블록이면 TicketException을 던져야 한다', async () => {
       redisService.get.mockResolvedValue('true');
       redisService.sismember.mockResolvedValue(false);
 
       await expect(service.reserve(dto, userId)).rejects.toThrow(
-        BadRequestException,
+        TicketException,
       );
     });
 
-    it('좌석 좌표가 범위를 벗어나면 BadRequestException을 던져야 한다', async () => {
+    it('좌석 좌표가 범위를 벗어나면 TicketException을 던져야 한다', async () => {
       const mockBlockData = JSON.stringify({ rowSize: 2, colSize: 2 });
       redisService.get.mockImplementation((key) => {
         if (key === REDIS_KEYS.TICKETING_OPEN) return Promise.resolve('true');
@@ -106,11 +116,11 @@ describe('ReservationService', () => {
         seats: [{ block_id: 10, row: 5, col: 0 }],
       };
       await expect(service.reserve(invalidDto, userId)).rejects.toThrow(
-        BadRequestException,
+        TicketException,
       );
     });
 
-    it('요청에 중복된 좌석이 있으면 BadRequestException을 던져야 한다', async () => {
+    it('요청에 중복된 좌석이 있으면 TicketException을 던져야 한다', async () => {
       const mockBlockData = JSON.stringify({ rowSize: 5, colSize: 5 });
       redisService.get.mockImplementation((key) => {
         if (key === REDIS_KEYS.TICKETING_OPEN) return Promise.resolve('true');
@@ -127,11 +137,11 @@ describe('ReservationService', () => {
         ],
       };
       await expect(service.reserve(duplicateDto, userId)).rejects.toThrow(
-        BadRequestException,
+        TicketException,
       );
     });
 
-    it('일부 좌석이 이미 예약되어 있으면 BadRequestException을 던져야 한다', async () => {
+    it('일부 좌석이 이미 예약되어 있으면 TicketException을 던져야 한다', async () => {
       const mockBlockData = JSON.stringify({ rowSize: 2, colSize: 2 });
       redisService.get.mockImplementation((key) => {
         if (key === REDIS_KEYS.TICKETING_OPEN) return Promise.resolve('true');
@@ -142,7 +152,7 @@ describe('ReservationService', () => {
       redisService.atomicReservation.mockResolvedValue([0, 0]);
 
       await expect(service.reserve(dto, userId)).rejects.toThrow(
-        BadRequestException,
+        TicketException,
       );
     });
 

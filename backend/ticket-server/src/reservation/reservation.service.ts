@@ -1,10 +1,10 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { REDIS_CHANNELS, REDIS_KEYS } from '@beastcamp/shared-constants';
+import {
+  TICKET_ERROR_CODES,
+  TicketException,
+  TraceService,
+} from '@beastcamp/shared-nestjs';
 import { RedisService } from '../redis/redis.service';
 import { CreateReservationRequestDto } from './dto/create-reservation-request.dto';
 import { GetReservationsResponseDto } from './dto/get-reservations-response.dto';
@@ -14,7 +14,10 @@ import { CreateReservationResponseDto } from './dto/create-reservation-response.
 export class ReservationService {
   private readonly logger = new Logger(ReservationService.name);
 
-  constructor(private readonly redisService: RedisService) {}
+  constructor(
+    private readonly redisService: RedisService,
+    private readonly traceService: TraceService,
+  ) {}
 
   async getSeats(
     sessionId: number,
@@ -32,6 +35,7 @@ export class ReservationService {
   async reserve(
     dto: CreateReservationRequestDto,
     userId: string,
+    isVirtual: boolean = false,
   ): Promise<CreateReservationResponseDto> {
     const { session_id: sessionId, seats } = dto;
     await this.validateTicketingOpen();
@@ -41,8 +45,9 @@ export class ReservationService {
       seatKeys,
       sessionId,
       userId,
+      isVirtual,
     );
-    await this.publishReservationDoneEvent(userId);
+    await this.publishReservationDoneEvent(userId, isVirtual);
 
     const virtual_user_size = await this.getVirtualSize();
     const reserved_at = new Date().toISOString();
@@ -60,21 +65,41 @@ export class ReservationService {
 
   private async validateTicketingOpen() {
     const isOpen = await this.redisService.get(REDIS_KEYS.TICKETING_OPEN);
-    if (isOpen !== 'true') throw new ForbiddenException('Ticketing not open');
+    if (isOpen !== 'true') {
+      throw new TicketException(
+        TICKET_ERROR_CODES.TICKETING_NOT_OPEN,
+        '티켓팅이 열려있지 않습니다.',
+        403,
+      );
+    }
   }
 
-  private async publishReservationDoneEvent(userId: string): Promise<void> {
+  private async publishReservationDoneEvent(
+    userId: string,
+    isVirtual: boolean,
+  ): Promise<void> {
     try {
+      const traceId = this.traceService.getOrCreateTraceId();
+
+      const payload = JSON.stringify({ userId, traceId });
       await this.redisService.publishToQueue(
         REDIS_CHANNELS.QUEUE_EVENT_DONE,
-        userId,
+        payload,
       );
-      this.logger.log(
-        `티켓팅 완료 이벤트(active token 만료): ${userId}님이 티켓팅을 완료했습니다.`,
-      );
+      const samplingRate = isVirtual ? 0.01 : 1.0;
+      if (Math.random() < samplingRate) {
+        this.logger.log('티켓팅 완료 이벤트 발행 성공', {
+          userId,
+          isVirtual,
+          sampled: isVirtual,
+        });
+      }
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Unknown error');
-      this.logger.error('이벤트 발행 중 오류 발생:', err.stack ?? err.message);
+      this.logger.warn('티켓팅 완료 이벤트 발행 실패', err.stack, {
+        userId,
+        isVirtual,
+      });
     }
   }
 
@@ -102,14 +127,20 @@ export class ReservationService {
       const { rowSize, colSize } = blockInfoMap.get(blockId)!;
 
       if (row < 0 || row >= rowSize || col < 0 || col >= colSize) {
-        throw new BadRequestException(
-          `Invalid coordinates for block ${blockId}`,
+        throw new TicketException(
+          TICKET_ERROR_CODES.INVALID_SEAT_COORDINATES,
+          `좌석 좌표가 유효하지 않습니다. (block: ${blockId})`,
+          400,
         );
       }
       const key = `reservation:session:${sessionId}:block:${blockId}:row:${row}:col:${col}`;
 
       if (uniqueKeys.has(key)) {
-        throw new BadRequestException('Duplicate seats in request');
+        throw new TicketException(
+          TICKET_ERROR_CODES.DUPLICATE_SEATS,
+          '요청에 중복된 좌석이 포함되어 있습니다.',
+          400,
+        );
       }
       uniqueKeys.add(key);
       seatKeys.push(key);
@@ -121,6 +152,7 @@ export class ReservationService {
     seatKeys: string[],
     sessionId: number,
     userId: string,
+    isVirtual: boolean = false,
   ): Promise<number> {
     const rankKey = `rank:session:${sessionId}`;
     const [success, rank] = await this.redisService.atomicReservation(
@@ -129,12 +161,26 @@ export class ReservationService {
       rankKey,
     );
 
-    if (success !== 1)
-      throw new BadRequestException('Some seats are already reserved');
+    if (success !== 1) {
+      throw new TicketException(
+        TICKET_ERROR_CODES.SEATS_ALREADY_RESERVED,
+        '이미 예약된 좌석이 포함되어 있습니다.',
+        400,
+      );
+    }
 
-    this.logger.log(
-      `예매 완료: userId:${userId} -> ${seatKeys.length}개의 seats. sessionId:${sessionId}, rank:${rank}`,
-    );
+    const samplingRate = isVirtual ? 0.01 : 1.0;
+
+    if (Math.random() < samplingRate) {
+      this.logger.log('티켓 예약 성공 (Atomic)', {
+        userId,
+        sessionId,
+        rank,
+        seatCount: seatKeys.length,
+        isVirtual,
+        sampled: isVirtual,
+      });
+    }
     return rank;
   }
 
@@ -143,15 +189,24 @@ export class ReservationService {
       `session:${sessionId}:blocks`,
       String(blockId),
     );
-    if (!isValid)
-      throw new BadRequestException(
-        `Invalid block ${blockId} for session ${sessionId}`,
+    if (!isValid) {
+      throw new TicketException(
+        TICKET_ERROR_CODES.INVALID_BLOCK_FOR_SESSION,
+        `회차 ${sessionId}에 대한 블록 정보가 유효하지 않습니다. (block: ${blockId})`,
+        400,
       );
+    }
   }
 
   private async getBlockInfo(blockId: number) {
     const data = await this.redisService.get(`block:${blockId}`);
-    if (!data) throw new BadRequestException(`Block ${blockId} data not found`);
+    if (!data) {
+      throw new TicketException(
+        TICKET_ERROR_CODES.BLOCK_DATA_NOT_FOUND,
+        `블록 정보가 존재하지 않습니다. (block: ${blockId})`,
+        400,
+      );
+    }
     return JSON.parse(data) as { rowSize: number; colSize: number };
   }
 

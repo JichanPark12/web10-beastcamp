@@ -1,8 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatMessage } from './entities/chat-message.entity';
 import { UserNickname } from './entities/user-nickname.entity';
+import { API_ERROR_CODES, TicketException } from '@beastcamp/shared-nestjs';
 
 export interface ChatMessageResponse {
   id: string;
@@ -41,7 +42,11 @@ export class ChatService {
     });
 
     if (existingNickname && existingNickname.sessionId !== sessionId) {
-      throw new BadRequestException('이미 사용 중인 닉네임입니다.');
+      throw new TicketException(
+        API_ERROR_CODES.CHAT_NICKNAME_DUPLICATE,
+        '이미 사용 중인 닉네임입니다.',
+        400,
+      );
     }
 
     // 기존 사용자 닉네임 조회
@@ -81,7 +86,11 @@ export class ChatService {
     });
 
     if (!userNickname) {
-      throw new BadRequestException('닉네임을 먼저 설정해주세요.');
+      throw new TicketException(
+        API_ERROR_CODES.CHAT_NICKNAME_REQUIRED,
+        '닉네임을 먼저 설정해주세요.',
+        400,
+      );
     }
 
     const newMessage = this.chatMessageRepository.create({

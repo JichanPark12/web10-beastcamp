@@ -16,7 +16,8 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@beastcamp/backend-config": ["../../packages/backend-config/src"],
+      "@beastcamp/shared-nestjs": ["../../packages/shared-nestjs/src/index.ts"],
+      "@beastcamp/shared-nestjs/*": ["../../packages/shared-nestjs/src/*"],
       "@beastcamp/shared-types": ["../../packages/shared-types/src"],
       "@beastcamp/shared-constants": ["../../packages/shared-constants/src"]
     },

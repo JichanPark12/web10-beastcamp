@@ -3,9 +3,10 @@ import { RedisModule } from '../redis/redis.module';
 import { AuthModule } from '../auth/auth.module';
 import { ReservationService } from './reservation.service';
 import { ReservationController } from './reservation.controller';
+import { TraceModule } from '@beastcamp/shared-nestjs';
 
 @Module({
-  imports: [RedisModule, AuthModule],
+  imports: [RedisModule, AuthModule, TraceModule],
   controllers: [ReservationController],
   providers: [ReservationService],
   exports: [ReservationService],

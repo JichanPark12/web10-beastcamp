@@ -1,7 +1,8 @@
 import { Injectable, OnModuleInit, Inject, Logger } from '@nestjs/common';
 import { ChainableCommander, Redis } from 'ioredis';
-import { DynamicConfigManager } from '@beastcamp/backend-config';
+import { DynamicConfigManager } from '@beastcamp/shared-nestjs';
 import { PROVIDERS, REDIS_KEYS } from '@beastcamp/shared-constants';
+import { QUEUE_ERROR_CODES, QueueException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class QueueConfigService implements OnModuleInit {
@@ -16,12 +17,30 @@ export class QueueConfigService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    await this.seedConfig();
-    await this.manager.refresh(true);
+    try {
+      await this.seedConfig();
+      await this.manager.refresh(true);
+      this.logger.log('Queue Dynamic Config 초기화 완료');
+    } catch (error) {
+      this.logger.error(
+        'Queue Dynamic Config 초기화 실패',
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 
   async sync() {
-    await this.manager.refresh();
+    try {
+      await this.manager.refresh();
+      this.logger.debug('Queue Dynamic Config 동기화 완료');
+    } catch (error) {
+      this.logger.error(
+        'Queue Dynamic Config 동기화 실패',
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 
   private async seedConfig() {
@@ -60,9 +79,29 @@ export class QueueConfigService implements OnModuleInit {
     
 
     try {
-      await pipeline.exec();
+      const results = await pipeline.exec();
+
+      const firstError = results?.find(([err]) => err)?.[0];
+      if (firstError) {
+        throw firstError instanceof Error ? firstError : new Error(String(firstError));
+      }
+
+      this.logger.log('Queue Config 시딩 성공');
     } catch (error) {
-      this.logger.error('Queue Config 시딩 실패', (error as Error).stack);
+      const wrappedError =
+        error instanceof QueueException
+          ? error
+          : new QueueException(
+              QUEUE_ERROR_CODES.QUEUE_CONFIG_SEED_FAILED,
+              `대기열 설정 시딩에 실패했습니다. (${error instanceof Error ? error.message : String(error)})`,
+              500,
+            );
+      this.logger.error(wrappedError.message, error instanceof Error ? error.stack : undefined, {
+        errorCode: wrappedError.errorCode,
+        redisKey: REDIS_KEYS.CONFIG_QUEUE,
+        isSystem: true,
+      });
+      throw wrappedError;
     }
   }
 
