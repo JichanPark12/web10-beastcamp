@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect } from 'react';
-import UserNickname from './UserNickname';
-import { Ticket, Clock } from 'lucide-react';
-import { useSessionStore } from '@/stores/sessionStore';
+import Link from "next/link";
+import { useEffect } from "react";
+import UserNickname from "./UserNickname";
+import { Ticket, Clock } from "lucide-react";
+import { useSessionStore } from "@/stores/sessionStore";
 
 export default function Header() {
   const { initializeSession } = useSessionStore();
@@ -40,6 +40,14 @@ export default function Header() {
             >
               <Clock className="w-4 h-4" />
               서버 시간
+            </Link>
+
+            <Link
+              href="/experience"
+              className="text-gray-600 hover:text-purple-600 font-medium transition-colors flex items-center gap-2"
+            >
+              <Ticket className="w-4 h-4" />
+              체험하기
             </Link>
 
             <UserNickname />
