@@ -50,29 +50,25 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message = exception.message;
     }
 
-    const logContext = {
-      traceId,
-      statusCode,
+    const logMsg = `[${request?.method}] ${request?.url} -> ${message}`;
+
+    const logMetadata = {
       errorCode,
+      statusCode,
       path: request?.url,
       method: request?.method,
-      stack: exception instanceof Error ? exception.stack : undefined,
+      ip: request?.ip,
+      userId: request?.user?.id,
     };
-
-    const logMsg = `[${request?.method}] ${request?.url} - ${errorCode}: ${message}`;
 
     if (statusCode >= 500) {
       this.logger.error(
         logMsg,
         exception instanceof Error ? exception.stack : undefined,
-        { traceId, errorCode, statusCode }
+        logMetadata
       );
     } else {
-      this.logger.warn(
-        logMsg,
-        exception instanceof Error ? exception.stack : undefined,
-        { traceId, errorCode, statusCode }
-      );
+      this.logger.warn(logMsg, undefined, logMetadata);
     }
 
     response.status(statusCode).json({

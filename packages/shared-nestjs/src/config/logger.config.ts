@@ -29,7 +29,12 @@ export const getWinstonLogger = (
           winston.format.ms(),
           winston.format.label({ label: serviceName }),
           winston.format((info) => {
-            if (typeof info.context === "object") {
+            if (typeof info.context === "string") {
+              info.className = info.context;
+              delete info.context;
+            }
+
+            if (typeof info.context === "object" && info.context !== null) {
               Object.assign(info, info.context);
               delete info.context;
             }

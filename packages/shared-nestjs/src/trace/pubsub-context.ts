@@ -3,6 +3,7 @@ import { TraceService } from "./trace.service";
 export type PubSubPayload = {
   userId: string;
   traceId?: string;
+  isVirtual?: boolean;
 };
 
 export const parsePubSubPayload = (message: string): PubSubPayload => {
@@ -18,20 +19,20 @@ export const parsePubSubPayload = (message: string): PubSubPayload => {
         typeof parsed.traceId === "string" ? parsed.traceId : undefined;
 
       if (userId) {
-        return { userId, traceId };
+        return { userId, traceId, isVirtual: userId.startsWith("V_") };
       }
     }
   } catch {
-    // fallback handled below
+    // JSON이 아닌 평문 메시지인 경우 폴백으로 진행
   }
 
-  return { userId: message };
+  return { userId: message, isVirtual: message.startsWith("V_") };
 };
 
 export const runWithPubSubContext = async <T>(
   traceService: TraceService,
   message: string,
-  handler: (payload: PubSubPayload) => Promise<T> | T,
+  handler: (payload: PubSubPayload) => Promise<T> | T
 ): Promise<T> => {
   const payload = parsePubSubPayload(message);
   const traceId = payload.traceId || traceService.generateTraceId();
