@@ -27,11 +27,15 @@ export function useReservationTicket() {
   const mutation = useReservationMutation(token || "");
 
   const handleReservationSuccess = (response: {
+    reserved_at: string;
+    virtual_user_size?: number | null;
     rank: number;
     seats: { block_id: number; row: number; col: number }[];
   }) => {
     const blockMap = createBlockMap(venue?.blocks || []);
     const result = {
+      reservedAt: response.reserved_at,
+      virtualUserSize: response.virtual_user_size || 50000,
       rank: response.rank,
       seats: transformSeatsForResult(response.seats, blockMap),
     };

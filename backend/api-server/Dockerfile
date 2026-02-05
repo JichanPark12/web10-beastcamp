@@ -60,4 +60,4 @@ USER nestjs
 EXPOSE 3002
 
 WORKDIR /app/backend/api-server
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/backend/api-server/src/main.js"]

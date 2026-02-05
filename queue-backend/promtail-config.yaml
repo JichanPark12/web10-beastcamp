@@ -37,8 +37,8 @@ scrape_configs:
           context:
 
       # 로그 메시지 본문만 출력 (JSON 구조 제거)
-      - output:
-          source: message
+      #- output:
+      #    source: message
 
       # 로그 발생 시각 동기화 (ISO 8601 / RFC3339)
       - timestamp:

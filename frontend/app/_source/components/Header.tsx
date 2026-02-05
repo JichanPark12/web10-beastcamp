@@ -31,13 +31,13 @@ export default function Header() {
           </Link>
 
           <nav className="flex items-center gap-6">
-            <Link
+            {/* <Link
               href="/server-time"
               className="text-gray-600 hover:text-purple-600 font-medium transition-colors flex items-center gap-2"
             >
               <Clock className="w-4 h-4" />
               서버 시간
-            </Link>
+            </Link> */}
 
             <Link
               href="/experience"

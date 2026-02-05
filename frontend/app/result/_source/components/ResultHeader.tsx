@@ -7,7 +7,7 @@ export default function ResultHeader() {
         <Trophy className="w-8 h-8 text-white" />
       </div>
       <h3 className="text-2xl mb-2 text-center">예매 완료!</h3>
-      <p className="text-gray-500  text-center">티켓팅 결과를 확인하세요</p>
+      <p className="text-gray-500 text-center">티켓팅 결과를 확인하세요</p>
     </div>
   );
 }
