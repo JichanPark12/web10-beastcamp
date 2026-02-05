@@ -71,12 +71,14 @@ export class SeedingService implements OnApplicationBootstrap {
       const blocks = await this.blocksRepository.find({ relations: ['venue'] });
 
       const venueMap = new Map<string, number>();
-      venues.forEach((v) => venueMap.set(v.venueName, v.id));
+      for (const v of venues) {
+        venueMap.set(v.venueName, v.id);
+      }
 
       const blockMap = new Map<string, number>(); // Key: "VenueName:BlockName" -> Value: BlockId
-      blocks.forEach((b) => {
+      for (const b of blocks) {
         blockMap.set(`${b.venue.venueName}:${b.blockDataName}`, b.id);
-      });
+      }
 
       // 5분 단위 Loop
       const currentTime = new Date(startDate);
@@ -145,7 +147,9 @@ export class SeedingService implements OnApplicationBootstrap {
 
           // 구역별 등급 매핑
           const gradeNameMap = new Map<string, number>();
-          savedGrades.forEach((g) => gradeNameMap.set(g.name, g.id));
+          for (const g of savedGrades) {
+            gradeNameMap.set(g.name, g.id);
+          }
 
           for (const [gradeName, blockNames] of Object.entries(venueRules)) {
             const gradeId = gradeNameMap.get(gradeName);

@@ -79,7 +79,14 @@ export class QueueConfigService implements OnModuleInit {
     
 
     try {
-      await pipeline.exec();
+      const results = await pipeline.exec();
+
+      const firstError = results?.find(([err]) => err)?.[0];
+      if (firstError) {
+        throw firstError instanceof Error ? firstError : new Error(String(firstError));
+      }
+
+      this.logger.log('Queue Config 시딩 성공');
     } catch (error) {
       const wrappedError =
         error instanceof QueueException
@@ -91,7 +98,8 @@ export class QueueConfigService implements OnModuleInit {
             );
       this.logger.error(wrappedError.message, error instanceof Error ? error.stack : undefined, {
         errorCode: wrappedError.errorCode,
-        redisKey: REDIS_KEYS.CONFIG_QUEUE
+        redisKey: REDIS_KEYS.CONFIG_QUEUE,
+        isSystem: true,
       });
       throw wrappedError;
     }

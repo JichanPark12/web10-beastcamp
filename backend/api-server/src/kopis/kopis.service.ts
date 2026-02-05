@@ -141,13 +141,10 @@ export class KopisService {
 
       return items.filter((item) => item?.prfstate?.trim() !== '공연완료');
     } catch (error) {
-      this.logger.warn(
-        '공연장 조회 실패',
-        error instanceof Error ? error.stack : undefined,
-        {
-          venueCode,
-        },
-      );
+      this.logger.warn('공연장 조회 실패', {
+        venueCode,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return [];
     }
   }
@@ -171,7 +168,7 @@ export class KopisService {
       const detail = items[0]; // 상세 조회는 항상 1개라고 가정
 
       if (!detail) {
-        this.logger.warn('상세 정보 없음', undefined, { performanceId });
+        this.logger.warn('상세 정보 없음', { performanceId });
         return null;
       }
 

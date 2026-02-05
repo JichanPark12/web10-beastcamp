@@ -68,7 +68,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         logMetadata
       );
     } else {
-      this.logger.warn(logMsg, undefined, logMetadata);
+      this.logger.warn(logMsg, logMetadata);
     }
 
     response.status(statusCode).json({

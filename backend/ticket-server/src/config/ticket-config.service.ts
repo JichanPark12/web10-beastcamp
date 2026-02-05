@@ -33,6 +33,7 @@ export class TicketConfigService implements OnModuleInit {
         'Dynamic Config 초기화 실패',
         error instanceof Error ? error.stack : undefined,
       );
+      throw error;
     }
   }
 

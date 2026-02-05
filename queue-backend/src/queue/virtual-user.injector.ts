@@ -164,14 +164,28 @@ export class VirtualUserInjector {
       }
 
       const results = await pipeline.exec();
-      const hasError = results?.some(([err]) => err);
-      if (hasError) {
-        this.logger.error('대기열 주입 실패', undefined, { results });
-        throw new QueueException(
+      const errorResult = results?.find(([err]) => err);
+
+      if (errorResult) {
+        const [redisError] = errorResult;
+
+        const wrappedError = new QueueException(
           QUEUE_ERROR_CODES.QUEUE_VIRTUAL_INJECT_FAILED,
           '대기열 주입에 실패했습니다.',
           500,
         );
+
+        this.logger.error(
+          wrappedError.message,
+          redisError instanceof Error ? redisError.stack : String(redisError),
+          {
+            errorCode: wrappedError.errorCode,
+            isVirtual: true,
+            results,
+          },
+        );
+
+        throw wrappedError;
       }
 
       if (virtual.injectBatchDelayMs > 0 && offset + currentBatchSize < count) {

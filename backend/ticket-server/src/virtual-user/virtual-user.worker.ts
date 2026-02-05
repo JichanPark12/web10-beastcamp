@@ -114,7 +114,7 @@ export class VirtualUserWorker implements OnModuleInit, OnModuleDestroy {
       `session:${sessionId}:blocks`,
     );
     if (!blockId) {
-      this.logger.warn('회차 내 블록들 정보 없음', undefined, {
+      this.logger.warn('회차 내 블록들 정보 없음', {
         sessionId,
         userId,
       });
@@ -198,7 +198,7 @@ export class VirtualUserWorker implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    this.logger.warn('가상 유저 예약 실패: 재시도 한도 초과', undefined, {
+    this.logger.warn('가상 유저 예약 실패: 재시도 한도 초과', {
       userId,
     });
     await this.releaseActiveUser(userId, 'max_attempts');

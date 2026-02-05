@@ -91,6 +91,7 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^@beastcamp/shared-constants$": "<rootDir>/../../packages/shared-constants/src",
+      "^@beastcamp/shared-types$": "<rootDir>/../../packages/shared-types/src",
       "^@beastcamp/shared-nestjs$": "<rootDir>/../../packages/shared-nestjs/src"
     }
   }

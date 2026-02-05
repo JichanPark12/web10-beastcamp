@@ -120,6 +120,8 @@ web10-beastcamp/
 
 - `packages/shared-nestjs/**` 변경
 
+  - → api-server 재배포
+  - → ticket-server 재배포
   - → queue-backend 재배포
 
 - `packages/shared-constants/**` 변경
@@ -249,11 +251,11 @@ GitHub Repository → Settings → Secrets and variables → Actions에서 다�
 
 #### NCP Container Registry (프론트엔드 배포용)
 
-| Secret 이름                 | 설명                         | 예시                                      |
-| --------------------------- | ---------------------------- | ----------------------------------------- |
-| `NCP_REGISTRY_URL`          | NCP Container Registry URL   | `your-registry.kr.ncr.ntruss.com`         |
-| `NCP_REGISTRY_USERNAME`     | NCP Container Registry 사용자 | `your-username`                           |
-| `NCP_REGISTRY_PASSWORD`     | NCP Container Registry 비밀번호 | `your-password` 또는 Access Token         |
+| Secret 이름             | 설명                            | 예시                              |
+| ----------------------- | ------------------------------- | --------------------------------- |
+| `NCP_REGISTRY_URL`      | NCP Container Registry URL      | `your-registry.kr.ncr.ntruss.com` |
+| `NCP_REGISTRY_USERNAME` | NCP Container Registry 사용자   | `your-username`                   |
+| `NCP_REGISTRY_PASSWORD` | NCP Container Registry 비밀번호 | `your-password` 또는 Access Token |
 
 **총 10개의 Secrets 필요**
 
@@ -314,7 +316,7 @@ docker login beastcamp-registry.kr.ncr.ntruss.com -u your-username -p your-token
 #### 프론트엔드 ([frontend/docker-compose.yml](../frontend/docker-compose.yml))
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   frontend:
@@ -322,7 +324,7 @@ services:
       context: ..
       dockerfile: frontend/Dockerfile
     ports:
-      - '3000:3000'
+      - "3000:3000"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
@@ -331,7 +333,7 @@ services:
 #### 백엔드 ([backend/docker-compose.yml](../backend/docker-compose.yml))
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   api-server:
@@ -339,7 +341,7 @@ services:
       context: ..
       dockerfile: backend/api-server/Dockerfile
     ports:
-      - '3001:3001'
+      - "3001:3001"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
@@ -349,7 +351,7 @@ services:
       context: ..
       dockerfile: backend/ticket-server/Dockerfile
     ports:
-      - '3002:3002'
+      - "3002:3002"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
@@ -358,7 +360,7 @@ services:
 #### 큐 서버 ([queue-backend/docker-compose.yml](../queue-backend/docker-compose.yml))
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   queue-backend:
@@ -366,7 +368,7 @@ services:
       context: ..
       dockerfile: queue-backend/Dockerfile
     ports:
-      - '3003:3003'
+      - "3003:3003"
     environment:
       - NODE_ENV=production
     restart: unless-stopped

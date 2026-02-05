@@ -30,7 +30,7 @@ export class TicketSetupService {
       throw new TicketException(
         TICKET_ERROR_CODES.NO_PERFORMANCES_FOUND,
         '공연 정보가 존재하지 않습니다.',
-        500,
+        404,
       );
     }
     const performanceId = performances[0].performance_id;
@@ -41,7 +41,7 @@ export class TicketSetupService {
       throw new TicketException(
         TICKET_ERROR_CODES.NO_SESSIONS_FOUND,
         '해당 공연에 해당하는 회차가 없습니다.',
-        500,
+        404,
       );
     }
 
@@ -120,7 +120,7 @@ export class TicketSetupService {
       throw new TicketException(
         TICKET_ERROR_CODES.NO_BLOCKS_FOUND,
         '공연장의 블록 정보가 존재하지 않습니다.',
-        500,
+        404,
       );
     }
 

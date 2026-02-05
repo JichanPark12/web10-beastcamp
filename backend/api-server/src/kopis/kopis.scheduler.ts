@@ -247,7 +247,7 @@ export class KopisScheduler {
           }
         } catch (e) {
           if (isMySqlDuplicateEntryError(e)) {
-            this.logger.warn('중복 티켓팅 일정 건너뜀', undefined, {
+            this.logger.warn('중복 티켓팅 일정 건너뜀', {
               kopisId: detail.mt20id,
               ticketingDate: performanceEntity.ticketingDate,
             });
@@ -285,7 +285,7 @@ export class KopisScheduler {
             errorCode: error.errorCode,
           });
         } else {
-          this.logger.warn(error.message, undefined, {
+          this.logger.warn(error.message, {
             errorCode: error.errorCode,
           });
         }

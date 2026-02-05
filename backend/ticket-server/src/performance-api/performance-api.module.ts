@@ -4,7 +4,13 @@ import { PerformanceApiService } from './performance-api.service';
 import { AxiosTraceInterceptor, TraceModule } from '@beastcamp/shared-nestjs';
 
 @Module({
-  imports: [HttpModule, TraceModule],
+  imports: [
+    HttpModule.register({
+      timeout: 5000,
+      maxRedirects: 5,
+    }),
+    TraceModule,
+  ],
   providers: [PerformanceApiService, AxiosTraceInterceptor],
   exports: [PerformanceApiService],
 })

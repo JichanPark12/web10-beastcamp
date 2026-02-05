@@ -8,12 +8,17 @@
     "dev": "tsc -w"
   },
   "devDependencies": {
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.1.11",
     "@nestjs/config": "^4.0.2",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@nestjs/axios": "^4.0.1",
+    "@nestjs/common": "^11.1.11",
+    "@nestjs/config": "^4.0.2"
+  },
+  "dependencies": {
     "ioredis": "^5.9.2",
     "nest-winston": "^1.10.2",
     "winston": "^3.19.0"
