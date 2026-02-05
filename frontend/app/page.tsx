@@ -11,7 +11,7 @@ import { ScheduledTicketings } from "./_source/components/scheduledTicketing/Sch
 import UpcomingTicketing from "./_source/components/ticketing/UpcomingTicketing";
 import Chat from "./_source/components/chat/Chat";
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   return (

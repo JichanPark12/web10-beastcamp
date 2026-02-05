@@ -90,15 +90,25 @@ async function request<T = unknown>(
 
     if (!response.ok) {
       let errorData: unknown;
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+
       try {
         // 응답이 json일 수도 아닐 수도 있음
         errorData = await response.json();
+
+        // NestJS BadRequestException 응답 형식: { message: string, statusCode: number, error: string }
+        if (errorData && typeof errorData === 'object' && 'message' in errorData) {
+          errorMessage = String(errorData.message);
+        }
       } catch {
         errorData = await response.text();
+        if (typeof errorData === 'string' && errorData) {
+          errorMessage = errorData;
+        }
       }
 
       throw new ApiError(
-        `HTTP ${response.status}: ${response.statusText}`,
+        errorMessage,
         response.status,
         response.statusText,
         errorData,

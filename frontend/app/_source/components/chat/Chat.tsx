@@ -63,10 +63,18 @@ export default function Chat() {
   }, [messages]);
 
   const formatTime = (timestamp: string) => {
+    // ISO 8601 UTC 문자열을 로컬 시간으로 변환
     const date = new Date(timestamp);
-    return date.toLocaleTimeString("ko-KR", {
-      hour: "2-digit",
-      minute: "2-digit",
+
+    // 유효한 날짜인지 확인
+    if (isNaN(date.getTime())) {
+      return '시간 정보 없음';
+    }
+
+    return date.toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false, // 24시간 형식 사용
     });
   };
 

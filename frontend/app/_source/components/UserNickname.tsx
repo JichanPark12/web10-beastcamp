@@ -12,6 +12,7 @@ export default function UserNickname() {
   const { sessionId } = useSessionStore();
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const { mutate: registerNickname, isPending } = useRegisterNicknameMutation();
 
   // 서버에서 닉네임 조회 (세션 ID 기반)
@@ -20,6 +21,7 @@ export default function UserNickname() {
   const handleSaveNickname = () => {
     if (!inputValue.trim() || !sessionId) return;
 
+    setErrorMessage("");
     registerNickname(
       {
         sessionId,
@@ -29,9 +31,10 @@ export default function UserNickname() {
         onSuccess: () => {
           setIsEditing(false);
           setInputValue("");
+          setErrorMessage("");
         },
         onError: (error) => {
-          alert(error.message || "닉네임 등록에 실패했습니다.");
+          setErrorMessage(error.message || "닉네임 등록에 실패했습니다.");
         },
       }
     );
@@ -48,20 +51,32 @@ export default function UserNickname() {
 
   if (isEditing) {
     return (
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyPress}
-          onBlur={handleSaveNickname}
-          placeholder="닉네임 입력"
-          minLength={2}
-          maxLength={20}
-          disabled={isPending}
-          autoFocus
-          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
-        />
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              if (errorMessage) setErrorMessage("");
+            }}
+            onKeyDown={handleKeyPress}
+            onBlur={handleSaveNickname}
+            placeholder="닉네임 입력"
+            minLength={2}
+            maxLength={20}
+            disabled={isPending}
+            autoFocus
+            className={`px-3 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-100 ${
+              errorMessage
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 focus:ring-purple-500"
+            }`}
+          />
+        </div>
+        {errorMessage && (
+          <p className="text-xs text-red-600 px-1">{errorMessage}</p>
+        )}
       </div>
     );
   }
@@ -71,6 +86,7 @@ export default function UserNickname() {
       onClick={() => {
         setIsEditing(true);
         setInputValue(nickname || "");
+        setErrorMessage("");
       }}
       className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors group"
     >
