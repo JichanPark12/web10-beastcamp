@@ -26,10 +26,7 @@ export default function Header() {
             </div>
             <div>
               <h1 className="text-xl">내티켓</h1>
-              <span className="sr-only">티켓팅 연습 & 시뮬레이션</span>
-              <p className="text-sm text-gray-500">
-                인터파크·예스24 티켓팅 연습
-              </p>
+              <p className="text-sm text-gray-500">티켓팅 연습 & 시뮬레이션</p>
             </div>
           </Link>
 
