@@ -1,7 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { jwtConfig, redisConfig } from '@beastcamp/backend-config';
+import {
+  jwtConfig,
+  redisConfig,
+  GlobalExceptionFilter,
+  TraceMiddleware,
+  TraceModule,
+} from '@beastcamp/shared-nestjs';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReservationModule } from './reservation/reservation.module';
 import { TicketSchedulerModule } from './ticket-scheduler/ticket-scheduler.module';
@@ -22,9 +28,12 @@ import { VirtualUserModule } from './virtual-user/virtual-user.module';
     TicketSchedulerModule,
     CaptchaModule,
     VirtualUserModule,
+    TraceModule,
   ],
   controllers: [],
   providers: [
+    GlobalExceptionFilter,
+    TraceMiddleware,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

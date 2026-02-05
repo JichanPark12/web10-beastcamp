@@ -10,6 +10,11 @@ import { SeedingModule } from './seeding/seeding.module';
 import { KopisModule } from './kopis/kopis.module';
 import { ChatModule } from './chat/chat.module';
 import { UserModule } from './user/user.module';
+import {
+  GlobalExceptionFilter,
+  TraceMiddleware,
+  TraceModule,
+} from '@beastcamp/shared-nestjs';
 
 @Module({
   imports: [
@@ -54,8 +59,9 @@ import { UserModule } from './user/user.module';
     KopisModule,
     ChatModule,
     UserModule,
+    TraceModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [GlobalExceptionFilter, TraceMiddleware],
 })
 export class AppModule {}

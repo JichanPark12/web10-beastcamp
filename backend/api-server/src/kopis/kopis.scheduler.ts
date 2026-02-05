@@ -12,6 +12,11 @@ import { VENUES_DATA } from '../seeding/data/venues.data';
 import { BLOCK_GRADE_RULES } from '../seeding/data/performances.data';
 
 import { isMySqlDuplicateEntryError } from '../common/utils/error.utils';
+import {
+  API_ERROR_CODES,
+  TicketException,
+  TraceService,
+} from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class KopisScheduler {
@@ -20,14 +25,32 @@ export class KopisScheduler {
   constructor(
     private readonly kopisService: KopisService,
     private readonly dataSource: DataSource,
+    private readonly traceService: TraceService,
   ) {}
 
   // UTC 14:30 (KST 23:30)
   @Cron('30 14 * * *', { name: 'kopis-sync' })
   async handleCron() {
-    this.logger.log('Starting KOPIS data sync...');
-    await this.syncPerformances();
-    this.logger.log('KOPIS data sync completed.');
+    await this.traceService.runWithTraceId(
+      this.traceService.generateTraceId(),
+      async () => {
+        const startTime = Date.now();
+        this.logger.log('KOPIS 데이터 동기화 시작');
+        try {
+          await this.syncPerformances();
+          const duration = Date.now() - startTime;
+          this.logger.log(`KOPIS 데이터 동기화 완료 (${duration}ms)`);
+        } catch (error) {
+          const duration = Date.now() - startTime;
+
+          this.logger.error(`KOPIS 데이터 동기화 실패 (${duration}ms)`, {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+          });
+          throw error;
+        }
+      },
+    );
   }
 
   async syncPerformances(startDate?: Date, endDate?: Date) {
@@ -42,7 +65,7 @@ export class KopisScheduler {
       // Venue 목록 가져오기 (랜덤 할당용)
       let venues = await venueRepository.find();
       if (venues.length === 0) {
-        this.logger.log('Initializing Venues and Blocks...');
+        this.logger.log('Venues/Blocks 초기화 중');
 
         for (const venueData of VENUES_DATA) {
           // Venue 생성
@@ -72,13 +95,11 @@ export class KopisScheduler {
       const validDetails = details.filter((detail) => detail !== null);
 
       if (validDetails.length === 0) {
-        this.logger.log('No valid performances found from KOPIS');
+        this.logger.log('동기화할 유효한 공연 정보가 없습니다.');
         return;
       }
 
-      this.logger.log(
-        `Found ${validDetails.length} valid performances - ${new Date().toString()}`,
-      );
+      this.logger.log('유효 공연 조회 완료', { count: validDetails.length });
 
       // 날짜 범위 설정
       let startTime: Date;
@@ -88,14 +109,18 @@ export class KopisScheduler {
         // 파라미터로 받은 날짜 사용
         startTime = new Date(startDate);
         endTime = new Date(endDate);
-        this.logger.log(
-          `Using provided date range: ${startTime.toISOString()} ~ ${endTime.toISOString()}`,
-        );
+
+        this.logger.log('동기화 대상 날짜 범위', {
+          start: startTime.toISOString(),
+          end: endTime.toISOString(),
+        });
 
         if (startTime > endTime) {
-          const message = `Invalid date range: Start date (${startTime.toISOString()}) is after end date (${endTime.toISOString()})`;
-          this.logger.warn(message);
-          throw new Error(message);
+          throw new TicketException(
+            API_ERROR_CODES.KOPIS_INVALID_DATE_RANGE,
+            `시작 날짜(${startTime.toISOString()})는 종료 날짜(${endTime.toISOString()})보다 이후일 수 없습니다.`,
+            400,
+          );
         }
       } else {
         // 기본값: 실행 기준(UTC 14:30 = KST 23:30) 다음날 KST 00:05 ~ 24:00
@@ -119,9 +144,10 @@ export class KopisScheduler {
         startTime = new Date(startKrs.getTime() - KR_TIME_DIFF);
         endTime = new Date(endKrs.getTime() - KR_TIME_DIFF);
 
-        this.logger.log(
-          `Using calculated date range (KST converted to UTC): ${startTime.toISOString()} ~ ${endTime.toISOString()}`,
-        );
+        this.logger.log('계산된 날짜 범위(KST→UTC)', {
+          start: startTime.toISOString(),
+          end: endTime.toISOString(),
+        });
       }
 
       const currentTime = new Date(startTime);
@@ -192,9 +218,7 @@ export class KopisScheduler {
               )[randomVenue.venueName];
 
               if (!venueRules) {
-                this.logger.warn(
-                  `No rules found for venue: ${randomVenue.venueName}`,
-                );
+                this.logger.warn(`공연장 규칙 없음: ${randomVenue.venueName}`);
                 continue;
               }
 
@@ -226,19 +250,26 @@ export class KopisScheduler {
             if (blockGradesBuffer.length >= CHUNK_SIZE) {
               await blockGradeRepository.save(blockGradesBuffer);
               blockGradesBuffer.length = 0;
-              this.logger.log(`Flushed ${CHUNK_SIZE} block grades...`);
+              this.logger.debug('BlockGrade 청크 데이터 저장 완료', {
+                size: CHUNK_SIZE,
+              });
             }
           } else {
-            this.logger.warn('⚠️ No venues available to assign sessions.');
+            this.logger.warn('할당 가능한 공연장 없음');
           }
         } catch (e) {
           if (isMySqlDuplicateEntryError(e)) {
-            this.logger.warn(
-              `Duplicate ticketing date for ${performanceEntity.kopisId} at ${performanceEntity.ticketingDate.toISOString()} - Skipped`,
-            );
+            this.logger.warn('중복 티켓팅 일정 건너뜀', {
+              kopisId: detail.mt20id,
+              ticketingDate: performanceEntity.ticketingDate,
+            });
           } else {
             this.logger.error(
-              `Error saving performance ${performanceEntity.kopisId}: ${e}`,
+              '공연 데이터 저장 실패',
+              e instanceof Error ? e.stack : undefined,
+              {
+                kopisId: detail.mt20id,
+              },
             );
           }
         }
@@ -254,19 +285,34 @@ export class KopisScheduler {
         blockGradesBuffer.length = 0;
       }
 
-      this.logger.log('=== Summary ===');
-      this.logger.log(`Total Performances Scheduled: ${performanceCount}`);
-      this.logger.log(`Total Sessions Scheduled: ${sessionCount}`);
+      this.logger.log('KOPIS 동기화 최종 결과 요약', {
+        totalPerformances: performanceCount,
+        totalSessions: sessionCount,
+      });
     } catch (error) {
-      const isDateRangeError =
-        error instanceof Error &&
-        error.message.startsWith('Invalid date range');
-
-      if (!isDateRangeError) {
-        this.logger.error('KOPIS data sync failed:', error);
+      if (error instanceof TicketException) {
+        const statusCode = error.getStatus();
+        if (statusCode >= 500) {
+          this.logger.error(error.message, error.stack, {
+            errorCode: error.errorCode,
+          });
+        } else {
+          this.logger.warn(error.message, {
+            errorCode: error.errorCode,
+          });
+        }
+        throw error;
       }
 
-      throw error;
+      this.logger.error(
+        'KOPIS 동기화 프로세스 실패',
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw new TicketException(
+        API_ERROR_CODES.KOPIS_SYNC_FAILED,
+        'KOPIS 데이터 동기화에 실패했습니다.',
+        500,
+      );
     }
   }
 }

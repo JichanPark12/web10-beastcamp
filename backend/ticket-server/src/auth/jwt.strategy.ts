@@ -1,9 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { JwtPayload } from '@beastcamp/shared-types';
 import { REDIS_KEY_PREFIXES } from '@beastcamp/shared-constants';
+import { AUTH_ERROR_CODES, AuthException } from '@beastcamp/shared-nestjs';
 import { RedisService } from '../redis/redis.service';
 
 @Injectable()
@@ -30,18 +31,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload) {
     // payload 타입 검증
     if (payload.type !== 'TICKETING') {
-      throw new UnauthorizedException('Invalid token type');
+      throw new AuthException(
+        AUTH_ERROR_CODES.INVALID_TOKEN_TYPE,
+        '유효하지 않은 토큰 타입입니다.',
+        401,
+      );
     }
 
     // userId 검증
     if (!payload.sub) {
-      throw new UnauthorizedException('Invalid token payload');
+      throw new AuthException(
+        AUTH_ERROR_CODES.INVALID_TOKEN_PAYLOAD,
+        '유효하지 않은 토큰 페이로드입니다.',
+        401,
+      );
     }
 
     const activeUserKey = `${REDIS_KEY_PREFIXES.ACTIVE_USER}${payload.sub}`;
     const isActive = await this.redisService.existsInQueue(activeUserKey);
     if (!isActive) {
-      throw new UnauthorizedException('User is not active in queue');
+      throw new AuthException(
+        AUTH_ERROR_CODES.USER_NOT_ACTIVE,
+        '활성 큐에 있지 않은 사용자입니다.',
+        401,
+      );
     }
 
     // validate 메서드가 반환하는 값이 request.user에 할당됨

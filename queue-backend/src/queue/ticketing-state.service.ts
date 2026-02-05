@@ -11,6 +11,7 @@ import {
   REDIS_KEYS,
 } from '@beastcamp/shared-constants';
 import Redis from 'ioredis';
+import { runWithPubSubContext, TraceService } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class TicketingStateService implements OnModuleInit, OnModuleDestroy {
@@ -25,15 +26,30 @@ export class TicketingStateService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     @Inject(PROVIDERS.REDIS_TICKET) private readonly ticketRedis: Redis,
+    private readonly traceService: TraceService,
   ) {}
 
   async onModuleInit(): Promise<void> {
     this.subscriber = this.ticketRedis.duplicate();
     await this.subscriber.subscribe(REDIS_CHANNELS.TICKETING_STATE_CHANGED);
-    this.subscriber.on('message', (channel: string) => {
+
+    this.logger.log('티켓팅 상태 동기화 구독 시작', {
+      channel: REDIS_CHANNELS.TICKETING_STATE_CHANGED,
+    });
+
+    this.subscriber.on('message', (channel: string, message: string) => {
       if (channel === REDIS_CHANNELS.TICKETING_STATE_CHANGED) {
-        this.lastSyncAt = 0;
-        void this.refreshIfNeeded();
+        void runWithPubSubContext(
+          this.traceService,
+          message,
+          async (payload) => {
+            this.logger.log('티켓팅 상태 변경 알림 수신 -> 로컬 캐시 무효화', {
+              receivedState: payload.userId,
+            });
+            this.lastSyncAt = 0;
+            await this.refreshIfNeeded();
+          },
+        );
       }
     });
   }
@@ -63,10 +79,20 @@ export class TicketingStateService implements OnModuleInit, OnModuleDestroy {
     this.refreshPromise = (async () => {
       try {
         const isOpen = await this.ticketRedis.get(REDIS_KEYS.TICKETING_OPEN);
-        this.cachedIsOpen = isOpen === 'true';
+        const newState = isOpen === 'true';
+
+        this.logger.debug('티켓팅 상태 캐시 갱신 완료', { isOpen: newState });
+
+        this.cachedIsOpen = newState;
         this.lastSyncAt = Date.now();
       } catch (error) {
-        this.logger.error('동기화 실패', (error as Error).stack);
+        this.logger.error(
+          '티켓팅 상태 동기화 실패',
+          error instanceof Error ? error.stack : undefined,
+          {
+            redisKey: REDIS_KEYS.TICKETING_OPEN,
+          },
+        );
         this.lastSyncAt = 0;
       } finally {
         this.refreshPromise = null;

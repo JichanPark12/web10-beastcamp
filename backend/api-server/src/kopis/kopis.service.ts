@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { XMLParser } from 'fast-xml-parser';
@@ -12,6 +8,7 @@ import {
   KopisPerformanceDetail,
 } from './interfaces/kopis.interfaces';
 import { Performance } from '../performances/entities/performance.entity';
+import { API_ERROR_CODES, TicketException } from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class KopisService {
@@ -103,8 +100,16 @@ export class KopisService {
       const results = await Promise.all(promises);
       return results.flat();
     } catch (error) {
-      this.logger.error(`전체 조회 프로세스 실패: ${error}`);
-      throw new InternalServerErrorException('KOPIS 데이터 수집 실패');
+      this.logger.error(
+        'KOPIS 목록 조회 중 예상치 못한 오류',
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new TicketException(
+        API_ERROR_CODES.KOPIS_SYNC_FAILED,
+        'KOPIS 데이터 수집에 실패했습니다.',
+        500,
+      );
     }
   }
 
@@ -136,9 +141,10 @@ export class KopisService {
 
       return items.filter((item) => item?.prfstate?.trim() !== '공연완료');
     } catch (error) {
-      this.logger.error(
-        `공연장(${venueCode}) 조회 실패: ${error instanceof Error ? error.message : error}`,
-      );
+      this.logger.warn('공연장 조회 실패', {
+        venueCode,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return [];
     }
   }
@@ -162,7 +168,7 @@ export class KopisService {
       const detail = items[0]; // 상세 조회는 항상 1개라고 가정
 
       if (!detail) {
-        this.logger.warn(`상세 정보 없음 - ID: ${performanceId}`);
+        this.logger.warn('상세 정보 없음', { performanceId });
         return null;
       }
 
@@ -173,9 +179,10 @@ export class KopisService {
 
       // 플랫폼 필터링: 지원되는 플랫폼이 없으면 null 반환
       if (!this.hasSupportedPlatform(detail)) {
-        this.logger.debug(
-          `지원되지 않는 플랫폼 - ID: ${performanceId}, 플랫폼: ${this.extractPlatformNames(detail)}`,
-        );
+        this.logger.debug('지원되지 않는 플랫폼 건너뜀', {
+          performanceId,
+          platforms: this.extractPlatformNames(detail),
+        });
         return null;
       }
 
@@ -184,8 +191,12 @@ export class KopisService {
 
       return detail;
     } catch (error) {
-      this.logger.error(
-        `상세 조회 실패: ${error instanceof Error ? error.message : error}`,
+      this.logger.warn(
+        '상세 조회 실패',
+        error instanceof Error ? error.stack : undefined,
+        {
+          performanceId,
+        },
       );
       return null;
     }

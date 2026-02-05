@@ -10,9 +10,11 @@ import type { JwtSignOptions } from '@nestjs/jwt';
 import { HeartbeatService } from './heartbeat.service';
 import { VirtualUserInjector } from './virtual-user.injector';
 import { TicketingStateService } from './ticketing-state.service';
+import { TraceModule } from '@beastcamp/shared-nestjs';
 
 @Module({
   imports: [
+    TraceModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {

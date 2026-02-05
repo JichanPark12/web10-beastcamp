@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "prebuild": "pnpm --filter @beastcamp/backend-config build && pnpm --filter @beastcamp/shared-types build && pnpm --filter @beastcamp/shared-constants build",
+    "prebuild": "pnpm --filter @beastcamp/shared-nestjs build && pnpm --filter @beastcamp/shared-types build && pnpm --filter @beastcamp/shared-constants build",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "node dist/main.js",
@@ -21,7 +21,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@beastcamp/backend-config": "workspace:*",
+    "@beastcamp/shared-nestjs": "workspace:*",
     "@beastcamp/shared-constants": "workspace:*",
     "@beastcamp/shared-types": "workspace:*",
     "@nestjs/axios": "^4.0.1",
@@ -94,6 +94,7 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
+      "^@beastcamp/shared-nestjs$": "<rootDir>/../../../packages/shared-nestjs/src",
       "^@beastcamp/shared-types$": "<rootDir>/../../../packages/shared-types/src",
       "^@beastcamp/shared-constants$": "<rootDir>/../../../packages/shared-constants/src"
     }

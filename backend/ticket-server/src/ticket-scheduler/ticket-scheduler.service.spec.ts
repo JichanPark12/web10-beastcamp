@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
+import { TraceService } from '@beastcamp/shared-nestjs';
 import { TicketSchedulerService } from './ticket-scheduler.service';
 import { TicketSetupService } from '../ticket-setup/ticket-setup.service';
 import { SchedulerRegistry } from '@nestjs/schedule';
@@ -50,6 +51,15 @@ describe('TicketSchedulerService', () => {
         {
           provide: ConfigService,
           useValue: configServiceMock,
+        },
+        {
+          provide: TraceService,
+          useValue: {
+            generateTraceId: jest.fn().mockReturnValue('trace-id'),
+            runWithTraceId: jest
+              .fn()
+              .mockImplementation((_id: string, fn: () => unknown) => fn()),
+          },
         },
       ],
     }).compile();

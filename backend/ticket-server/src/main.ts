@@ -2,12 +2,26 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { getWinstonLogger } from '@beastcamp/backend-config';
+import {
+  getWinstonLogger,
+  GlobalExceptionFilter,
+  TraceMiddleware,
+  TraceService,
+} from '@beastcamp/shared-nestjs';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: getWinstonLogger('ticket-server'),
+    bufferLogs: true,
   });
+
+  const traceService = app.get(TraceService);
+
+  app.useLogger(getWinstonLogger('ticket-server', traceService));
+
+  const traceMiddleware = app.get(TraceMiddleware);
+  app.use(traceMiddleware.use.bind(traceMiddleware));
+
+  app.useGlobalFilters(app.get(GlobalExceptionFilter));
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -9,6 +9,7 @@ import {
 } from '../performance-api/performance-api.service';
 import { RedisService } from '../redis/redis.service';
 import { REDIS_CHANNELS, REDIS_KEYS } from '@beastcamp/shared-constants';
+import { TraceService } from '@beastcamp/shared-nestjs';
 
 describe('TicketSetupService', () => {
   let service: TicketSetupService;
@@ -19,6 +20,15 @@ describe('TicketSetupService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TicketSetupService,
+        {
+          provide: TraceService,
+          useValue: {
+            getTraceId: jest.fn(),
+            getOrCreateTraceId: jest.fn().mockReturnValue('trace-id'),
+            runWithTraceId: jest.fn((_id: string, fn: () => unknown) => fn()),
+            generateTraceId: jest.fn().mockReturnValue('trace-id'),
+          },
+        },
         {
           provide: PerformanceApiService,
           useValue: {
@@ -51,7 +61,9 @@ describe('TicketSetupService', () => {
     it('공연 목록이 비어있으면 에러를 던져야 한다', async () => {
       performanceApi.getPerformances.mockResolvedValue([]);
 
-      await expect(service.setup()).rejects.toThrow('No performances found');
+      await expect(service.setup()).rejects.toThrow(
+        '공연 정보가 존재하지 않습니다.',
+      );
       expect(
         jest.mocked(redisService.deleteAllExceptPrefix),
       ).toHaveBeenCalledWith('config:');
@@ -128,7 +140,7 @@ describe('TicketSetupService', () => {
       );
       expect(jest.mocked(redisService.publishToTicket)).toHaveBeenCalledWith(
         REDIS_CHANNELS.TICKETING_STATE_CHANGED,
-        'open',
+        '{"userId":"open","traceId":"trace-id"}',
       );
     });
 
@@ -156,7 +168,7 @@ describe('TicketSetupService', () => {
       );
       expect(jest.mocked(redisService.publishToTicket)).toHaveBeenCalledWith(
         REDIS_CHANNELS.TICKETING_STATE_CHANGED,
-        'close',
+        '{"userId":"close","traceId":"trace-id"}',
       );
     });
   });

@@ -2,14 +2,29 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { getWinstonLogger } from '@beastcamp/backend-config';
+import {
+  getWinstonLogger,
+  GlobalExceptionFilter,
+  TraceMiddleware,
+  TraceService,
+} from '@beastcamp/shared-nestjs';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: getWinstonLogger('queue-backend'),
+    bufferLogs: true,
   });
+
+  const traceMiddleware = app.get(TraceMiddleware);
+  app.use(traceMiddleware.use.bind(traceMiddleware));
+
+  const traceService = app.get(TraceService);
+
+  app.useLogger(getWinstonLogger('queue-backend', traceService));
+
   app.use(cookieParser());
   app.setGlobalPrefix('api');
+
+  app.useGlobalFilters(app.get(GlobalExceptionFilter));
 
   // 배포 시 CORS를 nginx에서만 처리. 중복 시 'true, true' 등으로 깨짐.
   if (process.env.NODE_ENV !== 'production') {
