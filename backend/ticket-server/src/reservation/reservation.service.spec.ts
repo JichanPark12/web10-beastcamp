@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
-import { TicketException } from '@beastcamp/shared-nestjs';
+import { TicketException, TraceService } from '@beastcamp/shared-nestjs';
 import { ReservationService } from './reservation.service';
 import { REDIS_KEYS } from '@beastcamp/shared-constants';
 import { RedisService } from '../redis/redis.service';
@@ -23,6 +23,15 @@ describe('ReservationService', () => {
             publishToQueue: jest.fn(),
             del: jest.fn(),
             hgetQueue: jest.fn(),
+          },
+        },
+        {
+          provide: TraceService,
+          useValue: {
+            generateTraceId: jest.fn().mockReturnValue('trace-id'),
+            runWithTraceId: jest
+              .fn()
+              .mockImplementation((_id: string, fn: () => unknown) => fn()),
           },
         },
       ],

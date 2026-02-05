@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { REDIS_CHANNELS, REDIS_KEYS } from '@beastcamp/shared-constants';
-import { TraceService } from '@beastcamp/shared-nestjs/trace/trace.service';
-import { TICKET_ERROR_CODES, TicketException } from '@beastcamp/shared-nestjs';
+import {
+  TICKET_ERROR_CODES,
+  TicketException,
+  TraceService,
+} from '@beastcamp/shared-nestjs';
 import { RedisService } from '../redis/redis.service';
 import { CreateReservationRequestDto } from './dto/create-reservation-request.dto';
 import { GetReservationsResponseDto } from './dto/get-reservations-response.dto';
@@ -32,6 +35,7 @@ export class ReservationService {
   async reserve(
     dto: CreateReservationRequestDto,
     userId: string,
+    isVirtual: boolean = false,
   ): Promise<CreateReservationResponseDto> {
     const { session_id: sessionId, seats } = dto;
     await this.validateTicketingOpen();
@@ -41,8 +45,9 @@ export class ReservationService {
       seatKeys,
       sessionId,
       userId,
+      isVirtual,
     );
-    await this.publishReservationDoneEvent(userId);
+    await this.publishReservationDoneEvent(userId, isVirtual);
 
     const virtual_user_size = await this.getVirtualSize();
 
@@ -68,7 +73,10 @@ export class ReservationService {
     }
   }
 
-  private async publishReservationDoneEvent(userId: string): Promise<void> {
+  private async publishReservationDoneEvent(
+    userId: string,
+    isVirtual: boolean,
+  ): Promise<void> {
     try {
       const traceId = this.traceService.getOrCreateTraceId();
 
@@ -77,12 +85,20 @@ export class ReservationService {
         REDIS_CHANNELS.QUEUE_EVENT_DONE,
         payload,
       );
-      this.logger.log(
-        `티켓팅 완료 이벤트(active token 만료): ${userId}님이 티켓팅을 완료했습니다.`,
-      );
+      const samplingRate = isVirtual ? 0.01 : 1.0;
+      if (Math.random() < samplingRate) {
+        this.logger.log('티켓팅 완료 이벤트 발행 성공', {
+          userId,
+          isVirtual,
+          sampled: isVirtual,
+        });
+      }
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Unknown error');
-      this.logger.error('이벤트 발행 중 오류 발생:', err.stack ?? err.message);
+      this.logger.warn('티켓팅 완료 이벤트 발행 실패', err.stack, {
+        userId,
+        isVirtual,
+      });
     }
   }
 
@@ -135,6 +151,7 @@ export class ReservationService {
     seatKeys: string[],
     sessionId: number,
     userId: string,
+    isVirtual: boolean = false,
   ): Promise<number> {
     const rankKey = `rank:session:${sessionId}`;
     const [success, rank] = await this.redisService.atomicReservation(
@@ -151,9 +168,18 @@ export class ReservationService {
       );
     }
 
-    this.logger.log(
-      `예매 완료: userId:${userId} -> ${seatKeys.length}개의 seats. sessionId:${sessionId}, rank:${rank}`,
-    );
+    const samplingRate = isVirtual ? 0.01 : 1.0;
+
+    if (Math.random() < samplingRate) {
+      this.logger.log('티켓 예약 성공 (Atomic)', {
+        userId,
+        sessionId,
+        rank,
+        seatCount: seatKeys.length,
+        isVirtual,
+        sampled: isVirtual,
+      });
+    }
     return rank;
   }
 

@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-jest.mock('@beastcamp/backend-config', () => ({
-  DynamicConfigManager: jest.fn(),
-}));
-
 import { Test, TestingModule } from '@nestjs/testing';
-import { TicketException, TICKET_ERROR_CODES } from '@beastcamp/shared-nestjs';
+import {
+  TicketException,
+  TICKET_ERROR_CODES,
+  TraceService,
+} from '@beastcamp/shared-nestjs';
 import { ChainableCommander } from 'ioredis';
 import { REDIS_CHANNELS } from '@beastcamp/shared-constants';
 import { VirtualUserWorker } from './virtual-user.worker';
@@ -92,6 +92,15 @@ describe('VirtualUserWorker', () => {
             isVirtualUserEnabled: jest.fn().mockReturnValue(true),
           },
         },
+        {
+          provide: TraceService,
+          useValue: {
+            generateTraceId: jest.fn().mockReturnValue('trace-id'),
+            runWithTraceId: jest
+              .fn()
+              .mockImplementation((_id: string, fn: () => unknown) => fn()),
+          },
+        },
       ],
     }).compile();
 
@@ -121,6 +130,7 @@ describe('VirtualUserWorker', () => {
       jest.mocked(reservationService.reserve).mockResolvedValue({
         rank: 1,
         seats: [{ block_id: 10, row: 0, col: 0 }],
+        virtual_user_size: 50000,
       });
 
       await workerTest.processVirtualUser('vu-1', 10);
@@ -142,6 +152,7 @@ describe('VirtualUserWorker', () => {
       jest.mocked(reservationService.reserve).mockResolvedValue({
         rank: 1,
         seats: [{ block_id: 10, row: 1, col: 2 }],
+        virtual_user_size: 50000,
       });
 
       await workerTest.processVirtualUser('vu-1', 10);
@@ -166,6 +177,7 @@ describe('VirtualUserWorker', () => {
       jest.mocked(reservationService.reserve).mockResolvedValue({
         rank: 1,
         seats: [{ block_id: 10, row: 0, col: 0 }],
+        virtual_user_size: 50000,
       });
 
       await workerTest.processVirtualUser('vu-1', 10);
@@ -185,6 +197,7 @@ describe('VirtualUserWorker', () => {
       jest.mocked(reservationService.reserve).mockResolvedValue({
         rank: 1,
         seats: [{ block_id: 10, row: 0, col: 0 }],
+        virtual_user_size: 50000,
       });
 
       await workerTest.processVirtualUser('vu-1', 10);
@@ -204,6 +217,7 @@ describe('VirtualUserWorker', () => {
       jest.mocked(reservationService.reserve).mockResolvedValue({
         rank: 1,
         seats: [{ block_id: 10, row: 1, col: 1 }],
+        virtual_user_size: 50000,
       });
 
       await workerTest.processVirtualUser('vu-1', 10);

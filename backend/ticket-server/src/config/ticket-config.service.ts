@@ -24,15 +24,32 @@ export class TicketConfigService implements OnModuleInit {
   }
 
   async onModuleInit(): Promise<void> {
-    await this.seedTicketConfig();
-    await this.syncAll();
+    try {
+      await this.seedTicketConfig();
+      await this.syncAll();
+      this.logger.log('Ticket/Queue Dynamic Config 초기화 완료');
+    } catch (error) {
+      this.logger.error(
+        'Dynamic Config 초기화 실패',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   async syncAll(): Promise<void> {
-    await Promise.all([
-      this.ticketManager.refresh(),
-      this.queueManager.refresh(),
-    ]);
+    try {
+      await Promise.all([
+        this.ticketManager.refresh(),
+        this.queueManager.refresh(),
+      ]);
+      this.logger.debug('Dynamic Config 동기화 성공');
+    } catch (error) {
+      this.logger.error(
+        'Dynamic Config 동기화 실패',
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 
   isVirtualUserEnabled(): boolean {
@@ -81,9 +98,16 @@ export class TicketConfigService implements OnModuleInit {
 
     try {
       await pipeline.exec();
+      this.logger.debug('Ticket 설정 시드 주입 완료');
     } catch (error) {
-      const err = error instanceof Error ? error : new Error('Unknown error');
-      this.logger.error('시드 실패: ticket config', err.stack);
+      this.logger.error(
+        'Ticket 설정 시드 주입 실패',
+        error instanceof Error ? error.stack : undefined,
+        {
+          redisKey: REDIS_KEYS.CONFIG_TICKET,
+        },
+      );
+      throw error;
     }
   }
 
