@@ -29,4 +29,10 @@ export class CreateReservationResponseDto {
     example: 50000,
   })
   virtual_user_size: number;
+
+  @ApiProperty({
+    description: '예약 완료 시각 (ISO 8601)',
+    example: '2026-02-05T17:00:00.000Z',
+  })
+  reserved_at: string;
 }

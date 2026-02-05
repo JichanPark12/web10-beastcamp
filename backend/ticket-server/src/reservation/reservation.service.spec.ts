@@ -163,6 +163,8 @@ describe('ReservationService', () => {
       expect(result.rank).toBe(5);
       expect(result.seats).toEqual(dto.seats);
       expect(result.virtual_user_size).toBe(50000);
+      expect(result.reserved_at).toBeDefined();
+      expect(typeof result.reserved_at).toBe('string');
       expect(redisService.atomicReservation).toHaveBeenCalledWith(
         ['reservation:session:1:block:10:row:0:col:0'],
         userId,
