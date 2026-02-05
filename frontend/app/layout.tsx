@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 
 const SITE_TITLE = "내티켓 - 티켓팅 연습 & 시뮬레이션";
 const SITE_DESCRIPTION =
-  "인터파크, 예스24, 멜론티켓의 실제 티켓팅 환경을 재현한 무료 연습 사이트. 대기열, 좌석 선택, 피드백까지 실전처럼 연습하고 티켓팅 성공률을 높이세요.";
+  "티켓팅 연습 사이트. 실전과 같은 환경에서 봇과 경쟁하며 티켓팅 연습을 해보세요.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.neticket.site"),
