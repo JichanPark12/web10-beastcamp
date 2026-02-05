@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { TraceService } from '@beastcamp/shared-nestjs';
 import { QueueTrigger } from './queue.trigger';
 import { QueueWorker } from './queue.worker';
 import { PROVIDERS, REDIS_CHANNELS } from '@beastcamp/shared-constants';
@@ -41,6 +42,15 @@ describe('QueueTrigger', () => {
         { provide: QueueWorker, useValue: workerMock },
         { provide: PROVIDERS.REDIS_QUEUE, useValue: redisMock },
         { provide: QueueConfigService, useValue: configServiceMock },
+        {
+          provide: TraceService,
+          useValue: {
+            generateTraceId: jest.fn().mockReturnValue('trace-id'),
+            runWithTraceId: jest
+              .fn()
+              .mockImplementation((_id: string, fn: () => unknown) => fn()),
+          },
+        },
       ],
     }).compile();
 

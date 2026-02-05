@@ -4,7 +4,11 @@ import { randomBytes } from 'crypto';
 import Redis from 'ioredis';
 import { QueueConfigService } from './queue-config.service';
 import { TicketingStateService } from './ticketing-state.service';
-import { QUEUE_ERROR_CODES, QueueException } from '@beastcamp/shared-nestjs';
+import {
+  QUEUE_ERROR_CODES,
+  QueueException,
+  TraceService,
+} from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class VirtualUserInjector {
@@ -15,13 +19,14 @@ export class VirtualUserInjector {
 
   constructor(
     @Inject(PROVIDERS.REDIS_QUEUE) private readonly redis: Redis,
+    private readonly traceService: TraceService,
     private readonly configService: QueueConfigService,
     private readonly ticketingStateService: TicketingStateService,
   ) {}
 
   async start(): Promise<void> {
     if (this.isRunning) {
-      this.logger.debug('가상 유저 주입이 이미 실행 중입니다.');
+      this.logger.debug('가상 유저 주입이 이미 실행 중');
       return;
     }
 
@@ -29,7 +34,7 @@ export class VirtualUserInjector {
     const { virtual } = this.configService;
 
     if (!virtual.enabled) {
-      this.logger.warn('가상 유저 주입이 비활성화되어 있습니다.');
+      this.logger.warn('가상 유저 주입이 비활성화됨');
       return;
     }
 
@@ -46,6 +51,7 @@ export class VirtualUserInjector {
       if (initialCount > 0) {
         await this.injectBatch(initialCount);
         await this.incrementState(initialCount);
+        this.logger.log('초기 가상 유저 주입 완료', { initialCount });
       }
     }
 
@@ -53,9 +59,16 @@ export class VirtualUserInjector {
   }
 
   private scheduleNextTick(): void {
-    if (!this.isRunning) return;
+    if (!this.isRunning) {
+      return;
+    }
+
     this.timerId = setTimeout(
-      () => void this.runTick(),
+      () =>
+        void this.traceService.runWithTraceId(
+          this.traceService.generateTraceId(),
+          () => this.runTick(),
+        ),
       this.configService.virtual.tickIntervalMs,
     );
   }
@@ -65,7 +78,7 @@ export class VirtualUserInjector {
 
     const isOpen = await this.ticketingStateService.isOpen();
     if (!isOpen) {
-      this.logger.log('⚠️ 티켓팅이 종료되어 가상 유저 주입을 중단합니다.');
+      this.logger.log('티켓팅 종료로 주입 중단');
       return this.stop();
     }
 
@@ -97,17 +110,18 @@ export class VirtualUserInjector {
         await this.injectBatch(injectCount);
         const totalAfterUpdate = await this.incrementState(injectCount);
         if (totalAfterUpdate >= virtual.targetTotal) {
-          this.logger.log(
-            `✅ 목표 도달로 인한 종료 (Total: ${totalAfterUpdate})`,
-          );
+          this.logger.log('✅ 목표 도달로 주입 종료', {
+            totalInjected: totalAfterUpdate,
+          });
           return this.stop();
         }
       }
 
       if (currentWaiting >= virtual.targetTotal) {
-        this.logger.log(
-          `⚠️ 대기열 포화로 인한 주입 중단 (Current: ${currentWaiting})`,
-        );
+        this.logger.log('⚠️ 대기열 포화로 주입 중단', {
+          currentWaiting,
+          targetTotal: virtual.targetTotal,
+        });
         return this.stop();
       }
     } catch (error) {
@@ -120,8 +134,11 @@ export class VirtualUserInjector {
               500,
             );
       this.logger.error(
-        `[${wrappedError.errorCode}] ${wrappedError.message}`,
+        wrappedError.message,
         error instanceof Error ? error.stack : undefined,
+        {
+          errorCode: wrappedError.errorCode,
+        },
       );
     }
 
@@ -149,7 +166,7 @@ export class VirtualUserInjector {
       const results = await pipeline.exec();
       const hasError = results?.some(([err]) => err);
       if (hasError) {
-        this.logger.error('대기열 주입 실패', { results });
+        this.logger.error('대기열 주입 실패', undefined, { results });
         throw new QueueException(
           QUEUE_ERROR_CODES.QUEUE_VIRTUAL_INJECT_FAILED,
           '대기열 주입에 실패했습니다.',
@@ -171,9 +188,10 @@ export class VirtualUserInjector {
       .exec();
     const [err, value] = results?.[0] ?? [];
     if (err || typeof value !== 'number') {
-      this.logger.warn(
-        `⚠️ 가상 유저 주입 인원 수 증가 실패: ${err?.message ?? 'invalid value'}`,
-      );
+      this.logger.warn('⚠️ 인원 수 증가 실패', {
+        error: err?.message,
+        value,
+      });
       return 0;
     }
     return value;

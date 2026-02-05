@@ -9,9 +9,12 @@ import {
 import Redis from 'ioredis';
 import { QueueWorker } from './queue.worker';
 import { QueueConfigService } from './queue-config.service';
-import { runWithPubSubContext } from '@beastcamp/shared-nestjs/trace/pubsub-context';
-import { TraceService } from '@beastcamp/shared-nestjs/trace/trace.service';
-import { QUEUE_ERROR_CODES, QueueException } from '@beastcamp/shared-nestjs';
+import {
+  QUEUE_ERROR_CODES,
+  QueueException,
+  runWithPubSubContext,
+  TraceService,
+} from '@beastcamp/shared-nestjs';
 
 @Injectable()
 export class QueueTrigger implements OnModuleInit, OnModuleDestroy {
@@ -35,12 +38,15 @@ export class QueueTrigger implements OnModuleInit, OnModuleDestroy {
     this.subClient.on('message', (channel: string, message: string) => {
       if (channel === REDIS_CHANNELS.QUEUE_EVENT_DONE) {
         void runWithPubSubContext(this.traceService, message, (payload) =>
-          this.handleDoneEvent(payload.userId),
+          this.handleDoneEvent(payload.userId, Boolean(payload.isVirtual)),
         );
       }
     });
 
-    void this.runTransferCycle();
+    void this.traceService.runWithTraceId(
+      this.traceService.generateTraceId(),
+      () => this.runTransferCycle(),
+    );
   }
 
   private scheduleNextTransfer(): void {
@@ -52,7 +58,10 @@ export class QueueTrigger implements OnModuleInit, OnModuleDestroy {
     const delayMs = intervalSec * 1000;
 
     this.timer = setTimeout(() => {
-      void this.runTransferCycle();
+      void this.traceService.runWithTraceId(
+        this.traceService.generateTraceId(),
+        () => this.runTransferCycle(),
+      );
     }, delayMs);
   }
 
@@ -74,18 +83,28 @@ export class QueueTrigger implements OnModuleInit, OnModuleDestroy {
               500,
             );
       this.logger.error(
-        `[${wrappedError.errorCode}] ${wrappedError.message}`,
+        wrappedError.message,
         error instanceof Error ? error.stack : undefined,
+        {
+          errorCode: wrappedError.errorCode,
+        },
       );
     } finally {
       this.scheduleNextTransfer();
     }
   }
 
-  private async handleDoneEvent(userId: string) {
+  private async handleDoneEvent(userId: string, isVirtual: boolean) {
     try {
-      this.logger.log(`🔔 티켓팅 완료 메시지 수신: ${userId}`);
-      await this.worker.removeActiveUser(userId);
+      const samplingRate = isVirtual ? 0.01 : 1.0;
+      if (Math.random() < samplingRate) {
+        this.logger.log(`🔔 티켓팅 완료 수신`, {
+          userId,
+          isVirtual,
+          sampled: isVirtual,
+        });
+      }
+      await this.worker.removeActiveUser(userId, isVirtual);
       await this.worker.processQueueTransfer();
     } catch (err) {
       const wrappedError =
@@ -97,8 +116,12 @@ export class QueueTrigger implements OnModuleInit, OnModuleDestroy {
               500,
             );
       this.logger.error(
-        `[${wrappedError.errorCode}] ${wrappedError.message}`,
+        wrappedError.message,
         err instanceof Error ? err.stack : undefined,
+        {
+          errorCode: wrappedError.errorCode,
+          userId,
+        },
       );
     }
   }

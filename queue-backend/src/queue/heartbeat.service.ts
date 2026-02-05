@@ -35,9 +35,7 @@ export class HeartbeatService {
 
       if (this.heartbeatCache.size > heartbeat.cacheMaxSize) {
         this.heartbeatCache.clear();
-        this.logger.debug(
-          '하트비트 로컬 캐시가 최대치에 도달하여 초기화되었습니다.',
-        );
+        this.logger.debug('캐시 최대치 도달로 초기화');
       }
     } catch (error) {
       const wrappedError =
@@ -49,8 +47,12 @@ export class HeartbeatService {
               500,
             );
       this.logger.error(
-        `[${wrappedError.errorCode}] ${wrappedError.message} (userId: ${userId})`,
+        wrappedError.message,
         error instanceof Error ? error.stack : undefined,
+        {
+          errorCode: wrappedError.errorCode,
+          userId,
+        },
       );
     }
   }

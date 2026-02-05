@@ -35,7 +35,7 @@ export class QueueWorker {
 
   async processQueueTransfer() {
     if (this.isProcessing) {
-      this.logger.debug('🚫 이미 활성 큐 처리 중입니다.');
+      this.logger.debug('🚫 이미 활성 큐 처리 중');
       return;
     }
 
@@ -58,9 +58,10 @@ export class QueueWorker {
       );
 
       if (movedUsers.length > 0) {
-        this.logger.log(
-          `🚀 [입장] 유저 ${movedUsers.join(', ')}님이 활성 큐로 이동했습니다.`,
-        );
+        this.logger.debug('🚀 유저 활성 큐 이동 완료', {
+          count: movedUsers.length,
+          userIds: movedUsers,
+        });
       }
     } catch (error) {
       const wrappedError =
@@ -72,21 +73,23 @@ export class QueueWorker {
               500,
             );
       this.logger.error(
-        `[${wrappedError.errorCode}] ${wrappedError.message}`,
+        wrappedError.message,
         error instanceof Error ? error.stack : undefined,
+        {
+          errorCode: wrappedError.errorCode,
+        },
       );
     } finally {
       this.isProcessing = false;
     }
   }
 
-  async removeActiveUser(userId: string) {
+  async removeActiveUser(userId: string, isVirtual: boolean) {
     if (!userId) {
       return;
     }
 
     const statusKey = `${REDIS_KEY_PREFIXES.ACTIVE_USER}${userId}`;
-
     try {
       const results = await this.redis
         .pipeline()
@@ -96,9 +99,14 @@ export class QueueWorker {
 
       const removed = (results?.[0]?.[1] as number) ?? 0;
       if (removed > 0) {
-        this.logger.log(
-          `🛑 [퇴장] 유저 ${userId}님을 활성 큐에서 제거했습니다.`,
-        );
+        const samplingRate = isVirtual ? 0.01 : 1.0;
+        if (Math.random() < samplingRate) {
+          this.logger.log('🛑 유저 퇴장 완료', {
+            userId,
+            isVirtual,
+            sampled: isVirtual,
+          });
+        }
       }
     } catch (error) {
       const wrappedError =
@@ -110,8 +118,12 @@ export class QueueWorker {
               500,
             );
       this.logger.error(
-        `[${wrappedError.errorCode}] ${wrappedError.message} (userId: ${userId})`,
+        wrappedError.message,
         error instanceof Error ? error.stack : undefined,
+        {
+          errorCode: wrappedError.errorCode,
+          userId,
+        },
       );
     }
   }

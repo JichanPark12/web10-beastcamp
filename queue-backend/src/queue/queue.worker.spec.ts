@@ -70,20 +70,19 @@ describe('QueueWorker', () => {
     const movedUsers = ['user1'];
     redisMock.syncAndPromoteWaiters.mockResolvedValue(movedUsers);
 
-    // Logger spy 생성 (선택 사항)
-    const loggerSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    const loggerSpy = jest
+      .spyOn(Logger.prototype, 'debug')
+      .mockImplementation();
 
     await worker.processQueueTransfer();
 
-    expect(loggerSpy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        '🚀 [입장] 유저 user1님이 활성 큐로 이동했습니다.',
-      ),
-    );
+    expect(loggerSpy).toHaveBeenCalledWith('🚀 유저 활성 큐 이동 완료', {
+      count: 1,
+      userIds: ['user1'],
+    });
   });
 
   it('에러 발생 시 에러 로그를 남겨야 한다', async () => {
-    // 상황 설정: Redis 실행 중 에러 발생
     redisMock.syncAndPromoteWaiters.mockRejectedValue(new Error('Redis Error'));
     const loggerErrorSpy = jest
       .spyOn(Logger.prototype, 'error')
@@ -92,8 +91,9 @@ describe('QueueWorker', () => {
     await worker.processQueueTransfer();
 
     expect(loggerErrorSpy).toHaveBeenCalledWith(
-      '대기열 스케줄링 중 오류 발생:',
-      expect.any(Error),
+      '대기열 처리 중 오류가 발생했습니다.',
+      expect.stringContaining('Redis Error'),
+      { errorCode: 'QUEUE_TRANSFER_FAILED' },
     );
   });
 });

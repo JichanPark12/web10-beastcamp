@@ -141,8 +141,12 @@ export class QueueService {
                 500,
               );
         this.logger.error(
-          `[${wrappedError.errorCode}] ${wrappedError.message}`,
+          wrappedError.message,
           error instanceof Error ? error.stack : undefined,
+          {
+            errorCode: wrappedError.errorCode,
+            lockKey,
+          },
         );
         return;
       }

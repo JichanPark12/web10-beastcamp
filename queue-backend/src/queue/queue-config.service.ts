@@ -17,12 +17,30 @@ export class QueueConfigService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    await this.seedConfig();
-    await this.manager.refresh(true);
+    try {
+      await this.seedConfig();
+      await this.manager.refresh(true);
+      this.logger.log('Queue Dynamic Config 초기화 완료');
+    } catch (error) {
+      this.logger.error(
+        'Queue Dynamic Config 초기화 실패',
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 
   async sync() {
-    await this.manager.refresh();
+    try {
+      await this.manager.refresh();
+      this.logger.debug('Queue Dynamic Config 동기화 완료');
+    } catch (error) {
+      this.logger.error(
+        'Queue Dynamic Config 동기화 실패',
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 
   private async seedConfig() {
@@ -71,10 +89,11 @@ export class QueueConfigService implements OnModuleInit {
               '대기열 설정 시딩에 실패했습니다.',
               500,
             );
-      this.logger.error(
-        `[${wrappedError.errorCode}] ${wrappedError.message}`,
-        error instanceof Error ? error.stack : undefined,
-      );
+      this.logger.error(wrappedError.message, error instanceof Error ? error.stack : undefined, {
+        errorCode: wrappedError.errorCode,
+        redisKey: REDIS_KEYS.CONFIG_QUEUE
+      });
+      throw wrappedError;
     }
   }
 
